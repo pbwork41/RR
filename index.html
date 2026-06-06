@@ -4,12 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Трекер смен — Lady Stretch</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#ffffff;--bg2:#f8f9fa;--bg3:#f1f3f5;
+  --bg:#fff;--bg2:#f8f9fa;--bg3:#f1f3f5;
   --text:#1a1a2e;--text2:#555570;--text3:#888899;
   --border:#e0e0eb;--border2:#c8c8d8;
   --blue:#2563eb;--blue-bg:#eff6ff;--blue-text:#1d4ed8;
@@ -31,16 +30,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;ba
 .card-muted{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;margin-bottom:1rem}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
-@media(max-width:580px){.grid2{grid-template-columns:1fr}.grid3{grid-template-columns:1fr 1fr}}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media(max-width:580px){.grid2{grid-template-columns:1fr}.grid3{grid-template-columns:1fr 1fr}.grid4{grid-template-columns:1fr 1fr}}
 .metric{background:var(--bg2);border-radius:var(--radius-sm);padding:.75rem 1rem;border:1px solid var(--border)}
 .metric-label{font-size:11px;color:var(--text3);margin-bottom:3px;text-transform:uppercase;letter-spacing:.03em}
-.metric-val{font-size:22px;font-weight:700;color:var(--text)}
+.metric-val{font-size:20px;font-weight:700;color:var(--text)}
+.metric-sub{font-size:11px;color:var(--text3);margin-top:3px}
 .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600}
 .badge-green{background:var(--green-bg);color:var(--green-text)}
 .badge-amber{background:var(--amber-bg);color:var(--amber-text)}
 .badge-red{background:var(--red-bg);color:var(--red-text)}
 .progress-wrap{height:8px;background:var(--bg3);border-radius:4px;overflow:hidden;margin-top:8px}
 .progress-fill{height:100%;border-radius:4px;transition:width .4s ease}
+.progress-wrap-sm{height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-top:4px}
+.progress-fill-sm{height:100%;border-radius:3px}
 label{display:block;font-size:12px;color:var(--text2);margin-bottom:4px;font-weight:500}
 input,select,textarea{width:100%;padding:8px 12px;font-size:14px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);font-family:inherit;transition:border .15s}
 input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue)}
@@ -54,10 +57,11 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue)}
 .btn-sm{padding:5px 12px;font-size:12px}
 .divider{border:none;border-top:1px solid var(--border);margin:14px 0}
 .section-title{font-size:15px;font-weight:600;margin-bottom:12px;color:var(--text)}
+.subsection-title{font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
 .line{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px}
 .line:last-child{border-bottom:none}
 .line-label{color:var(--text2)}
-.line-val{font-weight:600;color:var(--text)}
+.line-val{font-weight:600}
 .total-line{display:flex;justify-content:space-between;align-items:center;padding:12px 0;font-size:16px;font-weight:700;border-top:2px solid var(--border);margin-top:6px}
 .shift-card{border:1px solid var(--border);border-radius:var(--radius-sm);padding:.875rem 1rem;margin-bottom:8px;background:var(--bg)}
 .shift-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
@@ -65,26 +69,32 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue)}
 .tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500}
 .tag-imp{background:#eff6ff;color:#1d4ed8}
 .tag-mec{background:#f5f3ff;color:#6d28d9}
-.shift-amounts{display:flex;gap:6px;flex-wrap:wrap}
-.amount-chip{background:var(--bg2);border:1px solid var(--border);padding:3px 10px;border-radius:20px;font-size:12px;color:var(--text2)}
-.amount-chip.highlight{background:var(--blue-bg);color:var(--blue-text);border-color:#bfdbfe;font-weight:600}
+.chip{background:var(--bg2);border:1px solid var(--border);padding:3px 10px;border-radius:20px;font-size:12px;color:var(--text2)}
+.chip-blue{background:var(--blue-bg);color:var(--blue-text);border-color:#bfdbfe;font-weight:600}
+.chip-green{background:var(--green-bg);color:var(--green-text);border-color:#86efac;font-weight:500}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
 .cert-block{border:1px solid var(--border);border-radius:var(--radius-sm);padding:.875rem;margin-bottom:8px;background:var(--bg2)}
 .cert-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
-.cert-title{font-size:12px;font-weight:600;color:var(--text2)}
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:1000;padding:1rem}
-.modal{background:var(--bg);border-radius:var(--radius);padding:1.5rem;width:min(520px,100%);max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.modal{background:var(--bg);border-radius:var(--radius);padding:1.5rem;width:min(540px,100%);max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)}
 .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem}
 .modal-title{font-size:17px;font-weight:700}
 .alert{padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;margin-bottom:12px}
 .alert-red{background:var(--red-bg);color:var(--red-text);border:1px solid #fca5a5}
 .pin-input{text-align:center;font-size:28px;letter-spacing:10px;font-weight:700}
 .empty-state{text-align:center;padding:3rem 1rem;color:var(--text3)}
-.empty-state i{font-size:48px;display:block;margin-bottom:12px;opacity:.4}
 .salary-box{background:linear-gradient(135deg,var(--blue-bg),#f0f4ff);border:1px solid #bfdbfe;border-radius:var(--radius);padding:1.25rem;margin-bottom:1rem}
 .salary-total{font-size:32px;font-weight:800;color:var(--blue-text)}
-.marathon-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:600;background:var(--amber-bg);color:var(--amber-text);border:1px solid #fcd34d;margin-top:8px}
-.loading{text-align:center;padding:2rem;color:var(--text3);font-size:14px}
-.sync-indicator{display:inline-flex;align-items:center;gap:6px;font-size:11px;opacity:.8}
+.hint{font-size:11px;color:var(--text3);margin-top:4px}
+.funnel-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px}
+.funnel-row:last-child{border-bottom:none}
+.funnel-label{flex:1;color:var(--text2)}
+.funnel-val{font-weight:600;min-width:40px;text-align:right}
+.funnel-pct{min-width:50px;text-align:right;color:var(--text3);font-size:12px}
+.marathon-banner{border:2px solid var(--amber);background:var(--amber-bg);border-radius:var(--radius);padding:1rem 1.25rem;margin-bottom:10px}
+.marathon-banner-title{font-size:14px;font-weight:700;color:var(--amber-text);margin-bottom:2px}
+.marathon-banner-desc{font-size:12px;color:var(--text2);margin-bottom:8px}
+.marathon-banner-prize{font-size:22px;font-weight:800;color:var(--amber-text)}
 </style>
 </head>
 <body>
@@ -95,24 +105,23 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue)}
       <div class="topbar-sub" id="month-label"></div>
     </div>
     <div style="display:flex;gap:8px;align-items:center">
-      <span class="sync-indicator" id="sync-status"><i class="ti ti-cloud"></i> <span id="sync-text">загрузка...</span></span>
-      <button class="btn btn-sm" style="background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.3)" onclick="openAddShift()">
-        <i class="ti ti-plus"></i> Внести смену
-      </button>
+      <span style="font-size:11px;opacity:.8" id="sync-text">загрузка...</span>
+      <button class="btn btn-sm" style="background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.3)" onclick="openAddShift()">+ Внести смену</button>
     </div>
   </div>
 
+  <div id="marathon-banners"></div>
+
   <div class="tabs">
-    <button class="tab active" onclick="switchTab('dashboard')"><i class="ti ti-chart-bar"></i> Сводка</button>
-    <button class="tab" onclick="switchTab('shifts')"><i class="ti ti-calendar"></i> Смены</button>
-    <button class="tab" onclick="switchTab('salary')"><i class="ti ti-wallet"></i> Зарплата</button>
+    <button class="tab active" onclick="switchTab('dashboard')">📊 Сводка</button>
+    <button class="tab" onclick="switchTab('shifts')">📅 Смены</button>
+    <button class="tab" onclick="switchTab('salary')">💰 Зарплата</button>
   </div>
 
   <div id="tab-dashboard" class="section active">
     <div class="grid2" id="studio-cards"></div>
     <div class="card" id="total-card"></div>
   </div>
-
   <div id="tab-shifts" class="section">
     <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
       <select id="filter-studio" onchange="renderShifts()" style="max-width:160px">
@@ -126,13 +135,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue)}
     </div>
     <div id="shifts-list"></div>
   </div>
-
   <div id="tab-salary" class="section">
     <div class="card-muted" style="margin-bottom:12px">
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <select id="sal-admin" onchange="renderSalary()" style="max-width:180px">
-          <option value="all">Все администраторы</option>
-        </select>
+        <select id="sal-admin" onchange="renderSalary()" style="max-width:180px"><option value="all">Все администраторы</option></select>
         <select id="sal-studio" onchange="renderSalary()" style="max-width:160px">
           <option value="all">Обе студии</option>
           <option value="Империал">Империал</option>
@@ -149,7 +155,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue)}
 <div class="modal">
   <div class="modal-header">
     <div class="modal-title">Внести смену</div>
-    <button class="btn btn-sm" onclick="closeModal('add-modal')"><i class="ti ti-x"></i></button>
+    <button class="btn btn-sm" onclick="closeModal('add-modal')">✕</button>
   </div>
   <div class="grid2">
     <div class="form-row"><label>Дата смены</label><input type="date" id="f-date"></div>
@@ -163,23 +169,40 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue)}
       <option>Анна</option><option>Мария</option><option>Екатерина</option><option>Юлия</option>
     </select>
   </div>
+
   <div class="divider"></div>
-  <div class="section-title">Продажи за смену</div>
+  <div class="subsection-title">Воронка за смену</div>
+  <div class="grid3">
+    <div class="form-row"><label>Лидов пришло</label><input type="number" id="f-leads" value="0" min="0"><div class="hint">Новых обращений</div></div>
+    <div class="form-row"><label>Записей на пробное</label><input type="number" id="f-bookings" value="0" min="0"></div>
+    <div class="form-row"><label>Пришло на пробное</label><input type="number" id="f-visits" value="0" min="0"></div>
+  </div>
+
+  <div class="divider"></div>
+  <div class="subsection-title">Продажи за смену</div>
   <div class="grid2">
     <div class="form-row"><label>Новые абонементы, ₽</label><input type="number" id="f-new" value="0" min="0"></div>
     <div class="form-row"><label>Продления, ₽</label><input type="number" id="f-renew" value="0" min="0"></div>
   </div>
   <div class="form-row"><label>Восстановление клиента, ₽</label><input type="number" id="f-restore" value="0" min="0"></div>
+
+  <div class="divider"></div>
+  <div class="subsection-title">Дополнительно</div>
+  <div class="grid2">
+    <div class="form-row"><label>Записей на массаж</label><input type="number" id="f-massage" value="0" min="0"></div>
+    <div class="form-row"><label>Собрано отзывов</label><input type="number" id="f-reviews" value="0" min="0"></div>
+  </div>
+
   <div class="divider"></div>
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-    <div class="section-title" style="margin:0">Реферальные сертификаты</div>
-    <button class="btn btn-sm" onclick="addCert('add')"><i class="ti ti-plus"></i> Добавить</button>
+    <div class="subsection-title" style="margin:0">Реферальные сертификаты</div>
+    <button class="btn btn-sm" onclick="addCert('add')">+ Добавить</button>
   </div>
   <div id="add-certs"></div>
   <div id="add-error" class="alert alert-red" style="display:none"></div>
   <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:1.25rem">
     <button class="btn" onclick="closeModal('add-modal')">Отмена</button>
-    <button class="btn btn-primary" id="save-btn" onclick="saveShift()"><i class="ti ti-check"></i> Сохранить</button>
+    <button class="btn btn-primary" id="save-btn" onclick="saveShift()">✓ Сохранить</button>
   </div>
 </div>
 </div>
@@ -200,7 +223,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue)}
 <div class="modal">
   <div class="modal-header">
     <div class="modal-title">Редактировать смену</div>
-    <button class="btn btn-sm" onclick="closeModal('edit-modal')"><i class="ti ti-x"></i></button>
+    <button class="btn btn-sm" onclick="closeModal('edit-modal')">✕</button>
   </div>
   <div class="grid2">
     <div class="form-row"><label>Дата смены</label><input type="date" id="e-date"></div>
@@ -214,70 +237,80 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue)}
     </select>
   </div>
   <div class="divider"></div>
-  <div class="section-title">Продажи за смену</div>
+  <div class="subsection-title">Воронка за смену</div>
+  <div class="grid3">
+    <div class="form-row"><label>Лидов пришло</label><input type="number" id="e-leads" value="0" min="0"></div>
+    <div class="form-row"><label>Записей на пробное</label><input type="number" id="e-bookings" value="0" min="0"></div>
+    <div class="form-row"><label>Пришло на пробное</label><input type="number" id="e-visits" value="0" min="0"></div>
+  </div>
+  <div class="divider"></div>
+  <div class="subsection-title">Продажи за смену</div>
   <div class="grid2">
     <div class="form-row"><label>Новые абонементы, ₽</label><input type="number" id="e-new" min="0"></div>
     <div class="form-row"><label>Продления, ₽</label><input type="number" id="e-renew" min="0"></div>
   </div>
   <div class="form-row"><label>Восстановление клиента, ₽</label><input type="number" id="e-restore" min="0"></div>
   <div class="divider"></div>
+  <div class="subsection-title">Дополнительно</div>
+  <div class="grid2">
+    <div class="form-row"><label>Записей на массаж</label><input type="number" id="e-massage" min="0"></div>
+    <div class="form-row"><label>Собрано отзывов</label><input type="number" id="e-reviews" min="0"></div>
+  </div>
+  <div class="divider"></div>
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-    <div class="section-title" style="margin:0">Реферальные сертификаты</div>
-    <button class="btn btn-sm" onclick="addCert('edit')"><i class="ti ti-plus"></i> Добавить</button>
+    <div class="subsection-title" style="margin:0">Реферальные сертификаты</div>
+    <button class="btn btn-sm" onclick="addCert('edit')">+ Добавить</button>
   </div>
   <div id="edit-certs"></div>
   <div id="edit-error" class="alert alert-red" style="display:none"></div>
   <div style="display:flex;justify-content:space-between;margin-top:1.25rem">
-    <button class="btn btn-danger btn-sm" onclick="deleteShift()"><i class="ti ti-trash"></i> Удалить</button>
+    <button class="btn btn-danger btn-sm" onclick="deleteShift()">🗑 Удалить</button>
     <div style="display:flex;gap:8px">
       <button class="btn" onclick="closeModal('edit-modal')">Отмена</button>
-      <button class="btn btn-primary" id="update-btn" onclick="updateShift()"><i class="ti ti-check"></i> Сохранить</button>
+      <button class="btn btn-primary" id="update-btn" onclick="updateShift()">✓ Сохранить</button>
     </div>
   </div>
 </div>
 </div>
 
 <script>
-const SUPABASE_URL = 'https://nhiyoilfegmmvdtqsgkm.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oaXlvaWxmZWdtbXZkdHFzZ2ttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2MDc0MTMsImV4cCI6MjA5NjE4MzQxM30.VL7a64jalOvhGC3yLMdeR-qR1Jlffht-uYcYmwDn7oQ';
-const PIN = '0000';
-const IMP_PLAN = 1800000;
-const MEC_PLAN = 1200000;
-const DAYS = 30;
+const SUPABASE_URL='https://nhiyoilfegmmvdtqsgkm.supabase.co';
+const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oaXlvaWxmZWdtbXZkdHFzZ2ttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2MDc0MTMsImV4cCI6MjA5NjE4MzQxM30.VL7a64jalOvhGC3yLMdeR-qR1Jlffht-uYcYmwDn7oQ';
+const PIN='0000';
+const IMP_PLAN=1800000,MEC_PLAN=1200000;
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let shifts=[],marathons=[],editingId=null,pinCb=null,addCertN=0,editCertN=0;
 
-let shifts = [];
-let editingId = null;
-let pinCb = null;
-let addCertN = 0;
-let editCertN = 0;
-
-function fmt(n){return Math.round(n).toLocaleString('ru-RU')}
+function fmt(n){return Math.round(n||0).toLocaleString('ru-RU')}
 function today(){return new Date().toISOString().slice(0,10)}
 function monthKey(){return today().slice(0,7)}
 function monthLabel(){return new Date().toLocaleString('ru-RU',{month:'long',year:'numeric'})}
 
-function setSyncStatus(text, ok=true){
-  document.getElementById('sync-text').textContent = text;
+// Ран рейт по календарным дням
+function calcRR(fact){
+  const now=new Date();
+  const dayOfMonth=now.getDate();
+  const daysInMonth=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
+  if(dayOfMonth===0)return 0;
+  return Math.round(fact/dayOfMonth*daysInMonth);
 }
 
-async function loadShifts(){
-  setSyncStatus('загрузка...');
-  const m = monthKey();
-  const {data, error} = await sb.from('shifts').select('*').gte('date', m+'-01').lte('date', m+'-31').order('date', {ascending:false});
-  if(error){setSyncStatus('ошибка загрузки');console.error(error);return;}
-  shifts = data.map(r=>({
-    id: r.id,
-    date: r.date,
-    studio: r.studio,
-    admin: r.admin,
-    newSales: r.new_sales||0,
-    renew: r.renew||0,
-    restore: r.restore||0,
-    certs: r.certs||[]
+async function loadData(){
+  document.getElementById('sync-text').textContent='загрузка...';
+  const m=monthKey();
+  const [{data:sd},{data:md}]=await Promise.all([
+    sb.from('shifts').select('*').gte('date',m+'-01').lte('date',m+'-31').order('date',{ascending:false}),
+    sb.from('marathons').select('*').eq('active',true).gte('date_end',today())
+  ]);
+  shifts=(sd||[]).map(r=>({
+    id:r.id,date:r.date,studio:r.studio,admin:r.admin,
+    newSales:+r.new_sales||0,renew:+r.renew||0,restore:+r.restore||0,
+    certs:r.certs||[],leads:+r.leads||0,bookings:+r.bookings||0,visits:+r.visits||0,
+    massage:+r.massage_bookings||0,reviews:+r.reviews||0
   }));
-  setSyncStatus('синхронизировано ✓');
+  marathons=md||[];
+  document.getElementById('sync-text').textContent='синхронизировано ✓';
   renderAll();
 }
 
@@ -287,11 +320,8 @@ function cashBonus(studio,cash){
 }
 
 function calcShift(s){
-  const cash=(+s.newSales||0)+(+s.renew||0)+(+s.restore||0);
-  const fix=1500;
-  const pNew=Math.round((+s.newSales||0)*0.05);
-  const pRenew=Math.round((+s.renew||0)*0.08);
-  const pRestore=Math.round((+s.restore||0)*0.10);
+  const cash=s.newSales+s.renew+s.restore;
+  const fix=1500,pNew=Math.round(s.newSales*0.05),pRenew=Math.round(s.renew*0.08),pRestore=Math.round(s.restore*0.10);
   const bonus=cashBonus(s.studio,cash);
   const certs=s.certs||[];
   const certBonus=certs.filter(c=>c.came).length*500;
@@ -300,10 +330,71 @@ function calcShift(s){
   return{fix,pNew,pRenew,pRestore,bonus,certBonus,pCert,cash,total:fix+pNew+pRenew+pRestore+bonus+certBonus+pCert};
 }
 
-function badge(pct){
-  if(pct>=100)return`<span class="badge badge-green"><i class="ti ti-check"></i> В плане</span>`;
-  if(pct>=85)return`<span class="badge badge-amber"><i class="ti ti-alert-triangle"></i> Нужно ускориться</span>`;
-  return`<span class="badge badge-red"><i class="ti ti-x"></i> Отстаём</span>`;
+function badge(p){
+  if(p>=100)return`<span class="badge badge-green">✓ В плане</span>`;
+  if(p>=85)return`<span class="badge badge-amber">⚠ Нужно ускориться</span>`;
+  return`<span class="badge badge-red">✗ Отстаём</span>`;
+}
+
+// Считаем прогресс администратора по условию марафона
+function marathonProgress(m, adminShifts){
+  const ss=adminShifts.filter(s=>s.date>=m.date_start&&s.date<=m.date_end);
+  const type=m.condition_type;
+  let val=0;
+  if(type==='revenue') val=ss.reduce((a,s)=>a+s.newSales+s.renew+s.restore,0);
+  else if(type==='new_sales') val=ss.filter(s=>s.newSales>0).length;
+  else if(type==='renewals') val=ss.filter(s=>s.renew>0).length;
+  else if(type==='bookings') val=ss.reduce((a,s)=>a+s.bookings,0);
+  else if(type==='visits') val=ss.reduce((a,s)=>a+s.visits,0);
+  else if(type==='massage') val=ss.reduce((a,s)=>a+s.massage,0);
+  else if(type==='reviews') val=ss.reduce((a,s)=>a+s.reviews,0);
+  else if(type==='conv_cv3'){
+    const visits=ss.reduce((a,s)=>a+s.visits,0);
+    const sales=ss.filter(s=>s.newSales>0).length;
+    val=visits>0?Math.round(sales/visits*100):0;
+  }
+  const target=+m.condition_value||1;
+  const pct=Math.min(Math.round(val/target*100),100);
+  const done=val>=target;
+  return{val,target,pct,done};
+}
+
+function conditionLabel(type,val){
+  const labels={
+    revenue:`Выручка ≥ ${fmt(val)} ₽`,
+    new_sales:`Новых продаж ≥ ${val} шт`,
+    renewals:`Продлений ≥ ${val} шт`,
+    bookings:`Записей на пробное ≥ ${val} шт`,
+    visits:`Доходимость ≥ ${val} чел`,
+    massage:`Записей на массаж ≥ ${val} шт`,
+    reviews:`Отзывов ≥ ${val} шт`,
+    conv_cv3:`Конверсия приход→продажа ≥ ${val}%`,
+  };
+  return labels[type]||val;
+}
+
+function renderMarathonBanners(){
+  if(!marathons.length){document.getElementById('marathon-banners').innerHTML='';return;}
+  // Get current admin's shifts for progress (show combined)
+  document.getElementById('marathon-banners').innerHTML=marathons.map(m=>{
+    const prog=marathonProgress(m,shifts);
+    const color=prog.done?'var(--green)':prog.pct>=50?'var(--amber)':'var(--red)';
+    return`<div class="marathon-banner">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+        <div style="flex:1">
+          <div class="marathon-banner-title">🏆 ${m.title}</div>
+          <div class="marathon-banner-desc">${m.condition_type?conditionLabel(m.condition_type,m.condition_value):m.description||''}</div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:8px">📅 ${m.date_start} — ${m.date_end}</div>
+          <div class="progress-wrap-sm"><div class="progress-fill-sm" style="width:${prog.pct}%;background:${color}"></div></div>
+          <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:11px;color:var(--amber-text)">
+            <span>${prog.done?'✅ Выполнено!':'Прогресс: '+prog.val+' / '+prog.target}</span>
+            <span>${prog.pct}%</span>
+          </div>
+        </div>
+        <div class="marathon-banner-prize">${fmt(m.prize)} ₽</div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 function renderDashboard(){
@@ -311,40 +402,59 @@ function renderDashboard(){
   let html='';
   studios.forEach(st=>{
     const ss=shifts.filter(s=>s.studio===st.name);
-    const fact=ss.reduce((a,s)=>a+(+s.newSales||0)+(+s.renew||0)+(+s.restore||0),0);
-    const done=ss.length;
-    const rate=done>0?fact/done:0;
-    const rr=Math.round(rate*DAYS);
+    const fact=ss.reduce((a,s)=>a+s.newSales+s.renew+s.restore,0);
+    const leads=ss.reduce((a,s)=>a+s.leads,0);
+    const bookings=ss.reduce((a,s)=>a+s.bookings,0);
+    const visits=ss.reduce((a,s)=>a+s.visits,0);
+    const sales=ss.filter(s=>s.newSales>0).length;
+    const rr=calcRR(fact);
     const rrPct=Math.round(rr/st.plan*100);
     const factPct=Math.round(fact/st.plan*100);
     const fill=Math.min(factPct,100);
     const color=rrPct>=100?'var(--green)':rrPct>=85?'var(--amber)':'var(--red)';
+    const now=new Date();
+    const daysLeft=new Date(now.getFullYear(),now.getMonth()+1,0).getDate()-now.getDate();
+    const needPerDay=daysLeft>0?Math.max(0,Math.round((st.plan-fact)/daysLeft)):0;
+    const cv1=leads>0?Math.round(bookings/leads*100):null;
+    const cv2=bookings>0?Math.round(visits/bookings*100):null;
+    const cv3=visits>0?Math.round(sales/visits*100):null;
+    const funnelHtml=leads>0?`
+      <div class="divider" style="margin:10px 0"></div>
+      <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">Воронка</div>
+      <div class="funnel-row"><span class="funnel-label">Лиды</span><span class="funnel-val">${leads}</span><span class="funnel-pct"></span></div>
+      <div class="funnel-row"><span style="color:var(--text3);font-size:11px">↓</span><span class="funnel-label">Записи</span><span class="funnel-val">${bookings}</span><span class="funnel-pct">${cv1!==null?cv1+'%':'—'}</span></div>
+      <div class="funnel-row"><span style="color:var(--text3);font-size:11px">↓</span><span class="funnel-label">Доходимость</span><span class="funnel-val">${visits}</span><span class="funnel-pct">${cv2!==null?cv2+'%':'—'}</span></div>
+      <div class="funnel-row"><span style="color:var(--text3);font-size:11px">↓</span><span class="funnel-label">Продажи</span><span class="funnel-val">${sales}</span><span class="funnel-pct">${cv3!==null?cv3+'%':'—'}</span></div>`:'';
     html+=`<div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
         <span class="tag ${st.cls}" style="font-size:13px;padding:4px 12px">${st.name}</span>${badge(rrPct)}
       </div>
       <div class="grid2" style="margin-bottom:12px">
         <div class="metric"><div class="metric-label">Факт</div><div class="metric-val" style="font-size:18px">${fmt(fact)} ₽</div></div>
-        <div class="metric"><div class="metric-label">Ран рейт</div><div class="metric-val" style="font-size:18px">${fmt(rr)} ₽</div></div>
+        <div class="metric"><div class="metric-label">Ран рейт</div><div class="metric-val" style="font-size:18px;color:${color}">${fmt(rr)} ₽</div><div class="metric-sub">прогноз на конец месяца</div></div>
+      </div>
+      <div class="metric" style="margin-bottom:12px;background:${needPerDay===0?'var(--green-bg)':'var(--bg2)'};border-color:${needPerDay===0?'#86efac':'var(--border)'}">
+        <div class="metric-label">Нужно продавать в день</div>
+        <div class="metric-val" style="font-size:18px;color:${needPerDay===0?'var(--green-text)':'var(--text)'}">${needPerDay===0?'✓ План выполнен':fmt(needPerDay)+' ₽'}</div>
+        <div class="metric-sub">${daysLeft} дней осталось</div>
       </div>
       <div class="progress-wrap"><div class="progress-fill" style="width:${fill}%;background:${color}"></div></div>
       <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:11px;color:var(--text3)">
         <span>Выполнено: ${factPct}%</span><span>План: ${fmt(st.plan)} ₽</span>
-      </div>
-      <div style="font-size:11px;color:var(--text3);margin-top:6px">Темп: ${fmt(rate)} ₽/смена · Нужно: ${fmt(st.plan/DAYS)} ₽/день</div>
-    </div>`;
+      </div>${funnelHtml}</div>`;
   });
   document.getElementById('studio-cards').innerHTML=html;
-  const tFact=shifts.reduce((a,s)=>a+(+s.newSales||0)+(+s.renew||0)+(+s.restore||0),0);
+
+  const tFact=shifts.reduce((a,s)=>a+s.newSales+s.renew+s.restore,0);
   const tPlan=IMP_PLAN+MEC_PLAN;
-  const tRR=shifts.length>0?Math.round(tFact/shifts.length*DAYS):0;
+  const tRR=calcRR(tFact);
   const tPct=Math.round(tRR/tPlan*100);
   document.getElementById('total-card').innerHTML=`
     <div style="font-size:13px;font-weight:600;color:var(--text2);margin-bottom:12px">Обе студии · ${monthLabel()}</div>
     <div class="grid3">
       <div class="metric"><div class="metric-label">Факт</div><div class="metric-val">${fmt(tFact)} ₽</div></div>
-      <div class="metric"><div class="metric-label">Ран рейт</div><div class="metric-val">${fmt(tRR)} ₽</div></div>
-      <div class="metric"><div class="metric-label">% плана</div><div class="metric-val">${tPct}%</div><div style="margin-top:6px">${badge(tPct)}</div></div>
+      <div class="metric"><div class="metric-label">Ран рейт</div><div class="metric-val">${fmt(tRR)} ₽</div><div class="metric-sub">прогноз на конец месяца</div></div>
+      <div class="metric"><div class="metric-label">% плана (RR)</div><div class="metric-val">${tPct}%</div><div style="margin-top:6px">${badge(tPct)}</div></div>
     </div>`;
 }
 
@@ -352,8 +462,7 @@ function updateSelects(){
   const admins=[...new Set(shifts.map(s=>s.admin))].filter(Boolean).sort();
   ['filter-admin','sal-admin'].forEach(id=>{
     const el=document.getElementById(id);const cur=el.value;
-    const def=id==='sal-admin'?'<option value="all">Все</option>':'<option value="all">Все администраторы</option>';
-    el.innerHTML=def+admins.map(a=>`<option value="${a}"${a===cur?' selected':''}>${a}</option>`).join('');
+    el.innerHTML='<option value="all">Все администраторы</option>'+admins.map(a=>`<option value="${a}"${a===cur?' selected':''}>${a}</option>`).join('');
   });
 }
 
@@ -365,12 +474,29 @@ function renderShifts(){
   if(stF!=='all')list=list.filter(s=>s.studio===stF);
   if(adF!=='all')list=list.filter(s=>s.admin===adF);
   list.sort((a,b)=>b.date.localeCompare(a.date));
-  if(!list.length){document.getElementById('shifts-list').innerHTML=`<div class="empty-state"><i class="ti ti-calendar-off"></i>Смен за этот месяц ещё нет.<br>Нажмите «Внести смену» чтобы начать.</div>`;return;}
+  if(!list.length){document.getElementById('shifts-list').innerHTML=`<div class="empty-state">Смен за этот месяц ещё нет.</div>`;return;}
   document.getElementById('shifts-list').innerHTML=list.map(s=>{
     const sal=calcShift(s);
     const cls=s.studio==='Империал'?'tag-imp':'tag-mec';
-    const certsHtml=(s.certs||[]).map(c=>`<div style="font-size:11px;color:var(--text2);margin-top:6px;padding:6px 10px;background:var(--bg2);border-radius:var(--radius-sm);border:1px solid var(--border)"><i class="ti ti-certificate" style="font-size:12px"></i> <b>${c.giver||'—'}</b> → <b>${c.visitor||'—'}</b> ${c.came?`<span class="badge badge-green" style="font-size:10px;padding:1px 6px">Пришёл</span>`:`<span class="badge badge-amber" style="font-size:10px;padding:1px 6px">Не пришёл</span>`}${c.bought?`<span class="badge badge-green" style="font-size:10px;padding:1px 6px">Купил ${fmt(c.amount||0)} ₽</span>`:''}</div>`).join('');
-    return`<div class="shift-card"><div class="shift-header"><div><div class="shift-tags"><span class="tag ${cls}">${s.studio}</span><span style="font-size:13px;font-weight:600;color:var(--text)">${s.date}</span><span style="font-size:12px;color:var(--text2)">${s.admin||''}</span></div><div class="shift-amounts"><span class="amount-chip">Касса: ${fmt(sal.cash)} ₽</span>${s.newSales>0?`<span class="amount-chip">Новые: ${fmt(s.newSales)} ₽</span>`:''}${s.renew>0?`<span class="amount-chip">Продления: ${fmt(s.renew)} ₽</span>`:''}${s.restore>0?`<span class="amount-chip">Восстановление: ${fmt(s.restore)} ₽</span>`:''}<span class="amount-chip highlight">ЗП смены: ${fmt(sal.total)} ₽</span></div></div><button class="btn btn-sm" onclick="openEdit(${s.id})"><i class="ti ti-edit"></i></button></div>${certsHtml}</div>`;
+    const leads=+s.leads||0,bookings=+s.bookings||0,visits=+s.visits||0;
+    const certsHtml=(s.certs||[]).map(c=>`<div style="font-size:11px;color:var(--text2);margin-top:6px;padding:6px 10px;background:var(--bg2);border-radius:var(--radius-sm);border:1px solid var(--border)">🎫 <b>${c.giver||'—'}</b> → <b>${c.visitor||'—'}</b> ${c.came?'<span class="badge badge-green" style="font-size:10px;padding:1px 6px">Пришёл</span>':'<span class="badge badge-amber" style="font-size:10px;padding:1px 6px">Не пришёл</span>'}${c.bought?`<span class="badge badge-green" style="font-size:10px;padding:1px 6px">Купил ${fmt(c.amount||0)} ₽</span>`:''}</div>`).join('');
+    return`<div class="shift-card"><div class="shift-header"><div>
+      <div class="shift-tags"><span class="tag ${cls}">${s.studio}</span><span style="font-size:13px;font-weight:600">${s.date}</span><span style="font-size:12px;color:var(--text2)">${s.admin||''}</span></div>
+      <div class="chips" style="margin-bottom:6px">
+        <span class="chip">Касса: ${fmt(sal.cash)} ₽</span>
+        ${s.newSales>0?`<span class="chip">Новые: ${fmt(s.newSales)} ₽</span>`:''}
+        ${s.renew>0?`<span class="chip">Продления: ${fmt(s.renew)} ₽</span>`:''}
+        ${s.restore>0?`<span class="chip">Восст.: ${fmt(s.restore)} ₽</span>`:''}
+        <span class="chip chip-blue">ЗП: ${fmt(sal.total)} ₽</span>
+      </div>
+      <div class="chips">
+        ${leads>0?`<span class="chip chip-green">Лиды: ${leads}</span>`:''}
+        ${bookings>0?`<span class="chip chip-green">Записи: ${bookings}${leads>0?' ('+Math.round(bookings/leads*100)+'%)':''}</span>`:''}
+        ${visits>0?`<span class="chip chip-green">Приход: ${visits}${bookings>0?' ('+Math.round(visits/bookings*100)+'%)':''}</span>`:''}
+        ${s.massage>0?`<span class="chip chip-green">Массаж: ${s.massage}</span>`:''}
+        ${s.reviews>0?`<span class="chip chip-green">Отзывы: ${s.reviews}</span>`:''}
+      </div>
+    </div><button class="btn btn-sm" onclick="openEdit(${s.id})">✏️</button></div>${certsHtml}</div>`;
   }).join('');
 }
 
@@ -380,49 +506,49 @@ function renderSalary(){
   let list=[...shifts];
   if(adF!=='all')list=list.filter(s=>s.admin===adF);
   if(stF!=='all')list=list.filter(s=>s.studio===stF);
-  if(!list.length){document.getElementById('salary-detail').innerHTML=`<div class="empty-state"><i class="ti ti-wallet-off"></i>Нет данных за этот месяц</div>`;return;}
+  if(!list.length){document.getElementById('salary-detail').innerHTML=`<div class="empty-state">Нет данных</div>`;return;}
   let fix=0,pNew=0,pRenew=0,pRestore=0,bonus=0,certB=0,pCert=0;
   list.forEach(s=>{const sal=calcShift(s);fix+=sal.fix;pNew+=sal.pNew;pRenew+=sal.pRenew;pRestore+=sal.pRestore;bonus+=sal.bonus;certB+=sal.certBonus;pCert+=sal.pCert;});
   const total=fix+pNew+pRenew+pRestore+bonus+certB+pCert;
   const n=list.length;
-  const est=n>0?Math.round(total/n*15):0;
-  const items=[
-    {label:`Оклад (${n} смен × 1 500 ₽)`,val:fix},
-    {label:'Новые абонементы (5%)',val:pNew},
-    {label:'Продления (8%)',val:pRenew},
-    {label:'Восстановление клиента (10%)',val:pRestore},
-    {label:'Бонус за кассу смены',val:bonus},
-    {label:'Сертификаты — приход (500 ₽)',val:certB},
-    {label:'Продажи по сертификатам (5%)',val:pCert},
-  ];
+  const now=new Date();
+  const dayOfMonth=now.getDate();
+  const daysInMonth=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
+  const est=dayOfMonth>0?Math.round(total/dayOfMonth*daysInMonth):0;
   document.getElementById('salary-detail').innerHTML=`
     <div class="salary-box">
       <div style="font-size:12px;color:var(--blue-text);margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.05em">К выплате за ${n} смен</div>
       <div class="salary-total">${fmt(total)} ₽</div>
-      <div class="marathon-badge"><i class="ti ti-trending-up"></i> Прогноз на месяц: ${fmt(est)} ₽</div>
-      <div style="font-size:11px;color:var(--text3);margin-top:8px">Без марафонных бонусов (+10 000 за план, +10 000 за конверсию)</div>
+      <div style="font-size:13px;color:var(--blue-text);margin-top:8px;font-weight:600">Прогноз на месяц: ${fmt(est)} ₽</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:4px">Без марафонных бонусов</div>
     </div>
     <div class="card">
       <div class="section-title">Детализация</div>
-      ${items.map(i=>`<div class="line"><span class="line-label">${i.label}</span><span class="line-val">${fmt(i.val)} ₽</span></div>`).join('')}
+      ${[
+        {label:`Оклад (${n} смен × 1 500 ₽)`,val:fix},
+        {label:'Новые абонементы (5%)',val:pNew},
+        {label:'Продления (8%)',val:pRenew},
+        {label:'Восстановление клиента (10%)',val:pRestore},
+        {label:'Бонус за кассу смены',val:bonus},
+        {label:'Сертификаты — приход (500 ₽)',val:certB},
+        {label:'Продажи по сертификатам (5%)',val:pCert},
+      ].map(i=>`<div class="line"><span class="line-label">${i.label}</span><span class="line-val">${fmt(i.val)} ₽</span></div>`).join('')}
       <div class="total-line"><span>Итого</span><span>${fmt(total)} ₽</span></div>
     </div>`;
 }
 
-function renderAll(){updateSelects();renderDashboard();renderShifts();renderSalary();}
+function renderAll(){updateSelects();renderMarathonBanners();renderDashboard();renderShifts();renderSalary();}
 
 function addCert(mode){
   const cont=document.getElementById(mode==='add'?'add-certs':'edit-certs');
   const n=mode==='add'?addCertN++:editCertN++;
   const div=document.createElement('div');
   div.className='cert-block';div.id=`cert-${mode}-${n}`;
-  div.innerHTML=`<div class="cert-header"><span class="cert-title"><i class="ti ti-certificate"></i> Сертификат ${n+1}</span><button class="btn btn-sm btn-danger" onclick="this.closest('.cert-block').remove()"><i class="ti ti-x"></i></button></div><div class="grid2"><div class="form-row"><label>Кто дал сертификат (клиент)</label><input type="text" data-f="giver" placeholder="Имя или телефон"></div><div class="form-row"><label>Кто пришёл по сертификату</label><input type="text" data-f="visitor" placeholder="Имя пришедшего"></div></div><div class="grid2"><div class="form-row"><label>Пришёл на занятие?</label><select data-f="came" onchange="toggleCame(this,'${mode}-${n}')"><option value="0">Нет</option><option value="1">Да</option></select></div><div class="form-row" id="bought-wrap-${mode}-${n}" style="display:none"><label>Купил абонемент?</label><select data-f="bought" onchange="toggleBought(this,'${mode}-${n}')"><option value="0">Нет</option><option value="1">Да</option></select></div></div><div class="form-row" id="amount-wrap-${mode}-${n}" style="display:none"><label>Сумма покупки, ₽</label><input type="number" data-f="amount" value="0" min="0"></div>`;
+  div.innerHTML=`<div class="cert-header"><span style="font-size:12px;font-weight:600;color:var(--text2)">🎫 Сертификат ${n+1}</span><button class="btn btn-sm btn-danger" onclick="this.closest('.cert-block').remove()">✕</button></div><div class="grid2"><div class="form-row"><label>Кто дал сертификат</label><input type="text" data-f="giver" placeholder="Имя клиента"></div><div class="form-row"><label>Кто пришёл</label><input type="text" data-f="visitor" placeholder="Имя пришедшего"></div></div><div class="grid2"><div class="form-row"><label>Пришёл?</label><select data-f="came" onchange="toggleCame(this,'${mode}-${n}')"><option value="0">Нет</option><option value="1">Да</option></select></div><div class="form-row" id="bought-wrap-${mode}-${n}" style="display:none"><label>Купил?</label><select data-f="bought" onchange="toggleBought(this,'${mode}-${n}')"><option value="0">Нет</option><option value="1">Да</option></select></div></div><div class="form-row" id="amount-wrap-${mode}-${n}" style="display:none"><label>Сумма покупки, ₽</label><input type="number" data-f="amount" value="0" min="0"></div>`;
   cont.appendChild(div);
 }
-
 function toggleCame(sel,id){document.getElementById('bought-wrap-'+id).style.display=sel.value==='1'?'block':'none';document.getElementById('amount-wrap-'+id).style.display='none';}
 function toggleBought(sel,id){document.getElementById('amount-wrap-'+id).style.display=sel.value==='1'?'block':'none';}
-
 function getCerts(contId){
   return[...document.getElementById(contId).querySelectorAll('.cert-block')].map(b=>({
     giver:b.querySelector('[data-f="giver"]').value.trim(),
@@ -435,9 +561,7 @@ function getCerts(contId){
 
 function openAddShift(){
   document.getElementById('f-date').value=today();
-  document.getElementById('f-new').value='0';
-  document.getElementById('f-renew').value='0';
-  document.getElementById('f-restore').value='0';
+  ['f-new','f-renew','f-restore','f-leads','f-bookings','f-visits','f-massage','f-reviews'].forEach(id=>document.getElementById(id).value='0');
   document.getElementById('f-admin').value='';
   document.getElementById('add-certs').innerHTML='';
   document.getElementById('add-error').style.display='none';
@@ -448,8 +572,7 @@ function openAddShift(){
 async function saveShift(){
   const admin=document.getElementById('f-admin').value;
   if(!admin){showErr('add-error','Выберите имя администратора');return;}
-  const btn=document.getElementById('save-btn');
-  btn.disabled=true;btn.textContent='Сохранение...';
+  const btn=document.getElementById('save-btn');btn.disabled=true;btn.textContent='Сохранение...';
   const {error}=await sb.from('shifts').insert({
     date:document.getElementById('f-date').value,
     studio:document.getElementById('f-studio').value,
@@ -457,12 +580,16 @@ async function saveShift(){
     new_sales:+document.getElementById('f-new').value||0,
     renew:+document.getElementById('f-renew').value||0,
     restore:+document.getElementById('f-restore').value||0,
+    leads:+document.getElementById('f-leads').value||0,
+    bookings:+document.getElementById('f-bookings').value||0,
+    visits:+document.getElementById('f-visits').value||0,
+    massage_bookings:+document.getElementById('f-massage').value||0,
+    reviews:+document.getElementById('f-reviews').value||0,
     certs:getCerts('add-certs')
   });
-  btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Сохранить';
-  if(error){showErr('add-error','Ошибка сохранения: '+error.message);return;}
-  closeModal('add-modal');
-  await loadShifts();
+  btn.disabled=false;btn.innerHTML='✓ Сохранить';
+  if(error){showErr('add-error','Ошибка: '+error.message);return;}
+  closeModal('add-modal');await loadData();
 }
 
 function openEdit(id){
@@ -482,6 +609,11 @@ function doEdit(id){
   document.getElementById('e-new').value=s.newSales||0;
   document.getElementById('e-renew').value=s.renew||0;
   document.getElementById('e-restore').value=s.restore||0;
+  document.getElementById('e-leads').value=s.leads||0;
+  document.getElementById('e-bookings').value=s.bookings||0;
+  document.getElementById('e-visits').value=s.visits||0;
+  document.getElementById('e-massage').value=s.massage||0;
+  document.getElementById('e-reviews').value=s.reviews||0;
   document.getElementById('edit-certs').innerHTML='';editCertN=0;
   (s.certs||[]).forEach(c=>{
     addCert('edit');const n=editCertN-1;
@@ -497,8 +629,7 @@ function doEdit(id){
 }
 
 async function updateShift(){
-  const btn=document.getElementById('update-btn');
-  btn.disabled=true;btn.textContent='Сохранение...';
+  const btn=document.getElementById('update-btn');btn.disabled=true;btn.textContent='Сохранение...';
   const {error}=await sb.from('shifts').update({
     date:document.getElementById('e-date').value,
     studio:document.getElementById('e-studio').value,
@@ -506,17 +637,22 @@ async function updateShift(){
     new_sales:+document.getElementById('e-new').value||0,
     renew:+document.getElementById('e-renew').value||0,
     restore:+document.getElementById('e-restore').value||0,
+    leads:+document.getElementById('e-leads').value||0,
+    bookings:+document.getElementById('e-bookings').value||0,
+    visits:+document.getElementById('e-visits').value||0,
+    massage_bookings:+document.getElementById('e-massage').value||0,
+    reviews:+document.getElementById('e-reviews').value||0,
     certs:getCerts('edit-certs')
   }).eq('id',editingId);
-  btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Сохранить';
+  btn.disabled=false;btn.innerHTML='✓ Сохранить';
   if(error){showErr('edit-error','Ошибка: '+error.message);return;}
-  closeModal('edit-modal');await loadShifts();
+  closeModal('edit-modal');await loadData();
 }
 
 async function deleteShift(){
   if(!confirm('Удалить эту смену?'))return;
   await sb.from('shifts').delete().eq('id',editingId);
-  closeModal('edit-modal');await loadShifts();
+  closeModal('edit-modal');await loadData();
 }
 
 function checkPin(){
@@ -525,10 +661,8 @@ function checkPin(){
   if(v===PIN){closeModal('pin-modal');if(pinCb){pinCb();pinCb=null;}}
   else{document.getElementById('pin-error').style.display='block';document.getElementById('pin-input').value='';}
 }
-
 function closeModal(id){document.getElementById(id).style.display='none';}
 function showErr(id,msg){const el=document.getElementById(id);el.textContent=msg;el.style.display='block';}
-
 function switchTab(t){
   document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['dashboard','shifts','salary'][i]===t));
   document.querySelectorAll('.section').forEach(el=>el.classList.remove('active'));
@@ -538,7 +672,7 @@ function switchTab(t){
 }
 
 document.getElementById('month-label').textContent=monthLabel();
-loadShifts();
+loadData();
 </script>
 </body>
 </html>

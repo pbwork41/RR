@@ -8,7 +8,7 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#ffffff;--bg2:#f8f9fa;--bg3:#f1f3f5;
+  --bg:#fff;--bg2:#f8f9fa;--bg3:#f1f3f5;
   --text:#1a1a2e;--text2:#555570;--text3:#888899;
   --border:#e0e0eb;--border2:#c8c8d8;
   --green:#16a34a;--green-bg:#f0fdf4;--green-text:#15803d;
@@ -19,11 +19,11 @@
 }
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:var(--bg3);color:var(--text);font-size:15px;min-height:100vh}
 .app{max-width:960px;margin:0 auto;padding:1rem}
-.topbar{background:var(--purple);color:#fff;padding:14px 20px;border-radius:var(--radius);margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center}
+.topbar{background:var(--purple);color:#fff;padding:14px 20px;border-radius:var(--radius);margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
 .topbar-title{font-size:17px;font-weight:600}
 .topbar-sub{font-size:12px;opacity:.8;margin-top:2px}
-.tabs{display:flex;gap:4px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:4px;margin-bottom:1rem}
-.tab{flex:1;padding:8px 12px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:none;color:var(--text2);border-radius:var(--radius-sm);transition:all .15s;font-family:inherit}
+.tabs{display:flex;gap:4px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:4px;margin-bottom:1rem;flex-wrap:wrap}
+.tab{flex:1;min-width:80px;padding:8px 10px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:none;color:var(--text2);border-radius:var(--radius-sm);transition:all .15s;font-family:inherit;white-space:nowrap}
 .tab.active{background:var(--purple);color:#fff}
 .section{display:none}.section.active{display:block}
 .card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;margin-bottom:1rem;box-shadow:var(--shadow)}
@@ -42,18 +42,22 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;ba
 .badge-red{background:var(--red-bg);color:var(--red-text)}
 .progress-wrap{height:8px;background:var(--bg3);border-radius:4px;overflow:hidden;margin-top:8px}
 .progress-fill{height:100%;border-radius:4px;transition:width .4s ease}
+.progress-wrap-sm{height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-top:4px}
+.progress-fill-sm{height:100%;border-radius:3px}
 label{display:block;font-size:12px;color:var(--text2);margin-bottom:4px;font-weight:500}
-input,select{width:100%;padding:8px 12px;font-size:14px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);font-family:inherit;transition:border .15s}
-input:focus,select:focus{outline:none;border-color:var(--purple)}
+input,select,textarea{width:100%;padding:8px 12px;font-size:14px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);font-family:inherit;transition:border .15s}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--purple)}
+textarea{resize:vertical;min-height:70px}
 .form-row{margin-bottom:10px}
 .btn{padding:9px 18px;font-size:14px;font-weight:500;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);cursor:pointer;font-family:inherit;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
 .btn:hover{background:var(--bg2)}
 .btn-primary{background:var(--purple);color:#fff;border-color:var(--purple)}
 .btn-primary:hover{background:#6d28d9}
+.btn-danger{color:var(--red-text);border-color:#fca5a5}
+.btn-danger:hover{background:var(--red-bg)}
 .btn-sm{padding:5px 12px;font-size:12px}
 .divider{border:none;border-top:1px solid var(--border);margin:14px 0}
 .section-title{font-size:15px;font-weight:600;margin-bottom:12px;color:var(--text)}
-.studio-header{font-size:14px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px}
 .pill-imp{background:#eff6ff;color:#1d4ed8;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500}
 .pill-mec{background:#f5f3ff;color:#6d28d9;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500}
 .kpi-table{width:100%;border-collapse:collapse;font-size:13px}
@@ -64,34 +68,50 @@ input:focus,select:focus{outline:none;border-color:var(--purple)}
 .delta-neg{color:var(--red-text);font-weight:600}
 .delta-neu{color:var(--text3)}
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:1000;padding:1rem}
-.modal{background:var(--bg);border-radius:var(--radius);padding:1.5rem;width:min(460px,100%);max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.modal{background:var(--bg);border-radius:var(--radius);padding:1.5rem;width:min(500px,100%);max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)}
 .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem}
 .modal-title{font-size:17px;font-weight:700}
 .alert{padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;margin-bottom:12px}
-.alert-red{background:var(--red-bg);color:var(--red-text);border:1px solid #fca5a5}
 .alert-green{background:var(--green-bg);color:var(--green-text);border:1px solid #86efac}
+.alert-red{background:var(--red-bg);color:var(--red-text);border:1px solid #fca5a5}
 .pin-input{text-align:center;font-size:28px;letter-spacing:10px;font-weight:700}
-/* Funnel */
-.funnel-wrap{display:flex;flex-direction:column;gap:0}
 .funnel-stage{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:2px}
 .funnel-label{flex:1;font-size:13px;color:var(--text2)}
-.funnel-val{font-size:15px;font-weight:700;color:var(--text);min-width:40px;text-align:right}
-.funnel-cv{font-size:12px;min-width:50px;text-align:right;font-weight:600}
 .funnel-arrow{text-align:center;color:var(--text3);font-size:13px;padding:2px 0}
-.cv-good{color:var(--green-text)}
-.cv-mid{color:var(--amber-text)}
-.cv-bad{color:var(--red-text)}
+.cv-good{color:var(--green-text);font-weight:600}
+.cv-mid{color:var(--amber-text);font-weight:600}
+.cv-bad{color:var(--red-text);font-weight:600}
+/* Marathon */
+.marathon-card{border:2px solid var(--amber);border-radius:var(--radius);padding:1rem;margin-bottom:12px;background:var(--amber-bg)}
+.marathon-card.inactive{border-color:var(--border);background:var(--bg2);opacity:.7}
+.marathon-title{font-size:15px;font-weight:700;color:var(--amber-text);margin-bottom:4px}
+.marathon-card.inactive .marathon-title{color:var(--text2)}
+.marathon-prize{font-size:22px;font-weight:800;color:var(--amber-text)}
+.marathon-card.inactive .marathon-prize{color:var(--text3)}
+/* MoM */
+.mom-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
+.mom-row:last-child{border-bottom:none}
+.mom-label{flex:1;color:var(--text2)}
+.mom-cur{font-weight:700;min-width:90px;text-align:right;color:var(--purple-text)}
+.mom-prev{color:var(--text3);min-width:80px;text-align:right}
+.mom-delta{min-width:60px;text-align:right;font-size:12px;font-weight:600}
+/* Admin progress row */
+.admin-progress-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
+.admin-progress-row:last-child{border-bottom:none}
+.admin-progress-name{min-width:100px;font-weight:500}
+.admin-progress-bar{flex:1}
+.admin-progress-val{min-width:80px;text-align:right;font-size:12px;color:var(--text2)}
+.admin-done{color:var(--green-text);font-weight:700}
 </style>
 </head>
 <body>
 
-<!-- PIN SCREEN -->
 <div id="pin-screen" style="position:fixed;inset:0;background:var(--bg3);display:flex;align-items:center;justify-content:center;z-index:999">
   <div class="card" style="width:min(360px,90vw);text-align:center;padding:2rem">
     <div style="font-size:32px;margin-bottom:12px">🔐</div>
     <div style="font-size:18px;font-weight:700;margin-bottom:6px">Управленческая панель</div>
     <div style="font-size:13px;color:var(--text3);margin-bottom:24px">Lady Stretch · Только для руководителей</div>
-    <div class="form-row"><input type="password" class="pin-input" id="pin-field" maxlength="4" placeholder="••••" oninput="checkPin()"></div>
+    <input type="password" class="pin-input" id="pin-field" maxlength="4" placeholder="••••" oninput="checkPin()">
     <div id="pin-err" class="alert alert-red" style="display:none;margin-top:8px">Неверный пин-код</div>
   </div>
 </div>
@@ -103,22 +123,27 @@ input:focus,select:focus{outline:none;border-color:var(--purple)}
       <div class="topbar-title">👑 Управленческая панель</div>
       <div class="topbar-sub" id="month-label"></div>
     </div>
-    <div style="display:flex;gap:8px;align-items:center">
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
       <span style="font-size:11px;opacity:.8" id="sync-label">загрузка...</span>
-      <button class="btn btn-sm" style="background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.3)" onclick="openPlanModal()">✏️ Поставить план</button>
+      <button class="btn btn-sm" style="background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.3)" onclick="openPlanModal()">✏️ План</button>
+      <button class="btn btn-sm" style="background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.3)" onclick="openMarathonModal()">🏆 Марафон</button>
     </div>
   </div>
 
   <div class="tabs">
     <button class="tab active" onclick="switchTab('overview')">📊 Сводка</button>
-    <button class="tab" onclick="switchTab('studios')">🏢 По студиям</button>
-    <button class="tab" onclick="switchTab('admins')">👤 По администраторам</button>
+    <button class="tab" onclick="switchTab('mom')">📈 Динамика</button>
+    <button class="tab" onclick="switchTab('studios')">🏢 Студии</button>
+    <button class="tab" onclick="switchTab('admins')">👤 Администраторы</button>
+    <button class="tab" onclick="switchTab('marathons')">🏆 Марафоны</button>
     <button class="tab" onclick="switchTab('plans')">🎯 Планы</button>
   </div>
 
   <div id="tab-overview" class="section active"><div id="overview-content"></div></div>
+  <div id="tab-mom" class="section"><div id="mom-content"></div></div>
   <div id="tab-studios" class="section"><div id="studios-content"></div></div>
   <div id="tab-admins" class="section"><div id="admins-content"></div></div>
+  <div id="tab-marathons" class="section"><div id="marathons-content"></div></div>
   <div id="tab-plans" class="section"><div id="plans-content"></div></div>
 </div>
 </div>
@@ -126,250 +151,366 @@ input:focus,select:focus{outline:none;border-color:var(--purple)}
 <!-- PLAN MODAL -->
 <div id="plan-modal" style="display:none" class="modal-bg">
 <div class="modal">
-  <div class="modal-header">
-    <div class="modal-title">Поставить план на месяц</div>
-    <button class="btn btn-sm" onclick="closeModal()">✕</button>
-  </div>
+  <div class="modal-header"><div class="modal-title">Поставить план на месяц</div><button class="btn btn-sm" onclick="closeModal('plan-modal')">✕</button></div>
   <div class="form-row"><label>Месяц</label><input type="month" id="plan-month"></div>
   <div class="divider"></div>
-
   <div style="font-size:13px;font-weight:600;margin-bottom:10px">🏢 Империал</div>
   <div class="grid2">
-    <div class="form-row"><label>Выручка, ₽</label><input type="number" id="imp-revenue" placeholder="1800000"></div>
-    <div class="form-row"><label>Новые абонементы, шт</label><input type="number" id="imp-new" placeholder="54"></div>
+    <div class="form-row"><label>Выручка, ₽</label><input type="number" id="imp-revenue"></div>
+    <div class="form-row"><label>Новые абонементы, шт</label><input type="number" id="imp-new"></div>
   </div>
   <div class="grid2">
-    <div class="form-row"><label>Лиды, шт</label><input type="number" id="imp-leads" placeholder="150"></div>
-    <div class="form-row"><label>Записи на пробное, шт</label><input type="number" id="imp-bookings" placeholder="135"></div>
+    <div class="form-row"><label>Лиды, шт</label><input type="number" id="imp-leads"></div>
+    <div class="form-row"><label>Записи на пробное, шт</label><input type="number" id="imp-bookings"></div>
   </div>
   <div class="grid2">
-    <div class="form-row"><label>Доходимость, чел</label><input type="number" id="imp-visits" placeholder="95"></div>
-    <div class="form-row"><label>Продления, шт</label><input type="number" id="imp-renewals" placeholder="10"></div>
+    <div class="form-row"><label>Доходимость, чел</label><input type="number" id="imp-visits"></div>
+    <div class="form-row"><label>Продления, шт</label><input type="number" id="imp-renewals"></div>
   </div>
   <div class="grid3">
-    <div class="form-row"><label>CV лид→запись, %</label><input type="number" id="imp-cv1" placeholder="65"></div>
-    <div class="form-row"><label>CV запись→приход, %</label><input type="number" id="imp-cv2" placeholder="75"></div>
-    <div class="form-row"><label>CV приход→продажа, %</label><input type="number" id="imp-cv3" placeholder="55"></div>
+    <div class="form-row"><label>CV лид→запись, %</label><input type="number" id="imp-cv1"></div>
+    <div class="form-row"><label>CV запись→приход, %</label><input type="number" id="imp-cv2"></div>
+    <div class="form-row"><label>CV приход→продажа, %</label><input type="number" id="imp-cv3"></div>
   </div>
-
   <div class="divider"></div>
   <div style="font-size:13px;font-weight:600;margin-bottom:10px">🏢 Мечта</div>
   <div class="grid2">
-    <div class="form-row"><label>Выручка, ₽</label><input type="number" id="mec-revenue" placeholder="1200000"></div>
-    <div class="form-row"><label>Новые абонементы, шт</label><input type="number" id="mec-new" placeholder="34"></div>
+    <div class="form-row"><label>Выручка, ₽</label><input type="number" id="mec-revenue"></div>
+    <div class="form-row"><label>Новые абонементы, шт</label><input type="number" id="mec-new"></div>
   </div>
   <div class="grid2">
-    <div class="form-row"><label>Лиды, шт</label><input type="number" id="mec-leads" placeholder="100"></div>
-    <div class="form-row"><label>Записи на пробное, шт</label><input type="number" id="mec-bookings" placeholder="70"></div>
+    <div class="form-row"><label>Лиды, шт</label><input type="number" id="mec-leads"></div>
+    <div class="form-row"><label>Записи на пробное, шт</label><input type="number" id="mec-bookings"></div>
   </div>
   <div class="grid2">
-    <div class="form-row"><label>Доходимость, чел</label><input type="number" id="mec-visits" placeholder="45"></div>
-    <div class="form-row"><label>Продления, шт</label><input type="number" id="mec-renewals" placeholder="12"></div>
+    <div class="form-row"><label>Доходимость, чел</label><input type="number" id="mec-visits"></div>
+    <div class="form-row"><label>Продления, шт</label><input type="number" id="mec-renewals"></div>
   </div>
   <div class="grid3">
-    <div class="form-row"><label>CV лид→запись, %</label><input type="number" id="mec-cv1" placeholder="60"></div>
-    <div class="form-row"><label>CV запись→приход, %</label><input type="number" id="mec-cv2" placeholder="70"></div>
-    <div class="form-row"><label>CV приход→продажа, %</label><input type="number" id="mec-cv3" placeholder="50"></div>
+    <div class="form-row"><label>CV лид→запись, %</label><input type="number" id="mec-cv1"></div>
+    <div class="form-row"><label>CV запись→приход, %</label><input type="number" id="mec-cv2"></div>
+    <div class="form-row"><label>CV приход→продажа, %</label><input type="number" id="mec-cv3"></div>
   </div>
-
   <div class="divider"></div>
   <div id="plan-msg" style="display:none" class="alert alert-green">✓ План сохранён</div>
   <div style="display:flex;gap:8px;justify-content:flex-end">
-    <button class="btn" onclick="closeModal()">Отмена</button>
-    <button class="btn btn-primary" onclick="savePlan()">💾 Сохранить план</button>
+    <button class="btn" onclick="closeModal('plan-modal')">Отмена</button>
+    <button class="btn btn-primary" onclick="savePlan()">💾 Сохранить</button>
+  </div>
+</div>
+</div>
+
+<!-- MARATHON MODAL -->
+<div id="marathon-modal" style="display:none" class="modal-bg">
+<div class="modal">
+  <div class="modal-header"><div class="modal-title">🏆 Создать марафон</div><button class="btn btn-sm" onclick="closeModal('marathon-modal')">✕</button></div>
+  <div class="form-row"><label>Название</label><input type="text" id="m-title" placeholder="Марафон продлений"></div>
+  <div class="form-row"><label>Описание (необязательно)</label><textarea id="m-desc" placeholder="Дополнительное описание..."></textarea></div>
+  <div class="grid2">
+    <div class="form-row"><label>Начало</label><input type="date" id="m-start"></div>
+    <div class="form-row"><label>Конец</label><input type="date" id="m-end"></div>
+  </div>
+  <div class="divider"></div>
+  <div style="font-size:13px;font-weight:600;margin-bottom:10px">Условие получения бонуса</div>
+  <div class="form-row"><label>Тип условия</label>
+    <select id="m-condition-type" onchange="updateConditionLabel()">
+      <option value="revenue">Выручка, ₽</option>
+      <option value="new_sales">Новых продаж, шт</option>
+      <option value="renewals">Продлений, шт</option>
+      <option value="bookings">Записей на пробное, шт</option>
+      <option value="visits">Доходимость, чел</option>
+      <option value="massage">Записей на массаж, шт</option>
+      <option value="reviews">Отзывов, шт</option>
+      <option value="conv_cv3">Конверсия приход→продажа, %</option>
+    </select>
+  </div>
+  <div class="form-row"><label id="m-condition-label">Порог (≥)</label><input type="number" id="m-condition-value" placeholder="500000"></div>
+  <div class="form-row"><label>Приз, ₽</label><input type="number" id="m-prize" placeholder="10000"></div>
+  <div class="divider"></div>
+  <div id="marathon-msg" style="display:none" class="alert alert-green">✓ Марафон создан</div>
+  <div style="display:flex;gap:8px;justify-content:flex-end">
+    <button class="btn" onclick="closeModal('marathon-modal')">Отмена</button>
+    <button class="btn btn-primary" onclick="saveMarathon()">🏆 Запустить</button>
   </div>
 </div>
 </div>
 
 <script>
-const PIN = '8387';
-const SUPABASE_URL = 'https://nhiyoilfegmmvdtqsgkm.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oaXlvaWxmZWdtbXZkdHFzZ2ttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2MDc0MTMsImV4cCI6MjA5NjE4MzQxM30.VL7a64jalOvhGC3yLMdeR-qR1Jlffht-uYcYmwDn7oQ';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const PIN='8387';
+const SUPABASE_URL='https://nhiyoilfegmmvdtqsgkm.supabase.co';
+const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oaXlvaWxmZWdtbXZkdHFzZ2ttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2MDc0MTMsImV4cCI6MjA5NjE4MzQxM30.VL7a64jalOvhGC3yLMdeR-qR1Jlffht-uYcYmwDn7oQ';
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
-let shifts = [];
-let plans = {};
+let shifts=[],shiftsLast=[],marathons=[],plans={};
 
 function fmt(n){return Math.round(n||0).toLocaleString('ru-RU')}
 function today(){return new Date().toISOString().slice(0,10)}
 function monthKey(){return today().slice(0,7)}
+function prevMonthKey(){const d=new Date();d.setDate(1);d.setMonth(d.getMonth()-1);return d.toISOString().slice(0,7);}
 function monthLabel(){return new Date().toLocaleString('ru-RU',{month:'long',year:'numeric'})}
+function prevMonthLabel(){const d=new Date();d.setDate(1);d.setMonth(d.getMonth()-1);return d.toLocaleString('ru-RU',{month:'long',year:'numeric'});}
+
+function calcRR(fact){
+  const now=new Date();
+  const day=now.getDate();
+  const dim=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
+  return day>0?Math.round(fact/day*dim):0;
+}
 
 function checkPin(){
-  const v = document.getElementById('pin-field').value;
-  if(v.length < 4) return;
-  if(v === PIN){
-    document.getElementById('pin-screen').style.display='none';
-    document.getElementById('main-app').style.display='block';
-    init();
-  } else {
-    document.getElementById('pin-err').style.display='block';
-    document.getElementById('pin-field').value='';
-  }
+  const v=document.getElementById('pin-field').value;
+  if(v.length<4)return;
+  if(v===PIN){document.getElementById('pin-screen').style.display='none';document.getElementById('main-app').style.display='block';init();}
+  else{document.getElementById('pin-err').style.display='block';document.getElementById('pin-field').value='';}
 }
 
 async function init(){
-  document.getElementById('month-label').textContent = monthLabel();
+  document.getElementById('month-label').textContent=monthLabel();
   await loadData();
 }
 
 async function loadData(){
-  document.getElementById('sync-label').textContent = 'загрузка...';
-  const m = monthKey();
-  const {data} = await sb.from('shifts').select('*').gte('date',m+'-01').lte('date',m+'-31');
-  shifts = (data||[]).map(r=>({
-    id:r.id, date:r.date, studio:r.studio, admin:r.admin,
-    newSales:+r.new_sales||0, renew:+r.renew||0, restore:+r.restore||0,
-    certs:r.certs||[],
-    leads:+r.leads||0, bookings:+r.bookings||0, visits:+r.visits||0
-  }));
+  document.getElementById('sync-label').textContent='загрузка...';
+  const m=monthKey(),pm=prevMonthKey();
+  const [{data:cur},{data:prev},{data:mar}]=await Promise.all([
+    sb.from('shifts').select('*').gte('date',m+'-01').lte('date',m+'-31'),
+    sb.from('shifts').select('*').gte('date',pm+'-01').lte('date',pm+'-31'),
+    sb.from('marathons').select('*').order('created_at',{ascending:false})
+  ]);
+  const parse=r=>({
+    id:r.id,date:r.date,studio:r.studio,admin:r.admin,
+    newSales:+r.new_sales||0,renew:+r.renew||0,restore:+r.restore||0,
+    certs:r.certs||[],leads:+r.leads||0,bookings:+r.bookings||0,visits:+r.visits||0,
+    massage:+r.massage_bookings||0,reviews:+r.reviews||0
+  });
+  shifts=(cur||[]).map(parse);
+  shiftsLast=(prev||[]).map(parse);
+  marathons=mar||[];
   try{plans=JSON.parse(localStorage.getItem('ls_plans_v2')||'{}');}catch(e){plans={};}
-  document.getElementById('sync-label').textContent = 'обновлено ✓';
+  document.getElementById('sync-label').textContent='обновлено ✓';
   renderAll();
 }
 
-function getStudioFact(studio){
-  const ss = shifts.filter(s=>s.studio===studio);
-  const revenue = ss.reduce((a,s)=>a+s.newSales+s.renew+s.restore,0);
-  const leads = ss.reduce((a,s)=>a+s.leads,0);
-  const bookings = ss.reduce((a,s)=>a+s.bookings,0);
-  const visits = ss.reduce((a,s)=>a+s.visits,0);
-  const newSalesCount = ss.filter(s=>s.newSales>0).length;
-  const renewals = ss.filter(s=>s.renew>0).length;
-  const n = ss.length;
-  const rr = n>0?Math.round(revenue/n*30):0;
-  const cv1 = leads>0?Math.round(bookings/leads*100):null;
-  const cv2 = bookings>0?Math.round(visits/bookings*100):null;
-  const cv3 = visits>0?Math.round(newSalesCount/visits*100):null;
-  return{revenue, leads, bookings, visits, newSalesCount, renewals, rr, cv1, cv2, cv3, n};
+function getStats(ss){
+  const revenue=ss.reduce((a,s)=>a+s.newSales+s.renew+s.restore,0);
+  const leads=ss.reduce((a,s)=>a+s.leads,0);
+  const bookings=ss.reduce((a,s)=>a+s.bookings,0);
+  const visits=ss.reduce((a,s)=>a+s.visits,0);
+  const newSalesCount=ss.filter(s=>s.newSales>0).length;
+  const renewals=ss.filter(s=>s.renew>0).length;
+  const massage=ss.reduce((a,s)=>a+s.massage,0);
+  const reviews=ss.reduce((a,s)=>a+s.reviews,0);
+  const rr=calcRR(revenue);
+  const cv1=leads>0?Math.round(bookings/leads*100):null;
+  const cv2=bookings>0?Math.round(visits/bookings*100):null;
+  const cv3=visits>0?Math.round(newSalesCount/visits*100):null;
+  return{revenue,leads,bookings,visits,newSalesCount,renewals,massage,reviews,rr,cv1,cv2,cv3,n:ss.length};
 }
 
-function getPlan(studio){
-  return plans[monthKey()+'_'+studio]||{};
-}
+function getPlan(st){return plans[monthKey()+'_'+st]||{};}
 
 function badge(p){
   if(p===null||p===undefined)return'<span class="badge" style="background:var(--bg2);color:var(--text3)">нет данных</span>';
   if(p>=100)return`<span class="badge badge-green">✓ В плане</span>`;
-  if(p>=85)return`<span class="badge badge-amber">⚠ Нужно ускориться</span>`;
+  if(p>=85)return`<span class="badge badge-amber">⚠ Ускориться</span>`;
   return`<span class="badge badge-red">✗ Отстаём</span>`;
 }
 
-function cvClass(val, target){
-  if(!target||val===null)return'delta-neu';
-  if(val>=target)return'cv-good delta-pos';
-  if(val>=target*0.85)return'cv-mid';
-  return'cv-bad delta-neg';
+function delta(cur,prev){
+  if(!prev)return'';
+  const d=Math.round((cur-prev)/prev*100);
+  if(d>0)return`<span class="delta-pos">▲ ${d}%</span>`;
+  if(d<0)return`<span class="delta-neg">▼ ${Math.abs(d)}%</span>`;
+  return`<span class="delta-neu">= 0%</span>`;
 }
 
-function funnelHtml(fact, plan){
+const CONDITION_LABELS={
+  revenue:'Выручка',new_sales:'Новых продаж',renewals:'Продлений',
+  bookings:'Записей на пробное',visits:'Доходимость',
+  massage:'Записей на массаж',reviews:'Отзывов',conv_cv3:'CV приход→продажа'
+};
+const CONDITION_UNITS={
+  revenue:' ₽',new_sales:' шт',renewals:' шт',bookings:' шт',
+  visits:' чел',massage:' шт',reviews:' шт',conv_cv3:'%'
+};
+
+function conditionLabel(type,val){
+  return`${CONDITION_LABELS[type]||type} ≥ ${type==='revenue'?fmt(val):val}${CONDITION_UNITS[type]||''}`;
+}
+
+function updateConditionLabel(){
+  const type=document.getElementById('m-condition-type').value;
+  document.getElementById('m-condition-label').textContent='Порог (≥), '+
+    (type==='revenue'?'₽':type==='conv_cv3'?'%':'шт/чел');
+}
+
+function marathonProgress(m,ss){
+  const msShifts=ss.filter(s=>s.date>=m.date_start&&s.date<=m.date_end);
+  const type=m.condition_type;
+  let val=0;
+  if(type==='revenue') val=msShifts.reduce((a,s)=>a+s.newSales+s.renew+s.restore,0);
+  else if(type==='new_sales') val=msShifts.filter(s=>s.newSales>0).length;
+  else if(type==='renewals') val=msShifts.filter(s=>s.renew>0).length;
+  else if(type==='bookings') val=msShifts.reduce((a,s)=>a+s.bookings,0);
+  else if(type==='visits') val=msShifts.reduce((a,s)=>a+s.visits,0);
+  else if(type==='massage') val=msShifts.reduce((a,s)=>a+s.massage,0);
+  else if(type==='reviews') val=msShifts.reduce((a,s)=>a+s.reviews,0);
+  else if(type==='conv_cv3'){
+    const v=msShifts.reduce((a,s)=>a+s.visits,0);
+    const sv=msShifts.filter(s=>s.newSales>0).length;
+    val=v>0?Math.round(sv/v*100):0;
+  }
+  const target=+m.condition_value||1;
+  const pct=Math.min(Math.round(val/target*100),100);
+  return{val,target,pct,done:val>=target};
+}
+
+function funnelHtml(fact,plan){
   const stages=[
-    {label:'Лиды', fact:fact.leads, plan:plan.leads||0},
-    {label:'Записи на пробное', fact:fact.bookings, plan:plan.bookings||0, cv:fact.cv1, cvPlan:plan.cv1||0, cvLabel:'CV лид→запись'},
-    {label:'Доходимость', fact:fact.visits, plan:plan.visits||0, cv:fact.cv2, cvPlan:plan.cv2||0, cvLabel:'CV запись→приход'},
-    {label:'Новые продажи', fact:fact.newSalesCount, plan:plan.new_clients||0, cv:fact.cv3, cvPlan:plan.cv3||0, cvLabel:'CV приход→продажа'},
+    {label:'Лиды',fact:fact.leads,plan:plan.leads||0},
+    {label:'Записи',fact:fact.bookings,plan:plan.bookings||0,cv:fact.cv1,cvPlan:plan.cv1||0},
+    {label:'Доходимость',fact:fact.visits,plan:plan.visits||0,cv:fact.cv2,cvPlan:plan.cv2||0},
+    {label:'Новые продажи',fact:fact.newSalesCount,plan:plan.new_clients||0,cv:fact.cv3,cvPlan:plan.cv3||0},
   ];
-
-  return `<div class="funnel-wrap">
-    ${stages.map((s,i)=>`
-      ${i>0?`<div class="funnel-arrow">↓ ${s.cv!==null?`<span class="${cvClass(s.cv,s.cvPlan)}" style="font-size:12px;font-weight:600">${s.cv}%${s.cvPlan?` (план ${s.cvPlan}%)`:''}</span>`:'нет данных'}</div>`:''}
-      <div class="funnel-stage">
-        <span class="funnel-label">${s.label}</span>
-        <span class="funnel-val">${s.fact}</span>
-        ${s.plan?`<span style="font-size:11px;color:var(--text3);min-width:50px;text-align:right">план ${s.plan}</span>`:''}
-      </div>
-    `).join('')}
-  </div>`;
+  return`<div>${stages.map((s,i)=>`
+    ${i>0?`<div class="funnel-arrow">↓ ${s.cv!==null?`<span class="${s.cv>=(s.cvPlan||0)?'cv-good':s.cv>=(s.cvPlan||0)*0.85?'cv-mid':'cv-bad'}">${s.cv}%${s.cvPlan?' (план '+s.cvPlan+'%)':''}</span>`:'нет данных'}</div>`:''}
+    <div class="funnel-stage"><span class="funnel-label">${s.label}</span><span style="font-weight:700">${s.fact}</span>${s.plan?`<span style="font-size:11px;color:var(--text3);margin-left:8px">план ${s.plan}</span>`:''}</div>`).join('')}</div>`;
 }
 
-function renderAll(){renderOverview();renderStudios();renderAdmins();renderPlans();}
+function renderAll(){renderOverview();renderMoM();renderStudios();renderAdmins();renderMarathons();renderPlans();}
 
 function renderOverview(){
   const studios=['Империал','Мечта'];
-  const totalFact = shifts.reduce((a,s)=>a+s.newSales+s.renew+s.restore,0);
-  const impPlan = getPlan('Империал');
-  const mecPlan = getPlan('Мечта');
-  const totalPlan = (impPlan.revenue||0)+(mecPlan.revenue||0);
+  const active=marathons.filter(m=>m.active&&m.date_end>=today());
+  let html='';
+  if(active.length){
+    html+=`<div style="margin-bottom:12px">${active.map(m=>{
+      const prog=marathonProgress(m,shifts);
+      const color=prog.done?'var(--green)':prog.pct>=50?'var(--amber)':'var(--red)';
+      return`<div class="marathon-card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+          <div style="flex:1">
+            <div class="marathon-title">🏆 ${m.title}</div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:6px">${m.condition_type?conditionLabel(m.condition_type,m.condition_value):m.description||''}</div>
+            <div style="font-size:11px;color:var(--text3);margin-bottom:8px">📅 ${m.date_start} — ${m.date_end}</div>
+            <div class="progress-wrap-sm"><div class="progress-fill-sm" style="width:${prog.pct}%;background:${color}"></div></div>
+            <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:11px">
+              <span style="color:var(--amber-text)">${prog.done?'✅ Выполнено!':'Прогресс (все студии): '+prog.val+' / '+prog.target}</span>
+              <span style="color:var(--amber-text)">${prog.pct}%</span>
+            </div>
+          </div>
+          <div class="marathon-prize">${fmt(m.prize)} ₽</div>
+        </div>
+      </div>`;
+    }).join('')}</div>`;
+  }
 
-  let html = `<div class="grid3" style="margin-bottom:12px">
-    <div class="metric"><div class="metric-label">Факт выручки (обе студии)</div><div class="metric-val">${fmt(totalFact)} ₽</div></div>
-    <div class="metric"><div class="metric-label">План (обе студии)</div><div class="metric-val">${totalPlan?fmt(totalPlan)+' ₽':'—'}</div></div>
-    <div class="metric"><div class="metric-label">Смен внесено</div><div class="metric-val">${shifts.length}</div></div>
+  html+=`<div class="grid2" style="margin-bottom:12px">
+    <div class="metric"><div class="metric-label">Факт (обе студии)</div><div class="metric-val">${fmt(shifts.reduce((a,s)=>a+s.newSales+s.renew+s.restore,0))} ₽</div></div>
+    <div class="metric"><div class="metric-label">Ран рейт (обе студии)</div><div class="metric-val">${fmt(calcRR(shifts.reduce((a,s)=>a+s.newSales+s.renew+s.restore,0)))} ₽</div><div class="metric-sub">прогноз на конец месяца</div></div>
   </div>`;
 
   studios.forEach(st=>{
-    const fact = getStudioFact(st);
-    const plan = getPlan(st);
-    const rrPct = plan.revenue>0?Math.round(fact.rr/plan.revenue*100):null;
-    const factPct = plan.revenue>0?Math.round(fact.revenue/plan.revenue*100):null;
-    const fill = Math.min(factPct||0,100);
-    const color = rrPct>=100?'var(--green)':rrPct>=85?'var(--amber)':'var(--red)';
-    const pill = st==='Империал'?'pill-imp':'pill-mec';
-
+    const fact=getStats(shifts.filter(s=>s.studio===st));
+    const plan=getPlan(st);
+    const rrPct=plan.revenue>0?Math.round(fact.rr/plan.revenue*100):null;
+    const factPct=plan.revenue>0?Math.round(fact.revenue/plan.revenue*100):null;
+    const fill=Math.min(factPct||0,100);
+    const color=rrPct>=100?'var(--green)':rrPct>=85?'var(--amber)':'var(--red)';
+    const pill=st==='Империал'?'pill-imp':'pill-mec';
+    const nowD=new Date();
+    const daysLeftD=new Date(nowD.getFullYear(),nowD.getMonth()+1,0).getDate()-nowD.getDate();
+    const needPerDayD=plan.revenue&&daysLeftD>0?Math.max(0,Math.round((plan.revenue-fact.revenue)/daysLeftD)):0;
     html+=`<div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-        <span class="studio-header" style="margin:0"><span class="${pill}">${st}</span></span>
+        <span class="${pill}" style="font-size:13px">${st}</span>
         ${plan.revenue?badge(rrPct):'<span class="badge" style="background:var(--bg2);color:var(--text3)">План не задан</span>'}
       </div>
       <div class="grid4" style="margin-bottom:12px">
         <div class="metric"><div class="metric-label">Факт</div><div class="metric-val" style="font-size:15px">${fmt(fact.revenue)} ₽</div></div>
-        <div class="metric"><div class="metric-label">Ран рейт</div><div class="metric-val" style="font-size:15px">${fmt(fact.rr)} ₽</div></div>
-        <div class="metric"><div class="metric-label">% плана</div><div class="metric-val" style="font-size:15px">${factPct!==null?factPct+'%':'—'}</div></div>
+        <div class="metric"><div class="metric-label">Ран рейт</div><div class="metric-val" style="font-size:15px;color:${color||'inherit'}">${fmt(fact.rr)} ₽</div><div class="metric-sub">прогноз</div></div>
+        <div class="metric"><div class="metric-label">% плана (RR)</div><div class="metric-val" style="font-size:15px">${rrPct!==null?rrPct+'%':'—'}</div></div>
         <div class="metric"><div class="metric-label">Смен</div><div class="metric-val" style="font-size:15px">${fact.n}</div></div>
       </div>
+      ${plan.revenue?`<div class="metric" style="margin-bottom:12px;background:${needPerDayD===0?'var(--green-bg)':'var(--bg2)'};border-color:${needPerDayD===0?'#86efac':'var(--border)'}">
+        <div class="metric-label">Нужно продавать в день</div>
+        <div class="metric-val" style="font-size:16px;color:${needPerDayD===0?'var(--green-text)':'var(--text)'}">${needPerDayD===0?'✓ План выполнен':fmt(needPerDayD)+' ₽'}</div>
+        <div class="metric-sub">${daysLeftD} дней осталось</div>
+      </div>`:''}
       ${plan.revenue?`<div class="progress-wrap"><div class="progress-fill" style="width:${fill}%;background:${color}"></div></div>
       <div style="display:flex;justify-content:space-between;margin-top:5px;font-size:11px;color:var(--text3)"><span>Факт: ${factPct}%</span><span>План: ${fmt(plan.revenue)} ₽</span></div>`:''}
-      ${fact.leads>0?`<div class="divider"></div>
-        <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Воронка конверсий</div>
-        ${funnelHtml(fact, plan)}`:'<div style="margin-top:10px;font-size:12px;color:var(--text3)">Данные по воронке появятся после внесения смен с лидами</div>'}
+      ${fact.leads>0?`<div class="divider"></div><div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Воронка</div>${funnelHtml(fact,plan)}`:''}
     </div>`;
   });
-
   document.getElementById('overview-content').innerHTML=html;
 }
 
-function renderStudios(){
+function renderMoM(){
   const studios=['Империал','Мечта'];
   let html='';
   studios.forEach(st=>{
-    const fact = getStudioFact(st);
-    const plan = getPlan(st);
-    const pill = st==='Империал'?'pill-imp':'pill-mec';
-
-    const kpis=[
-      {label:'Выручка', fact:fmt(fact.revenue)+' ₽', plan:plan.revenue?fmt(plan.revenue)+' ₽':'—', pv:plan.revenue?Math.round(fact.revenue/plan.revenue*100):null},
-      {label:'Ран рейт', fact:fmt(fact.rr)+' ₽', plan:plan.revenue?fmt(plan.revenue)+' ₽':'—', pv:plan.revenue?Math.round(fact.rr/plan.revenue*100):null},
-      {label:'Лиды', fact:fact.leads+' шт', plan:plan.leads?plan.leads+' шт':'—', pv:plan.leads?Math.round(fact.leads/plan.leads*100):null},
-      {label:'Записи на пробное', fact:fact.bookings+' шт', plan:plan.bookings?plan.bookings+' шт':'—', pv:plan.bookings?Math.round(fact.bookings/plan.bookings*100):null},
-      {label:'Доходимость', fact:fact.visits+' чел', plan:plan.visits?plan.visits+' чел':'—', pv:plan.visits?Math.round(fact.visits/plan.visits*100):null},
-      {label:'Новые абонементы', fact:fact.newSalesCount+' шт', plan:plan.new_clients?plan.new_clients+' шт':'—', pv:plan.new_clients?Math.round(fact.newSalesCount/plan.new_clients*100):null},
-      {label:'Продления', fact:fact.renewals+' шт', plan:plan.renewals?plan.renewals+' шт':'—', pv:plan.renewals?Math.round(fact.renewals/plan.renewals*100):null},
-      {label:'CV лид→запись', fact:fact.cv1!==null?fact.cv1+'%':'—', plan:plan.cv1?plan.cv1+'%':'—', pv:plan.cv1&&fact.cv1!==null?Math.round(fact.cv1/plan.cv1*100):null, isConv:true},
-      {label:'CV запись→приход', fact:fact.cv2!==null?fact.cv2+'%':'—', plan:plan.cv2?plan.cv2+'%':'—', pv:plan.cv2&&fact.cv2!==null?Math.round(fact.cv2/plan.cv2*100):null, isConv:true},
-      {label:'CV приход→продажа', fact:fact.cv3!==null?fact.cv3+'%':'—', plan:plan.cv3?plan.cv3+'%':'—', pv:plan.cv3&&fact.cv3!==null?Math.round(fact.cv3/plan.cv3*100):null, isConv:true},
+    const cur=getStats(shifts.filter(s=>s.studio===st));
+    const prev=getStats(shiftsLast.filter(s=>s.studio===st));
+    const pill=st==='Империал'?'pill-imp':'pill-mec';
+    const rows=[
+      {label:'Выручка',cur:fmt(cur.revenue)+' ₽',prev:fmt(prev.revenue)+' ₽',d:delta(cur.revenue,prev.revenue)},
+      {label:'Ран рейт',cur:fmt(cur.rr)+' ₽',prev:fmt(prev.rr)+' ₽',d:delta(cur.rr,prev.rr)},
+      {label:'Лиды',cur:cur.leads,prev:prev.leads,d:delta(cur.leads,prev.leads)},
+      {label:'Записи на пробное',cur:cur.bookings,prev:prev.bookings,d:delta(cur.bookings,prev.bookings)},
+      {label:'Доходимость',cur:cur.visits,prev:prev.visits,d:delta(cur.visits,prev.visits)},
+      {label:'Новые абонементы',cur:cur.newSalesCount,prev:prev.newSalesCount,d:delta(cur.newSalesCount,prev.newSalesCount)},
+      {label:'Продления',cur:cur.renewals,prev:prev.renewals,d:delta(cur.renewals,prev.renewals)},
+      {label:'Записи на массаж',cur:cur.massage,prev:prev.massage,d:delta(cur.massage,prev.massage)},
+      {label:'Отзывы',cur:cur.reviews,prev:prev.reviews,d:delta(cur.reviews,prev.reviews)},
+      {label:'CV лид→запись',cur:cur.cv1!==null?cur.cv1+'%':'—',prev:prev.cv1!==null?prev.cv1+'%':'—',d:cur.cv1&&prev.cv1?delta(cur.cv1,prev.cv1):''},
+      {label:'CV запись→приход',cur:cur.cv2!==null?cur.cv2+'%':'—',prev:prev.cv2!==null?prev.cv2+'%':'—',d:cur.cv2&&prev.cv2?delta(cur.cv2,prev.cv2):''},
+      {label:'CV приход→продажа',cur:cur.cv3!==null?cur.cv3+'%':'—',prev:prev.cv3!==null?prev.cv3+'%':'—',d:cur.cv3&&prev.cv3?delta(cur.cv3,prev.cv3):''},
     ];
-
     html+=`<div class="card">
-      <div class="studio-header"><span class="${pill}">${st}</span> — детализация KPI</div>
-      <table class="kpi-table">
-        <thead><tr><th>Показатель</th><th>Факт</th><th>План</th><th>%</th><th>Статус</th></tr></thead>
-        <tbody>
-          ${kpis.map(k=>{
-            const cls=k.pv===null?'delta-neu':k.pv>=100?'delta-pos':k.pv>=85?'delta-neu':'delta-neg';
-            return`<tr${k.isConv?' style="background:var(--bg2)"':''}>
-              <td>${k.isConv?'<span style="color:var(--text3);font-size:11px">⟳</span> ':''}<b>${k.label}</b></td>
-              <td><b>${k.fact}</b></td><td>${k.plan}</td>
-              <td class="${cls}">${k.pv!==null?k.pv+'%':'—'}</td>
-              <td>${k.pv!==null?badge(k.pv):'<span style="color:var(--text3);font-size:12px">нет плана</span>'}</td>
-            </tr>`;
-          }).join('')}
-        </tbody>
-      </table>
-      ${plan.revenue?`<div class="divider"></div>
-      <div style="font-size:12px;color:var(--text3)">
-        Нужно в день: <b>${fmt(plan.revenue/30)} ₽</b> · 
-        Отставание: <b>${fmt(Math.max(0,plan.revenue-fact.revenue))} ₽</b>
-      </div>`:''}
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px"><span class="${pill}">${st}</span><span style="font-size:12px;color:var(--text3)">${monthLabel()} vs ${prevMonthLabel()}</span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 60px;margin-bottom:4px">
+        <div style="font-size:11px;color:var(--text3);font-weight:600">Показатель</div>
+        <div style="font-size:11px;color:var(--purple-text);font-weight:600;text-align:right">Сейчас</div>
+        <div style="font-size:11px;color:var(--text3);font-weight:600;text-align:right">Прошлый</div>
+        <div style="font-size:11px;color:var(--text3);font-weight:600;text-align:right">%</div>
+      </div>
+      ${rows.map(r=>`<div class="mom-row">
+        <span class="mom-label">${r.label}</span>
+        <span class="mom-cur">${r.cur}</span>
+        <span class="mom-prev">${r.prev}</span>
+        <span class="mom-delta">${r.d||'—'}</span>
+      </div>`).join('')}
+    </div>`;
+  });
+  document.getElementById('mom-content').innerHTML=html;
+}
+
+function renderStudios(){
+  const studios=['Империал','Мечта'];let html='';
+  studios.forEach(st=>{
+    const fact=getStats(shifts.filter(s=>s.studio===st));
+    const plan=getPlan(st);
+    const pill=st==='Империал'?'pill-imp':'pill-mec';
+    const kpis=[
+      {label:'Выручка',fact:fmt(fact.revenue)+' ₽',plan:plan.revenue?fmt(plan.revenue)+' ₽':'—',pv:plan.revenue?Math.round(fact.revenue/plan.revenue*100):null},
+      {label:'Ран рейт',fact:fmt(fact.rr)+' ₽',plan:plan.revenue?fmt(plan.revenue)+' ₽':'—',pv:plan.revenue?Math.round(fact.rr/plan.revenue*100):null},
+      {label:'Лиды',fact:fact.leads,plan:plan.leads||'—',pv:plan.leads?Math.round(fact.leads/plan.leads*100):null},
+      {label:'Записи на пробное',fact:fact.bookings,plan:plan.bookings||'—',pv:plan.bookings?Math.round(fact.bookings/plan.bookings*100):null},
+      {label:'Доходимость',fact:fact.visits,plan:plan.visits||'—',pv:plan.visits?Math.round(fact.visits/plan.visits*100):null},
+      {label:'Новые абонементы',fact:fact.newSalesCount,plan:plan.new_clients||'—',pv:plan.new_clients?Math.round(fact.newSalesCount/plan.new_clients*100):null},
+      {label:'Продления',fact:fact.renewals,plan:plan.renewals||'—',pv:plan.renewals?Math.round(fact.renewals/plan.renewals*100):null},
+      {label:'⟳ CV лид→запись',fact:fact.cv1!==null?fact.cv1+'%':'—',plan:plan.cv1?plan.cv1+'%':'—',pv:plan.cv1&&fact.cv1!==null?Math.round(fact.cv1/plan.cv1*100):null},
+      {label:'⟳ CV запись→приход',fact:fact.cv2!==null?fact.cv2+'%':'—',plan:plan.cv2?plan.cv2+'%':'—',pv:plan.cv2&&fact.cv2!==null?Math.round(fact.cv2/plan.cv2*100):null},
+      {label:'⟳ CV приход→продажа',fact:fact.cv3!==null?fact.cv3+'%':'—',plan:plan.cv3?plan.cv3+'%':'—',pv:plan.cv3&&fact.cv3!==null?Math.round(fact.cv3/plan.cv3*100):null},
+    ];
+    html+=`<div class="card">
+      <div style="margin-bottom:12px"><span class="${pill}">${st}</span></div>
+      <table class="kpi-table"><thead><tr><th>Показатель</th><th>Факт</th><th>План</th><th>%</th><th>Статус</th></tr></thead>
+      <tbody>${kpis.map(k=>{
+        const cls=k.pv===null?'delta-neu':k.pv>=100?'delta-pos':k.pv>=85?'':' delta-neg';
+        return`<tr><td><b>${k.label}</b></td><td><b>${k.fact}</b></td><td>${k.plan}</td><td class="${cls}">${k.pv!==null?k.pv+'%':'—'}</td><td>${k.pv!==null?badge(k.pv):'<span style="color:var(--text3);font-size:12px">нет плана</span>'}</td></tr>`;
+      }).join('')}</tbody></table>
+      ${plan.revenue?`<div class="divider"></div><div style="font-size:12px;color:var(--text3)">Нужно в день: <b>${fmt(plan.revenue/30)} ₽</b> · Отставание: <b>${fmt(Math.max(0,plan.revenue-fact.revenue))} ₽</b></div>`:''}
     </div>`;
   });
   document.getElementById('studios-content').innerHTML=html;
@@ -377,66 +518,105 @@ function renderStudios(){
 
 function renderAdmins(){
   const admins=[...new Set(shifts.map(s=>s.admin))].filter(Boolean).sort();
-  if(!admins.length){document.getElementById('admins-content').innerHTML='<div style="color:var(--text3);padding:2rem;text-align:center">Нет данных за этот месяц</div>';return;}
-
+  if(!admins.length){document.getElementById('admins-content').innerHTML='<div style="color:var(--text3);padding:2rem;text-align:center">Нет данных</div>';return;}
   let html='<div class="card"><div class="section-title">Рейтинг администраторов</div>';
-  html+='<table class="kpi-table"><thead><tr><th>Администратор</th><th>Студия</th><th>Смен</th><th>Выручка</th><th>Лиды</th><th>Приход</th><th>CV приход→продажа</th></tr></thead><tbody>';
-
-  const adminData = admins.map(admin=>{
+  html+='<table class="kpi-table"><thead><tr><th>Администратор</th><th>Студия</th><th>Смен</th><th>Выручка</th><th>Записи</th><th>Массаж</th><th>Отзывы</th><th>CV→продажа</th></tr></thead><tbody>';
+  admins.map(admin=>{
     const ss=shifts.filter(s=>s.admin===admin);
-    const studio=ss[0]?.studio||'—';
-    const revenue=ss.reduce((a,s)=>a+s.newSales+s.renew+s.restore,0);
-    const leads=ss.reduce((a,s)=>a+s.leads,0);
-    const visits=ss.reduce((a,s)=>a+s.visits,0);
-    const sales=ss.filter(s=>s.newSales>0).length;
-    const cv3=visits>0?Math.round(sales/visits*100):null;
-    return{admin,studio,n:ss.length,revenue,leads,visits,sales,cv3};
-  }).sort((a,b)=>b.revenue-a.revenue);
-
-  adminData.forEach((d,i)=>{
+    const st=getStats(ss);
+    return{admin,studio:ss[0]?.studio||'—',...st};
+  }).sort((a,b)=>b.revenue-a.revenue).forEach((d,i)=>{
     const pill=d.studio==='Империал'?'pill-imp':'pill-mec';
-    const cvCls=d.cv3===null?'delta-neu':d.cv3>=55?'delta-pos':d.cv3>=40?'delta-neu':'delta-neg';
-    html+=`<tr>
-      <td><b>${i+1}. ${d.admin}</b></td>
-      <td><span class="${pill}">${d.studio}</span></td>
-      <td>${d.n}</td>
-      <td><b>${fmt(d.revenue)} ₽</b></td>
-      <td>${d.leads||'—'}</td>
-      <td>${d.visits||'—'}</td>
-      <td class="${cvCls}">${d.cv3!==null?d.cv3+'%':'—'}</td>
-    </tr>`;
+    const cvCls=d.cv3===null?'delta-neu':d.cv3>=55?'delta-pos':d.cv3>=40?'':'delta-neg';
+    html+=`<tr><td><b>${i+1}. ${d.admin}</b></td><td><span class="${pill}">${d.studio}</span></td><td>${d.n}</td><td><b>${fmt(d.revenue)} ₽</b></td><td>${d.bookings||'—'}</td><td>${d.massage||'—'}</td><td>${d.reviews||'—'}</td><td class="${cvCls}">${d.cv3!==null?d.cv3+'%':'—'}</td></tr>`;
   });
   html+='</tbody></table></div>';
-
-  // Certs
-  const allCerts=shifts.flatMap(s=>(s.certs||[]).map(c=>({...c,admin:s.admin})));
-  if(allCerts.length){
-    html+=`<div class="card"><div class="section-title">Реферальные сертификаты</div>
-      <table class="kpi-table"><thead><tr><th>Администратор</th><th>Кто дал</th><th>Кто пришёл</th><th>Пришёл</th><th>Купил</th><th>Сумма</th></tr></thead><tbody>
-      ${allCerts.map(c=>`<tr><td>${c.admin}</td><td>${c.giver||'—'}</td><td>${c.visitor||'—'}</td><td>${c.came?'✅':'❌'}</td><td>${c.bought?'✅':'❌'}</td><td>${c.bought?fmt(c.amount)+' ₽':'—'}</td></tr>`).join('')}
-      </tbody></table></div>`;
-  }
-
   document.getElementById('admins-content').innerHTML=html;
 }
 
+function renderMarathons(){
+  const todayStr=today();
+  const active=marathons.filter(m=>m.active&&m.date_end>=todayStr);
+  const ended=marathons.filter(m=>!m.active||m.date_end<todayStr);
+  const admins=[...new Set(shifts.map(s=>s.admin))].filter(Boolean).sort();
+
+  let html=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <div class="section-title" style="margin:0">Активные марафоны</div>
+    <button class="btn btn-primary btn-sm" onclick="openMarathonModal()">🏆 Создать</button>
+  </div>`;
+
+  if(!active.length){html+=`<div class="card-muted" style="text-align:center;color:var(--text3);padding:2rem">Нет активных марафонов</div>`;}
+
+  active.forEach(m=>{
+    const totalProg=marathonProgress(m,shifts);
+    const color=totalProg.done?'var(--green)':totalProg.pct>=50?'var(--amber)':'var(--red)';
+    html+=`<div class="marathon-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px">
+        <div style="flex:1">
+          <div class="marathon-title">🏆 ${m.title}</div>
+          ${m.description?`<div style="font-size:12px;color:var(--text2);margin-bottom:4px">${m.description}</div>`:''}
+          <div style="font-size:12px;font-weight:600;color:var(--amber-text);margin-bottom:4px">${m.condition_type?conditionLabel(m.condition_type,m.condition_value):''}</div>
+          <div style="font-size:11px;color:var(--text3)">📅 ${m.date_start} — ${m.date_end}</div>
+        </div>
+        <div class="marathon-prize">${fmt(m.prize)} ₽</div>
+      </div>`;
+
+    // Progress per admin
+    if(admins.length){
+      html+=`<div style="background:rgba(255,255,255,.6);border-radius:var(--radius-sm);padding:.75rem;margin-bottom:10px">
+        <div style="font-size:11px;font-weight:600;color:var(--amber-text);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Прогресс по администраторам</div>`;
+      admins.forEach(admin=>{
+        const ss=shifts.filter(s=>s.admin===admin);
+        const prog=marathonProgress(m,ss);
+        const barColor=prog.done?'var(--green)':prog.pct>=50?'var(--amber)':'var(--red)';
+        html+=`<div class="admin-progress-row">
+          <span class="admin-progress-name">${admin}</span>
+          <div class="admin-progress-bar">
+            <div class="progress-wrap-sm"><div class="progress-fill-sm" style="width:${prog.pct}%;background:${barColor}"></div></div>
+          </div>
+          <span class="admin-progress-val ${prog.done?'admin-done':''}">${prog.done?'✅ ':''} ${m.condition_type==='revenue'?fmt(prog.val)+' ₽':prog.val} / ${m.condition_type==='revenue'?fmt(prog.target)+' ₽':prog.target} (${prog.pct}%)</span>
+        </div>`;
+      });
+      html+=`</div>`;
+    }
+
+    html+=`<div style="display:flex;gap:6px">
+      <button class="btn btn-sm btn-danger" onclick="stopMarathon(${m.id})">⏹ Завершить</button>
+    </div></div>`;
+  });
+
+  if(ended.length){
+    html+=`<div class="section-title" style="margin-top:16px;margin-bottom:8px">Завершённые</div>`;
+    ended.forEach(m=>{
+      html+=`<div class="marathon-card inactive">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+          <div><div class="marathon-title">${m.title}</div>
+          ${m.condition_type?`<div style="font-size:12px;color:var(--text3)">${conditionLabel(m.condition_type,m.condition_value)}</div>`:''}
+          <div style="font-size:11px;color:var(--text3);margin-top:4px">📅 ${m.date_start} — ${m.date_end}</div></div>
+          <div style="font-size:16px;font-weight:700;color:var(--text3)">${fmt(m.prize)} ₽</div>
+        </div>
+        <div style="margin-top:10px"><button class="btn btn-sm btn-danger" onclick="deleteMarathon(${m.id})">🗑 Удалить</button></div>
+      </div>`;
+    });
+  }
+
+  document.getElementById('marathons-content').innerHTML=html;
+}
+
 function renderPlans(){
-  const m=monthKey();
   const studios=['Империал','Мечта'];
   let html=`<div class="card-muted" style="margin-bottom:12px">
     <div style="font-size:13px;color:var(--text2);margin-bottom:8px">Планы на <b>${monthLabel()}</b></div>
-    <button class="btn btn-primary btn-sm" onclick="openPlanModal()">✏️ Изменить планы</button>
+    <button class="btn btn-primary btn-sm" onclick="openPlanModal()">✏️ Изменить</button>
   </div>`;
-
   studios.forEach(st=>{
     const plan=getPlan(st);
     const pill=st==='Империал'?'pill-imp':'pill-mec';
-    if(!plan.revenue){html+=`<div class="card"><div class="studio-header"><span class="${pill}">${st}</span></div><div style="color:var(--text3);font-size:13px">Планы не заданы.</div></div>`;return;}
-    html+=`<div class="card">
-      <div class="studio-header"><span class="${pill}">${st}</span></div>
+    if(!plan.revenue){html+=`<div class="card"><span class="${pill}">${st}</span><div style="color:var(--text3);font-size:13px;margin-top:8px">Планы не заданы.</div></div>`;return;}
+    html+=`<div class="card"><div style="margin-bottom:12px"><span class="${pill}">${st}</span></div>
       <div class="grid3" style="margin-bottom:10px">
         <div class="metric"><div class="metric-label">Выручка</div><div class="metric-val">${fmt(plan.revenue)} ₽</div><div class="metric-sub">${fmt(plan.revenue/30)} ₽/день</div></div>
-        <div class="metric"><div class="metric-label">Новые абонементы</div><div class="metric-val">${plan.new_clients||'—'}</div></div>
+        <div class="metric"><div class="metric-label">Новые</div><div class="metric-val">${plan.new_clients||'—'}</div></div>
         <div class="metric"><div class="metric-label">Продления</div><div class="metric-val">${plan.renewals||'—'}</div></div>
       </div>
       <div class="grid3" style="margin-bottom:10px">
@@ -455,11 +635,9 @@ function renderPlans(){
 }
 
 function openPlanModal(){
-  const m=monthKey();
-  document.getElementById('plan-month').value=m;
+  document.getElementById('plan-month').value=monthKey();
   ['Империал','Мечта'].forEach(st=>{
-    const plan=getPlan(st);
-    const pfx=st==='Империал'?'imp':'mec';
+    const plan=getPlan(st);const pfx=st==='Империал'?'imp':'mec';
     document.getElementById(pfx+'-revenue').value=plan.revenue||'';
     document.getElementById(pfx+'-new').value=plan.new_clients||'';
     document.getElementById(pfx+'-leads').value=plan.leads||'';
@@ -492,13 +670,56 @@ function savePlan(){
   });
   localStorage.setItem('ls_plans_v2',JSON.stringify(plans));
   document.getElementById('plan-msg').style.display='block';
-  setTimeout(()=>{closeModal();renderAll();},900);
+  setTimeout(()=>{closeModal('plan-modal');renderAll();},900);
 }
 
-function closeModal(){document.getElementById('plan-modal').style.display='none';}
+function openMarathonModal(){
+  document.getElementById('m-title').value='';
+  document.getElementById('m-desc').value='';
+  document.getElementById('m-prize').value='';
+  document.getElementById('m-start').value=today();
+  document.getElementById('m-end').value='';
+  document.getElementById('m-condition-type').value='revenue';
+  document.getElementById('m-condition-value').value='';
+  updateConditionLabel();
+  document.getElementById('marathon-msg').style.display='none';
+  document.getElementById('marathon-modal').style.display='flex';
+}
+
+async function saveMarathon(){
+  const title=document.getElementById('m-title').value.trim();
+  if(!title){alert('Введите название');return;}
+  const {error}=await sb.from('marathons').insert({
+    title,
+    description:document.getElementById('m-desc').value.trim(),
+    prize:+document.getElementById('m-prize').value||0,
+    date_start:document.getElementById('m-start').value,
+    date_end:document.getElementById('m-end').value,
+    condition_type:document.getElementById('m-condition-type').value,
+    condition_value:+document.getElementById('m-condition-value').value||0,
+    active:true
+  });
+  if(error){alert('Ошибка: '+error.message);return;}
+  document.getElementById('marathon-msg').style.display='block';
+  setTimeout(async()=>{closeModal('marathon-modal');await loadData();},900);
+}
+
+async function stopMarathon(id){
+  if(!confirm('Завершить марафон?'))return;
+  await sb.from('marathons').update({active:false}).eq('id',id);
+  await loadData();
+}
+
+async function deleteMarathon(id){
+  if(!confirm('Удалить?'))return;
+  await sb.from('marathons').delete().eq('id',id);
+  await loadData();
+}
+
+function closeModal(id){document.getElementById(id).style.display='none';}
 
 function switchTab(t){
-  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['overview','studios','admins','plans'][i]===t));
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['overview','mom','studios','admins','marathons','plans'][i]===t));
   document.querySelectorAll('.section').forEach(el=>el.classList.remove('active'));
   document.getElementById('tab-'+t).classList.add('active');
 }
