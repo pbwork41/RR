@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Трекер смен — Lady Stretch</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -34,7 +35,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;ba
 .metric{background:var(--bg2);border-radius:var(--radius-sm);padding:.75rem 1rem;border:1px solid var(--border)}
 .metric-label{font-size:11px;color:var(--text3);margin-bottom:3px;text-transform:uppercase;letter-spacing:.03em}
 .metric-val{font-size:22px;font-weight:700;color:var(--text)}
-.metric-sub{font-size:11px;color:var(--text3);margin-top:2px}
 .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600}
 .badge-green{background:var(--green-bg);color:var(--green-text)}
 .badge-amber{background:var(--amber-bg);color:var(--amber-text)}
@@ -44,7 +44,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;ba
 label{display:block;font-size:12px;color:var(--text2);margin-bottom:4px;font-weight:500}
 input,select,textarea{width:100%;padding:8px 12px;font-size:14px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);font-family:inherit;transition:border .15s}
 input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue)}
-textarea{min-height:60px;resize:vertical}
 .form-row{margin-bottom:10px}
 .btn{padding:9px 18px;font-size:14px;font-weight:500;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);cursor:pointer;font-family:inherit;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
 .btn:hover{background:var(--bg2)}
@@ -78,13 +77,14 @@ textarea{min-height:60px;resize:vertical}
 .modal-title{font-size:17px;font-weight:700}
 .alert{padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;margin-bottom:12px}
 .alert-red{background:var(--red-bg);color:var(--red-text);border:1px solid #fca5a5}
-.alert-green{background:var(--green-bg);color:var(--green-text);border:1px solid #86efac}
 .pin-input{text-align:center;font-size:28px;letter-spacing:10px;font-weight:700}
 .empty-state{text-align:center;padding:3rem 1rem;color:var(--text3)}
 .empty-state i{font-size:48px;display:block;margin-bottom:12px;opacity:.4}
 .salary-box{background:linear-gradient(135deg,var(--blue-bg),#f0f4ff);border:1px solid #bfdbfe;border-radius:var(--radius);padding:1.25rem;margin-bottom:1rem}
 .salary-total{font-size:32px;font-weight:800;color:var(--blue-text)}
 .marathon-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:600;background:var(--amber-bg);color:var(--amber-text);border:1px solid #fcd34d;margin-top:8px}
+.loading{text-align:center;padding:2rem;color:var(--text3);font-size:14px}
+.sync-indicator{display:inline-flex;align-items:center;gap:6px;font-size:11px;opacity:.8}
 </style>
 </head>
 <body>
@@ -94,19 +94,25 @@ textarea{min-height:60px;resize:vertical}
       <div class="topbar-title">Lady Stretch — Трекер смен</div>
       <div class="topbar-sub" id="month-label"></div>
     </div>
-    <button class="btn btn-sm" style="background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.3)" onclick="openAddShift()">
-      <i class="ti ti-plus"></i> Внести смену
-    </button>
+    <div style="display:flex;gap:8px;align-items:center">
+      <span class="sync-indicator" id="sync-status"><i class="ti ti-cloud"></i> <span id="sync-text">загрузка...</span></span>
+      <button class="btn btn-sm" style="background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.3)" onclick="openAddShift()">
+        <i class="ti ti-plus"></i> Внести смену
+      </button>
+    </div>
   </div>
+
   <div class="tabs">
     <button class="tab active" onclick="switchTab('dashboard')"><i class="ti ti-chart-bar"></i> Сводка</button>
     <button class="tab" onclick="switchTab('shifts')"><i class="ti ti-calendar"></i> Смены</button>
     <button class="tab" onclick="switchTab('salary')"><i class="ti ti-wallet"></i> Зарплата</button>
   </div>
+
   <div id="tab-dashboard" class="section active">
     <div class="grid2" id="studio-cards"></div>
     <div class="card" id="total-card"></div>
   </div>
+
   <div id="tab-shifts" class="section">
     <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
       <select id="filter-studio" onchange="renderShifts()" style="max-width:160px">
@@ -120,6 +126,7 @@ textarea{min-height:60px;resize:vertical}
     </div>
     <div id="shifts-list"></div>
   </div>
+
   <div id="tab-salary" class="section">
     <div class="card-muted" style="margin-bottom:12px">
       <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -136,6 +143,8 @@ textarea{min-height:60px;resize:vertical}
     <div id="salary-detail"></div>
   </div>
 </div>
+
+<!-- ADD MODAL -->
 <div id="add-modal" style="display:none" class="modal-bg">
 <div class="modal">
   <div class="modal-header">
@@ -170,10 +179,12 @@ textarea{min-height:60px;resize:vertical}
   <div id="add-error" class="alert alert-red" style="display:none"></div>
   <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:1.25rem">
     <button class="btn" onclick="closeModal('add-modal')">Отмена</button>
-    <button class="btn btn-primary" onclick="saveShift()"><i class="ti ti-check"></i> Сохранить</button>
+    <button class="btn btn-primary" id="save-btn" onclick="saveShift()"><i class="ti ti-check"></i> Сохранить</button>
   </div>
 </div>
 </div>
+
+<!-- PIN MODAL -->
 <div id="pin-modal" style="display:none" class="modal-bg">
 <div class="modal" style="max-width:320px;text-align:center">
   <div class="modal-title" style="margin-bottom:8px">Пин-код</div>
@@ -183,6 +194,8 @@ textarea{min-height:60px;resize:vertical}
   <button class="btn btn-sm" style="margin-top:12px" onclick="closeModal('pin-modal')">Отмена</button>
 </div>
 </div>
+
+<!-- EDIT MODAL -->
 <div id="edit-modal" style="display:none" class="modal-bg">
 <div class="modal">
   <div class="modal-header">
@@ -218,45 +231,314 @@ textarea{min-height:60px;resize:vertical}
     <button class="btn btn-danger btn-sm" onclick="deleteShift()"><i class="ti ti-trash"></i> Удалить</button>
     <div style="display:flex;gap:8px">
       <button class="btn" onclick="closeModal('edit-modal')">Отмена</button>
-      <button class="btn btn-primary" onclick="updateShift()"><i class="ti ti-check"></i> Сохранить</button>
+      <button class="btn btn-primary" id="update-btn" onclick="updateShift()"><i class="ti ti-check"></i> Сохранить</button>
     </div>
   </div>
 </div>
 </div>
+
 <script>
-const PIN='0000';const IMP_PLAN=1800000;const MEC_PLAN=1200000;const DAYS=30;
-let shifts=[];let editingId=null;let pinCb=null;let addCertN=0;let editCertN=0;
+const SUPABASE_URL = 'https://nhiyoilfegmmvdtqsgkm.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oaXlvaWxmZWdtbXZkdHFzZ2ttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2MDc0MTMsImV4cCI6MjA5NjE4MzQxM30.VL7a64jalOvhGC3yLMdeR-qR1Jlffht-uYcYmwDn7oQ';
+const PIN = '0000';
+const IMP_PLAN = 1800000;
+const MEC_PLAN = 1200000;
+const DAYS = 30;
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let shifts = [];
+let editingId = null;
+let pinCb = null;
+let addCertN = 0;
+let editCertN = 0;
+
 function fmt(n){return Math.round(n).toLocaleString('ru-RU')}
 function today(){return new Date().toISOString().slice(0,10)}
 function monthKey(){return today().slice(0,7)}
 function monthLabel(){return new Date().toLocaleString('ru-RU',{month:'long',year:'numeric'})}
-function save(){localStorage.setItem('shifts_ls_v3',JSON.stringify(shifts))}
-function load(){try{shifts=JSON.parse(localStorage.getItem('shifts_ls_v3')||'[]')}catch(e){shifts=[]}}
-function monthShifts(){return shifts.filter(s=>s.date&&s.date.startsWith(monthKey()))}
-function cashBonus(studio,cash){if(studio==='Империал'){if(cash>=100000)return 2500;if(cash>=80000)return 1500;if(cash>=60000)return 1000;return 0;}else{if(cash>=70000)return 2500;if(cash>=55000)return 1500;if(cash>=40000)return 1000;return 0;}}
-function calcShift(s){const cash=(+s.newSales||0)+(+s.renew||0)+(+s.restore||0);const fix=1500;const pNew=Math.round((+s.newSales||0)*0.05);const pRenew=Math.round((+s.renew||0)*0.08);const pRestore=Math.round((+s.restore||0)*0.10);const bonus=cashBonus(s.studio,cash);const certs=s.certs||[];const certBonus=certs.filter(c=>c.came).length*500;const certSales=certs.filter(c=>c.came&&c.bought).reduce((a,c)=>a+(+c.amount||0),0);const pCert=Math.round(certSales*0.05);return{fix,pNew,pRenew,pRestore,bonus,certBonus,pCert,cash,total:fix+pNew+pRenew+pRestore+bonus+certBonus+pCert};}
-function badge(pct){if(pct>=100)return`<span class="badge badge-green"><i class="ti ti-check"></i> В плане</span>`;if(pct>=85)return`<span class="badge badge-amber"><i class="ti ti-alert-triangle"></i> Нужно ускориться</span>`;return`<span class="badge badge-red"><i class="ti ti-x"></i> Отстаём</span>`;}
-function renderDashboard(){const ms=monthShifts();const studios=[{name:'Империал',plan:IMP_PLAN,cls:'tag-imp'},{name:'Мечта',plan:MEC_PLAN,cls:'tag-mec'}];let html='';studios.forEach(st=>{const ss=ms.filter(s=>s.studio===st.name);const fact=ss.reduce((a,s)=>a+(+s.newSales||0)+(+s.renew||0)+(+s.restore||0),0);const done=ss.length;const rate=done>0?fact/done:0;const rr=Math.round(rate*DAYS);const rrPct=Math.round(rr/st.plan*100);const factPct=Math.round(fact/st.plan*100);const fill=Math.min(factPct,100);const color=rrPct>=100?'var(--green)':rrPct>=85?'var(--amber)':'var(--red)';html+=`<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><span class="tag ${st.cls}" style="font-size:13px;padding:4px 12px">${st.name}</span>${badge(rrPct)}</div><div class="grid2" style="margin-bottom:12px"><div class="metric"><div class="metric-label">Факт</div><div class="metric-val" style="font-size:18px">${fmt(fact)} ₽</div></div><div class="metric"><div class="metric-label">Ран рейт</div><div class="metric-val" style="font-size:18px">${fmt(rr)} ₽</div></div></div><div class="progress-wrap"><div class="progress-fill" style="width:${fill}%;background:${color}"></div></div><div style="display:flex;justify-content:space-between;margin-top:6px;font-size:11px;color:var(--text3)"><span>Выполнено: ${factPct}%</span><span>План: ${fmt(st.plan)} ₽</span></div><div style="font-size:11px;color:var(--text3);margin-top:6px">Темп: ${fmt(rate)} ₽/смена · Нужно: ${fmt(st.plan/DAYS)} ₽/день</div></div>`;});document.getElementById('studio-cards').innerHTML=html;const tFact=ms.reduce((a,s)=>a+(+s.newSales||0)+(+s.renew||0)+(+s.restore||0),0);const tPlan=IMP_PLAN+MEC_PLAN;const tDone=ms.length;const tRR=tDone>0?Math.round(tFact/tDone*DAYS):0;const tPct=Math.round(tRR/tPlan*100);document.getElementById('total-card').innerHTML=`<div style="font-size:13px;font-weight:600;color:var(--text2);margin-bottom:12px">Обе студии · ${monthLabel()}</div><div class="grid3"><div class="metric"><div class="metric-label">Факт</div><div class="metric-val">${fmt(tFact)} ₽</div></div><div class="metric"><div class="metric-label">Ран рейт</div><div class="metric-val">${fmt(tRR)} ₽</div></div><div class="metric"><div class="metric-label">% плана</div><div class="metric-val">${tPct}%</div><div style="margin-top:6px">${badge(tPct)}</div></div></div>`;}
-function updateSelects(){const ms=monthShifts();const admins=[...new Set(ms.map(s=>s.admin))].filter(Boolean).sort();['filter-admin','sal-admin'].forEach(id=>{const el=document.getElementById(id);const cur=el.value;const def=id==='sal-admin'?'<option value="all">Все</option>':'<option value="all">Все администраторы</option>';el.innerHTML=def+admins.map(a=>`<option value="${a}"${a===cur?' selected':''}>${a}</option>`).join('');});}
-function renderShifts(){const ms=monthShifts();const stF=document.getElementById('filter-studio').value;const adF=document.getElementById('filter-admin').value;updateSelects();let list=ms;if(stF!=='all')list=list.filter(s=>s.studio===stF);if(adF!=='all')list=list.filter(s=>s.admin===adF);list=[...list].sort((a,b)=>b.date.localeCompare(a.date));if(!list.length){document.getElementById('shifts-list').innerHTML=`<div class="empty-state"><i class="ti ti-calendar-off"></i>Смен за этот месяц ещё нет.<br>Нажмите «Внести смену» чтобы начать.</div>`;return;}document.getElementById('shifts-list').innerHTML=list.map(s=>{const sal=calcShift(s);const cls=s.studio==='Империал'?'tag-imp':'tag-mec';const certsHtml=(s.certs||[]).map(c=>`<div style="font-size:11px;color:var(--text2);margin-top:6px;padding:6px 10px;background:var(--bg2);border-radius:var(--radius-sm);border:1px solid var(--border)"><i class="ti ti-certificate" style="font-size:12px"></i> <b>${c.giver||'—'}</b> → <b>${c.visitor||'—'}</b> ${c.came?`<span class="badge badge-green" style="font-size:10px;padding:1px 6px">Пришёл</span>`:`<span class="badge badge-amber" style="font-size:10px;padding:1px 6px">Не пришёл</span>`}${c.bought?`<span class="badge badge-green" style="font-size:10px;padding:1px 6px">Купил ${fmt(c.amount||0)} ₽</span>`:''}</div>`).join('');return`<div class="shift-card"><div class="shift-header"><div><div class="shift-tags"><span class="tag ${cls}">${s.studio}</span><span style="font-size:13px;font-weight:600;color:var(--text)">${s.date}</span><span style="font-size:12px;color:var(--text2)">${s.admin||''}</span></div><div class="shift-amounts"><span class="amount-chip">Касса: ${fmt(sal.cash)} ₽</span>${s.newSales>0?`<span class="amount-chip">Новые: ${fmt(s.newSales)} ₽</span>`:''}${s.renew>0?`<span class="amount-chip">Продления: ${fmt(s.renew)} ₽</span>`:''}${s.restore>0?`<span class="amount-chip">Восстановление: ${fmt(s.restore)} ₽</span>`:''}<span class="amount-chip highlight">ЗП смены: ${fmt(sal.total)} ₽</span></div></div><button class="btn btn-sm" onclick="openEdit('${s.id}')"><i class="ti ti-edit"></i></button></div>${certsHtml}</div>`;}).join('');}
-function renderSalary(){const ms=monthShifts();const adF=document.getElementById('sal-admin').value;const stF=document.getElementById('sal-studio').value;let list=ms;if(adF!=='all')list=list.filter(s=>s.admin===adF);if(stF!=='all')list=list.filter(s=>s.studio===stF);if(!list.length){document.getElementById('salary-detail').innerHTML=`<div class="empty-state"><i class="ti ti-wallet-off"></i>Нет данных за этот месяц</div>`;return;}let fix=0,pNew=0,pRenew=0,pRestore=0,bonus=0,certB=0,pCert=0;list.forEach(s=>{const sal=calcShift(s);fix+=sal.fix;pNew+=sal.pNew;pRenew+=sal.pRenew;pRestore+=sal.pRestore;bonus+=sal.bonus;certB+=sal.certBonus;pCert+=sal.pCert;});const total=fix+pNew+pRenew+pRestore+bonus+certB+pCert;const n=list.length;const est=n>0?Math.round(total/n*15):0;const items=[{label:`Оклад (${n} смен × 1 500 ₽)`,val:fix},{label:'Новые абонементы (5%)',val:pNew},{label:'Продления (8%)',val:pRenew},{label:'Восстановление клиента (10%)',val:pRestore},{label:'Бонус за кассу смены',val:bonus},{label:'Сертификаты — приход (500 ₽)',val:certB},{label:'Продажи по сертификатам (5%)',val:pCert}];document.getElementById('salary-detail').innerHTML=`<div class="salary-box"><div style="font-size:12px;color:var(--blue-text);margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.05em">К выплате за ${n} смен</div><div class="salary-total">${fmt(total)} ₽</div><div class="marathon-badge"><i class="ti ti-trending-up"></i> Прогноз на месяц: ${fmt(est)} ₽</div><div style="font-size:11px;color:var(--text3);margin-top:8px">Без марафонных бонусов (+10 000 за план, +10 000 за конверсию)</div></div><div class="card"><div class="section-title">Детализация</div>${items.map(i=>`<div class="line"><span class="line-label">${i.label}</span><span class="line-val">${fmt(i.val)} ₽</span></div>`).join('')}<div class="total-line"><span>Итого</span><span>${fmt(total)} ₽</span></div></div>`;}
+
+function setSyncStatus(text, ok=true){
+  document.getElementById('sync-text').textContent = text;
+}
+
+async function loadShifts(){
+  setSyncStatus('загрузка...');
+  const m = monthKey();
+  const {data, error} = await sb.from('shifts').select('*').gte('date', m+'-01').lte('date', m+'-31').order('date', {ascending:false});
+  if(error){setSyncStatus('ошибка загрузки');console.error(error);return;}
+  shifts = data.map(r=>({
+    id: r.id,
+    date: r.date,
+    studio: r.studio,
+    admin: r.admin,
+    newSales: r.new_sales||0,
+    renew: r.renew||0,
+    restore: r.restore||0,
+    certs: r.certs||[]
+  }));
+  setSyncStatus('синхронизировано ✓');
+  renderAll();
+}
+
+function cashBonus(studio,cash){
+  if(studio==='Империал'){if(cash>=100000)return 2500;if(cash>=80000)return 1500;if(cash>=60000)return 1000;return 0;}
+  else{if(cash>=70000)return 2500;if(cash>=55000)return 1500;if(cash>=40000)return 1000;return 0;}
+}
+
+function calcShift(s){
+  const cash=(+s.newSales||0)+(+s.renew||0)+(+s.restore||0);
+  const fix=1500;
+  const pNew=Math.round((+s.newSales||0)*0.05);
+  const pRenew=Math.round((+s.renew||0)*0.08);
+  const pRestore=Math.round((+s.restore||0)*0.10);
+  const bonus=cashBonus(s.studio,cash);
+  const certs=s.certs||[];
+  const certBonus=certs.filter(c=>c.came).length*500;
+  const certSales=certs.filter(c=>c.came&&c.bought).reduce((a,c)=>a+(+c.amount||0),0);
+  const pCert=Math.round(certSales*0.05);
+  return{fix,pNew,pRenew,pRestore,bonus,certBonus,pCert,cash,total:fix+pNew+pRenew+pRestore+bonus+certBonus+pCert};
+}
+
+function badge(pct){
+  if(pct>=100)return`<span class="badge badge-green"><i class="ti ti-check"></i> В плане</span>`;
+  if(pct>=85)return`<span class="badge badge-amber"><i class="ti ti-alert-triangle"></i> Нужно ускориться</span>`;
+  return`<span class="badge badge-red"><i class="ti ti-x"></i> Отстаём</span>`;
+}
+
+function renderDashboard(){
+  const studios=[{name:'Империал',plan:IMP_PLAN,cls:'tag-imp'},{name:'Мечта',plan:MEC_PLAN,cls:'tag-mec'}];
+  let html='';
+  studios.forEach(st=>{
+    const ss=shifts.filter(s=>s.studio===st.name);
+    const fact=ss.reduce((a,s)=>a+(+s.newSales||0)+(+s.renew||0)+(+s.restore||0),0);
+    const done=ss.length;
+    const rate=done>0?fact/done:0;
+    const rr=Math.round(rate*DAYS);
+    const rrPct=Math.round(rr/st.plan*100);
+    const factPct=Math.round(fact/st.plan*100);
+    const fill=Math.min(factPct,100);
+    const color=rrPct>=100?'var(--green)':rrPct>=85?'var(--amber)':'var(--red)';
+    html+=`<div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <span class="tag ${st.cls}" style="font-size:13px;padding:4px 12px">${st.name}</span>${badge(rrPct)}
+      </div>
+      <div class="grid2" style="margin-bottom:12px">
+        <div class="metric"><div class="metric-label">Факт</div><div class="metric-val" style="font-size:18px">${fmt(fact)} ₽</div></div>
+        <div class="metric"><div class="metric-label">Ран рейт</div><div class="metric-val" style="font-size:18px">${fmt(rr)} ₽</div></div>
+      </div>
+      <div class="progress-wrap"><div class="progress-fill" style="width:${fill}%;background:${color}"></div></div>
+      <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:11px;color:var(--text3)">
+        <span>Выполнено: ${factPct}%</span><span>План: ${fmt(st.plan)} ₽</span>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-top:6px">Темп: ${fmt(rate)} ₽/смена · Нужно: ${fmt(st.plan/DAYS)} ₽/день</div>
+    </div>`;
+  });
+  document.getElementById('studio-cards').innerHTML=html;
+  const tFact=shifts.reduce((a,s)=>a+(+s.newSales||0)+(+s.renew||0)+(+s.restore||0),0);
+  const tPlan=IMP_PLAN+MEC_PLAN;
+  const tRR=shifts.length>0?Math.round(tFact/shifts.length*DAYS):0;
+  const tPct=Math.round(tRR/tPlan*100);
+  document.getElementById('total-card').innerHTML=`
+    <div style="font-size:13px;font-weight:600;color:var(--text2);margin-bottom:12px">Обе студии · ${monthLabel()}</div>
+    <div class="grid3">
+      <div class="metric"><div class="metric-label">Факт</div><div class="metric-val">${fmt(tFact)} ₽</div></div>
+      <div class="metric"><div class="metric-label">Ран рейт</div><div class="metric-val">${fmt(tRR)} ₽</div></div>
+      <div class="metric"><div class="metric-label">% плана</div><div class="metric-val">${tPct}%</div><div style="margin-top:6px">${badge(tPct)}</div></div>
+    </div>`;
+}
+
+function updateSelects(){
+  const admins=[...new Set(shifts.map(s=>s.admin))].filter(Boolean).sort();
+  ['filter-admin','sal-admin'].forEach(id=>{
+    const el=document.getElementById(id);const cur=el.value;
+    const def=id==='sal-admin'?'<option value="all">Все</option>':'<option value="all">Все администраторы</option>';
+    el.innerHTML=def+admins.map(a=>`<option value="${a}"${a===cur?' selected':''}>${a}</option>`).join('');
+  });
+}
+
+function renderShifts(){
+  updateSelects();
+  const stF=document.getElementById('filter-studio').value;
+  const adF=document.getElementById('filter-admin').value;
+  let list=[...shifts];
+  if(stF!=='all')list=list.filter(s=>s.studio===stF);
+  if(adF!=='all')list=list.filter(s=>s.admin===adF);
+  list.sort((a,b)=>b.date.localeCompare(a.date));
+  if(!list.length){document.getElementById('shifts-list').innerHTML=`<div class="empty-state"><i class="ti ti-calendar-off"></i>Смен за этот месяц ещё нет.<br>Нажмите «Внести смену» чтобы начать.</div>`;return;}
+  document.getElementById('shifts-list').innerHTML=list.map(s=>{
+    const sal=calcShift(s);
+    const cls=s.studio==='Империал'?'tag-imp':'tag-mec';
+    const certsHtml=(s.certs||[]).map(c=>`<div style="font-size:11px;color:var(--text2);margin-top:6px;padding:6px 10px;background:var(--bg2);border-radius:var(--radius-sm);border:1px solid var(--border)"><i class="ti ti-certificate" style="font-size:12px"></i> <b>${c.giver||'—'}</b> → <b>${c.visitor||'—'}</b> ${c.came?`<span class="badge badge-green" style="font-size:10px;padding:1px 6px">Пришёл</span>`:`<span class="badge badge-amber" style="font-size:10px;padding:1px 6px">Не пришёл</span>`}${c.bought?`<span class="badge badge-green" style="font-size:10px;padding:1px 6px">Купил ${fmt(c.amount||0)} ₽</span>`:''}</div>`).join('');
+    return`<div class="shift-card"><div class="shift-header"><div><div class="shift-tags"><span class="tag ${cls}">${s.studio}</span><span style="font-size:13px;font-weight:600;color:var(--text)">${s.date}</span><span style="font-size:12px;color:var(--text2)">${s.admin||''}</span></div><div class="shift-amounts"><span class="amount-chip">Касса: ${fmt(sal.cash)} ₽</span>${s.newSales>0?`<span class="amount-chip">Новые: ${fmt(s.newSales)} ₽</span>`:''}${s.renew>0?`<span class="amount-chip">Продления: ${fmt(s.renew)} ₽</span>`:''}${s.restore>0?`<span class="amount-chip">Восстановление: ${fmt(s.restore)} ₽</span>`:''}<span class="amount-chip highlight">ЗП смены: ${fmt(sal.total)} ₽</span></div></div><button class="btn btn-sm" onclick="openEdit(${s.id})"><i class="ti ti-edit"></i></button></div>${certsHtml}</div>`;
+  }).join('');
+}
+
+function renderSalary(){
+  const adF=document.getElementById('sal-admin').value;
+  const stF=document.getElementById('sal-studio').value;
+  let list=[...shifts];
+  if(adF!=='all')list=list.filter(s=>s.admin===adF);
+  if(stF!=='all')list=list.filter(s=>s.studio===stF);
+  if(!list.length){document.getElementById('salary-detail').innerHTML=`<div class="empty-state"><i class="ti ti-wallet-off"></i>Нет данных за этот месяц</div>`;return;}
+  let fix=0,pNew=0,pRenew=0,pRestore=0,bonus=0,certB=0,pCert=0;
+  list.forEach(s=>{const sal=calcShift(s);fix+=sal.fix;pNew+=sal.pNew;pRenew+=sal.pRenew;pRestore+=sal.pRestore;bonus+=sal.bonus;certB+=sal.certBonus;pCert+=sal.pCert;});
+  const total=fix+pNew+pRenew+pRestore+bonus+certB+pCert;
+  const n=list.length;
+  const est=n>0?Math.round(total/n*15):0;
+  const items=[
+    {label:`Оклад (${n} смен × 1 500 ₽)`,val:fix},
+    {label:'Новые абонементы (5%)',val:pNew},
+    {label:'Продления (8%)',val:pRenew},
+    {label:'Восстановление клиента (10%)',val:pRestore},
+    {label:'Бонус за кассу смены',val:bonus},
+    {label:'Сертификаты — приход (500 ₽)',val:certB},
+    {label:'Продажи по сертификатам (5%)',val:pCert},
+  ];
+  document.getElementById('salary-detail').innerHTML=`
+    <div class="salary-box">
+      <div style="font-size:12px;color:var(--blue-text);margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.05em">К выплате за ${n} смен</div>
+      <div class="salary-total">${fmt(total)} ₽</div>
+      <div class="marathon-badge"><i class="ti ti-trending-up"></i> Прогноз на месяц: ${fmt(est)} ₽</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:8px">Без марафонных бонусов (+10 000 за план, +10 000 за конверсию)</div>
+    </div>
+    <div class="card">
+      <div class="section-title">Детализация</div>
+      ${items.map(i=>`<div class="line"><span class="line-label">${i.label}</span><span class="line-val">${fmt(i.val)} ₽</span></div>`).join('')}
+      <div class="total-line"><span>Итого</span><span>${fmt(total)} ₽</span></div>
+    </div>`;
+}
+
 function renderAll(){updateSelects();renderDashboard();renderShifts();renderSalary();}
-function addCert(mode){const cont=document.getElementById(mode==='add'?'add-certs':'edit-certs');const n=mode==='add'?addCertN++:editCertN++;const div=document.createElement('div');div.className='cert-block';div.id=`cert-${mode}-${n}`;div.innerHTML=`<div class="cert-header"><span class="cert-title"><i class="ti ti-certificate"></i> Сертификат ${n+1}</span><button class="btn btn-sm btn-danger" onclick="this.closest('.cert-block').remove()"><i class="ti ti-x"></i></button></div><div class="grid2"><div class="form-row"><label>Кто дал сертификат (клиент)</label><input type="text" data-f="giver" placeholder="Имя или телефон"></div><div class="form-row"><label>Кто пришёл по сертификату</label><input type="text" data-f="visitor" placeholder="Имя пришедшего"></div></div><div class="grid2"><div class="form-row"><label>Пришёл на занятие?</label><select data-f="came" onchange="toggleCame(this,'${mode}-${n}')"><option value="0">Нет</option><option value="1">Да</option></select></div><div class="form-row" id="bought-wrap-${mode}-${n}" style="display:none"><label>Купил абонемент?</label><select data-f="bought" onchange="toggleBought(this,'${mode}-${n}')"><option value="0">Нет</option><option value="1">Да</option></select></div></div><div class="form-row" id="amount-wrap-${mode}-${n}" style="display:none"><label>Сумма покупки, ₽</label><input type="number" data-f="amount" value="0" min="0"></div>`;cont.appendChild(div);}
+
+function addCert(mode){
+  const cont=document.getElementById(mode==='add'?'add-certs':'edit-certs');
+  const n=mode==='add'?addCertN++:editCertN++;
+  const div=document.createElement('div');
+  div.className='cert-block';div.id=`cert-${mode}-${n}`;
+  div.innerHTML=`<div class="cert-header"><span class="cert-title"><i class="ti ti-certificate"></i> Сертификат ${n+1}</span><button class="btn btn-sm btn-danger" onclick="this.closest('.cert-block').remove()"><i class="ti ti-x"></i></button></div><div class="grid2"><div class="form-row"><label>Кто дал сертификат (клиент)</label><input type="text" data-f="giver" placeholder="Имя или телефон"></div><div class="form-row"><label>Кто пришёл по сертификату</label><input type="text" data-f="visitor" placeholder="Имя пришедшего"></div></div><div class="grid2"><div class="form-row"><label>Пришёл на занятие?</label><select data-f="came" onchange="toggleCame(this,'${mode}-${n}')"><option value="0">Нет</option><option value="1">Да</option></select></div><div class="form-row" id="bought-wrap-${mode}-${n}" style="display:none"><label>Купил абонемент?</label><select data-f="bought" onchange="toggleBought(this,'${mode}-${n}')"><option value="0">Нет</option><option value="1">Да</option></select></div></div><div class="form-row" id="amount-wrap-${mode}-${n}" style="display:none"><label>Сумма покупки, ₽</label><input type="number" data-f="amount" value="0" min="0"></div>`;
+  cont.appendChild(div);
+}
+
 function toggleCame(sel,id){document.getElementById('bought-wrap-'+id).style.display=sel.value==='1'?'block':'none';document.getElementById('amount-wrap-'+id).style.display='none';}
 function toggleBought(sel,id){document.getElementById('amount-wrap-'+id).style.display=sel.value==='1'?'block':'none';}
-function getCerts(contId){return[...document.getElementById(contId).querySelectorAll('.cert-block')].map(b=>({giver:b.querySelector('[data-f="giver"]').value.trim(),visitor:b.querySelector('[data-f="visitor"]').value.trim(),came:b.querySelector('[data-f="came"]').value==='1',bought:b.querySelector('[data-f="bought"]')?.value==='1'||false,amount:+b.querySelector('[data-f="amount"]')?.value||0}));}
-function openAddShift(){document.getElementById('f-date').value=today();document.getElementById('f-new').value='0';document.getElementById('f-renew').value='0';document.getElementById('f-restore').value='0';document.getElementById('f-admin').value='';document.getElementById('add-certs').innerHTML='';document.getElementById('add-error').style.display='none';addCertN=0;document.getElementById('add-modal').style.display='flex';}
-function saveShift(){const admin=document.getElementById('f-admin').value;if(!admin){showErr('add-error','Выберите имя администратора');return;}const s={id:Date.now().toString(),date:document.getElementById('f-date').value,studio:document.getElementById('f-studio').value,admin,newSales:+document.getElementById('f-new').value||0,renew:+document.getElementById('f-renew').value||0,restore:+document.getElementById('f-restore').value||0,certs:getCerts('add-certs')};shifts.push(s);save();closeModal('add-modal');renderAll();}
-function openEdit(id){pinCb=()=>doEdit(id);document.getElementById('pin-input').value='';document.getElementById('pin-error').style.display='none';document.getElementById('pin-modal').style.display='flex';setTimeout(()=>document.getElementById('pin-input').focus(),100);}
-function doEdit(id){editingId=id;const s=shifts.find(x=>x.id===id);if(!s)return;document.getElementById('e-date').value=s.date;document.getElementById('e-studio').value=s.studio;document.getElementById('e-admin').value=s.admin||'Анна';document.getElementById('e-new').value=s.newSales||0;document.getElementById('e-renew').value=s.renew||0;document.getElementById('e-restore').value=s.restore||0;document.getElementById('edit-certs').innerHTML='';editCertN=0;(s.certs||[]).forEach(c=>{addCert('edit');const n=editCertN-1;const b=document.getElementById(`cert-edit-${n}`);b.querySelector('[data-f="giver"]').value=c.giver||'';b.querySelector('[data-f="visitor"]').value=c.visitor||'';const cEl=b.querySelector('[data-f="came"]');cEl.value=c.came?'1':'0';toggleCame(cEl,`edit-${n}`);const bEl=b.querySelector('[data-f="bought"]');if(bEl){bEl.value=c.bought?'1':'0';toggleBought(bEl,`edit-${n}`);}const aEl=b.querySelector('[data-f="amount"]');if(aEl)aEl.value=c.amount||0;});document.getElementById('edit-error').style.display='none';document.getElementById('edit-modal').style.display='flex';}
-function updateShift(){const s=shifts.find(x=>x.id===editingId);if(!s)return;s.date=document.getElementById('e-date').value;s.studio=document.getElementById('e-studio').value;s.admin=document.getElementById('e-admin').value;s.newSales=+document.getElementById('e-new').value||0;s.renew=+document.getElementById('e-renew').value||0;s.restore=+document.getElementById('e-restore').value||0;s.certs=getCerts('edit-certs');save();closeModal('edit-modal');renderAll();}
-function deleteShift(){if(!confirm('Удалить эту смену?'))return;shifts=shifts.filter(x=>x.id!==editingId);save();closeModal('edit-modal');renderAll();}
-function checkPin(){const v=document.getElementById('pin-input').value;if(v.length<4)return;if(v===PIN){closeModal('pin-modal');if(pinCb){pinCb();pinCb=null;}}else{document.getElementById('pin-error').style.display='block';document.getElementById('pin-input').value='';}}
+
+function getCerts(contId){
+  return[...document.getElementById(contId).querySelectorAll('.cert-block')].map(b=>({
+    giver:b.querySelector('[data-f="giver"]').value.trim(),
+    visitor:b.querySelector('[data-f="visitor"]').value.trim(),
+    came:b.querySelector('[data-f="came"]').value==='1',
+    bought:b.querySelector('[data-f="bought"]')?.value==='1'||false,
+    amount:+b.querySelector('[data-f="amount"]')?.value||0
+  }));
+}
+
+function openAddShift(){
+  document.getElementById('f-date').value=today();
+  document.getElementById('f-new').value='0';
+  document.getElementById('f-renew').value='0';
+  document.getElementById('f-restore').value='0';
+  document.getElementById('f-admin').value='';
+  document.getElementById('add-certs').innerHTML='';
+  document.getElementById('add-error').style.display='none';
+  addCertN=0;
+  document.getElementById('add-modal').style.display='flex';
+}
+
+async function saveShift(){
+  const admin=document.getElementById('f-admin').value;
+  if(!admin){showErr('add-error','Выберите имя администратора');return;}
+  const btn=document.getElementById('save-btn');
+  btn.disabled=true;btn.textContent='Сохранение...';
+  const {error}=await sb.from('shifts').insert({
+    date:document.getElementById('f-date').value,
+    studio:document.getElementById('f-studio').value,
+    admin,
+    new_sales:+document.getElementById('f-new').value||0,
+    renew:+document.getElementById('f-renew').value||0,
+    restore:+document.getElementById('f-restore').value||0,
+    certs:getCerts('add-certs')
+  });
+  btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Сохранить';
+  if(error){showErr('add-error','Ошибка сохранения: '+error.message);return;}
+  closeModal('add-modal');
+  await loadShifts();
+}
+
+function openEdit(id){
+  pinCb=()=>doEdit(id);
+  document.getElementById('pin-input').value='';
+  document.getElementById('pin-error').style.display='none';
+  document.getElementById('pin-modal').style.display='flex';
+  setTimeout(()=>document.getElementById('pin-input').focus(),100);
+}
+
+function doEdit(id){
+  editingId=id;
+  const s=shifts.find(x=>x.id===id);if(!s)return;
+  document.getElementById('e-date').value=s.date;
+  document.getElementById('e-studio').value=s.studio;
+  document.getElementById('e-admin').value=s.admin||'Анна';
+  document.getElementById('e-new').value=s.newSales||0;
+  document.getElementById('e-renew').value=s.renew||0;
+  document.getElementById('e-restore').value=s.restore||0;
+  document.getElementById('edit-certs').innerHTML='';editCertN=0;
+  (s.certs||[]).forEach(c=>{
+    addCert('edit');const n=editCertN-1;
+    const b=document.getElementById(`cert-edit-${n}`);
+    b.querySelector('[data-f="giver"]').value=c.giver||'';
+    b.querySelector('[data-f="visitor"]').value=c.visitor||'';
+    const cEl=b.querySelector('[data-f="came"]');cEl.value=c.came?'1':'0';toggleCame(cEl,`edit-${n}`);
+    const bEl=b.querySelector('[data-f="bought"]');if(bEl){bEl.value=c.bought?'1':'0';toggleBought(bEl,`edit-${n}`);}
+    const aEl=b.querySelector('[data-f="amount"]');if(aEl)aEl.value=c.amount||0;
+  });
+  document.getElementById('edit-error').style.display='none';
+  document.getElementById('edit-modal').style.display='flex';
+}
+
+async function updateShift(){
+  const btn=document.getElementById('update-btn');
+  btn.disabled=true;btn.textContent='Сохранение...';
+  const {error}=await sb.from('shifts').update({
+    date:document.getElementById('e-date').value,
+    studio:document.getElementById('e-studio').value,
+    admin:document.getElementById('e-admin').value,
+    new_sales:+document.getElementById('e-new').value||0,
+    renew:+document.getElementById('e-renew').value||0,
+    restore:+document.getElementById('e-restore').value||0,
+    certs:getCerts('edit-certs')
+  }).eq('id',editingId);
+  btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Сохранить';
+  if(error){showErr('edit-error','Ошибка: '+error.message);return;}
+  closeModal('edit-modal');await loadShifts();
+}
+
+async function deleteShift(){
+  if(!confirm('Удалить эту смену?'))return;
+  await sb.from('shifts').delete().eq('id',editingId);
+  closeModal('edit-modal');await loadShifts();
+}
+
+function checkPin(){
+  const v=document.getElementById('pin-input').value;
+  if(v.length<4)return;
+  if(v===PIN){closeModal('pin-modal');if(pinCb){pinCb();pinCb=null;}}
+  else{document.getElementById('pin-error').style.display='block';document.getElementById('pin-input').value='';}
+}
+
 function closeModal(id){document.getElementById(id).style.display='none';}
 function showErr(id,msg){const el=document.getElementById(id);el.textContent=msg;el.style.display='block';}
-function switchTab(t){document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['dashboard','shifts','salary'][i]===t));document.querySelectorAll('.section').forEach(el=>el.classList.remove('active'));document.getElementById('tab-'+t).classList.add('active');if(t==='shifts')renderShifts();if(t==='salary')renderSalary();}
+
+function switchTab(t){
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['dashboard','shifts','salary'][i]===t));
+  document.querySelectorAll('.section').forEach(el=>el.classList.remove('active'));
+  document.getElementById('tab-'+t).classList.add('active');
+  if(t==='shifts')renderShifts();
+  if(t==='salary')renderSalary();
+}
+
 document.getElementById('month-label').textContent=monthLabel();
-load();renderAll();
+loadShifts();
 </script>
 </body>
 </html>
