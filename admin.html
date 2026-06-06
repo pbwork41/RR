@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Управленческая панель — Lady Stretch</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#ffffff;--bg2:#f8f9fa;--bg3:#f1f3f5;
+  --text:#1a1a2e;--text2:#555570;--text3:#888899;
+  --border:#e0e0eb;--border2:#c8c8d8;
+  --green:#16a34a;--green-bg:#f0fdf4;--green-text:#15803d;
+  --amber:#d97706;--amber-bg:#fffbeb;--amber-text:#b45309;
+  --red:#dc2626;--red-bg:#fef2f2;--red-text:#b91c1c;
+  --purple:#7c3aed;--purple-bg:#f5f3ff;--purple-text:#6d28d9;
+  --radius:10px;--radius-sm:6px;--shadow:0 1px 3px rgba(0,0,0,.08);
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:var(--bg3);color:var(--text);font-size:15px;min-height:100vh}
+.app{max-width:960px;margin:0 auto;padding:1rem}
+.topbar{background:var(--purple);color:#fff;padding:14px 20px;border-radius:var(--radius);margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center}
+.topbar-title{font-size:17px;font-weight:600}
+.topbar-sub{font-size:12px;opacity:.8;margin-top:2px}
+.tabs{display:flex;gap:4px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:4px;margin-bottom:1rem}
+.tab{flex:1;padding:8px 12px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:none;color:var(--text2);border-radius:var(--radius-sm);transition:all .15s;font-family:inherit}
+.tab.active{background:var(--purple);color:#fff}
+.section{display:none}.section.active{display:block}
+.card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;margin-bottom:1rem;box-shadow:var(--shadow)}
+.card-muted{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;margin-bottom:1rem}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media(max-width:640px){.grid2{grid-template-columns:1fr}.grid3{grid-template-columns:1fr 1fr}.grid4{grid-template-columns:1fr 1fr}}
+.metric{background:var(--bg2);border-radius:var(--radius-sm);padding:.75rem 1rem;border:1px solid var(--border)}
+.metric-label{font-size:11px;color:var(--text3);margin-bottom:3px;text-transform:uppercase;letter-spacing:.03em}
+.metric-val{font-size:20px;font-weight:700;color:var(--text)}
+.metric-sub{font-size:11px;color:var(--text3);margin-top:3px}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600}
+.badge-green{background:var(--green-bg);color:var(--green-text)}
+.badge-amber{background:var(--amber-bg);color:var(--amber-text)}
+.badge-red{background:var(--red-bg);color:var(--red-text)}
+.progress-wrap{height:8px;background:var(--bg3);border-radius:4px;overflow:hidden;margin-top:8px}
+.progress-fill{height:100%;border-radius:4px;transition:width .4s ease}
+label{display:block;font-size:12px;color:var(--text2);margin-bottom:4px;font-weight:500}
+input,select{width:100%;padding:8px 12px;font-size:14px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);font-family:inherit;transition:border .15s}
+input:focus,select:focus{outline:none;border-color:var(--purple)}
+.form-row{margin-bottom:10px}
+.btn{padding:9px 18px;font-size:14px;font-weight:500;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);cursor:pointer;font-family:inherit;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{background:var(--bg2)}
+.btn-primary{background:var(--purple);color:#fff;border-color:var(--purple)}
+.btn-primary:hover{background:#6d28d9}
+.btn-sm{padding:5px 12px;font-size:12px}
+.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
+.section-title{font-size:15px;font-weight:600;margin-bottom:12px;color:var(--text)}
+.studio-header{font-size:14px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.pill-imp{background:#eff6ff;color:#1d4ed8;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500}
+.pill-mec{background:#f5f3ff;color:#6d28d9;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500}
+.kpi-table{width:100%;border-collapse:collapse;font-size:13px}
+.kpi-table th{background:var(--bg2);padding:8px 12px;text-align:left;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.03em;border-bottom:1px solid var(--border)}
+.kpi-table td{padding:10px 12px;border-bottom:1px solid var(--border)}
+.kpi-table tr:last-child td{border-bottom:none}
+.delta-pos{color:var(--green-text);font-weight:600}
+.delta-neg{color:var(--red-text);font-weight:600}
+.delta-neu{color:var(--text3)}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:1000;padding:1rem}
+.modal{background:var(--bg);border-radius:var(--radius);padding:1.5rem;width:min(460px,100%);max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem}
+.modal-title{font-size:17px;font-weight:700}
+.alert{padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;margin-bottom:12px}
+.alert-red{background:var(--red-bg);color:var(--red-text);border:1px solid #fca5a5}
+.alert-green{background:var(--green-bg);color:var(--green-text);border:1px solid #86efac}
+.pin-input{text-align:center;font-size:28px;letter-spacing:10px;font-weight:700}
+/* Funnel */
+.funnel-wrap{display:flex;flex-direction:column;gap:0}
+.funnel-stage{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:2px}
+.funnel-label{flex:1;font-size:13px;color:var(--text2)}
+.funnel-val{font-size:15px;font-weight:700;color:var(--text);min-width:40px;text-align:right}
+.funnel-cv{font-size:12px;min-width:50px;text-align:right;font-weight:600}
+.funnel-arrow{text-align:center;color:var(--text3);font-size:13px;padding:2px 0}
+.cv-good{color:var(--green-text)}
+.cv-mid{color:var(--amber-text)}
+.cv-bad{color:var(--red-text)}
+</style>
+</head>
+<body>
+
+<!-- PIN SCREEN -->
+<div id="pin-screen" style="position:fixed;inset:0;background:var(--bg3);display:flex;align-items:center;justify-content:center;z-index:999">
+  <div class="card" style="width:min(360px,90vw);text-align:center;padding:2rem">
+    <div style="font-size:32px;margin-bottom:12px">🔐</div>
+    <div style="font-size:18px;font-weight:700;margin-bottom:6px">Управленческая панель</div>
+    <div style="font-size:13px;color:var(--text3);margin-bottom:24px">Lady Stretch · Только для руководителей</div>
+    <div class="form-row"><input type="password" class="pin-input" id="pin-field" maxlength="4" placeholder="••••" oninput="checkPin()"></div>
+    <div id="pin-err" class="alert alert-red" style="display:none;margin-top:8px">Неверный пин-код</div>
+  </div>
+</div>
+
+<div id="main-app" style="display:none">
+<div class="app">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">👑 Управленческая панель</div>
+      <div class="topbar-sub" id="month-label"></div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <span style="font-size:11px;opacity:.8" id="sync-label">загрузка...</span>
+      <button class="btn btn-sm" style="background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.3)" onclick="openPlanModal()">✏️ Поставить план</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('overview')">📊 Сводка</button>
+    <button class="tab" onclick="switchTab('studios')">🏢 По студиям</button>
+    <button class="tab" onclick="switchTab('admins')">👤 По администраторам</button>
+    <button class="tab" onclick="switchTab('plans')">🎯 Планы</button>
+  </div>
+
+  <div id="tab-overview" class="section active"><div id="overview-content"></div></div>
+  <div id="tab-studios" class="section"><div id="studios-content"></div></div>
+  <div id="tab-admins" class="section"><div id="admins-content"></div></div>
+  <div id="tab-plans" class="section"><div id="plans-content"></div></div>
+</div>
+</div>
+
+<!-- PLAN MODAL -->
+<div id="plan-modal" style="display:none" class="modal-bg">
+<div class="modal">
+  <div class="modal-header">
+    <div class="modal-title">Поставить план на месяц</div>
+    <button class="btn btn-sm" onclick="closeModal()">✕</button>
+  </div>
+  <div class="form-row"><label>Месяц</label><input type="month" id="plan-month"></div>
+  <div class="divider"></div>
+
+  <div style="font-size:13px;font-weight:600;margin-bottom:10px">🏢 Империал</div>
+  <div class="grid2">
+    <div class="form-row"><label>Выручка, ₽</label><input type="number" id="imp-revenue" placeholder="1800000"></div>
+    <div class="form-row"><label>Новые абонементы, шт</label><input type="number" id="imp-new" placeholder="54"></div>
+  </div>
+  <div class="grid2">
+    <div class="form-row"><label>Лиды, шт</label><input type="number" id="imp-leads" placeholder="150"></div>
+    <div class="form-row"><label>Записи на пробное, шт</label><input type="number" id="imp-bookings" placeholder="135"></div>
+  </div>
+  <div class="grid2">
+    <div class="form-row"><label>Доходимость, чел</label><input type="number" id="imp-visits" placeholder="95"></div>
+    <div class="form-row"><label>Продления, шт</label><input type="number" id="imp-renewals" placeholder="10"></div>
+  </div>
+  <div class="grid3">
+    <div class="form-row"><label>CV лид→запись, %</label><input type="number" id="imp-cv1" placeholder="65"></div>
+    <div class="form-row"><label>CV запись→приход, %</label><input type="number" id="imp-cv2" placeholder="75"></div>
+    <div class="form-row"><label>CV приход→продажа, %</label><input type="number" id="imp-cv3" placeholder="55"></div>
+  </div>
+
+  <div class="divider"></div>
+  <div style="font-size:13px;font-weight:600;margin-bottom:10px">🏢 Мечта</div>
+  <div class="grid2">
+    <div class="form-row"><label>Выручка, ₽</label><input type="number" id="mec-revenue" placeholder="1200000"></div>
+    <div class="form-row"><label>Новые абонементы, шт</label><input type="number" id="mec-new" placeholder="34"></div>
+  </div>
+  <div class="grid2">
+    <div class="form-row"><label>Лиды, шт</label><input type="number" id="mec-leads" placeholder="100"></div>
+    <div class="form-row"><label>Записи на пробное, шт</label><input type="number" id="mec-bookings" placeholder="70"></div>
+  </div>
+  <div class="grid2">
+    <div class="form-row"><label>Доходимость, чел</label><input type="number" id="mec-visits" placeholder="45"></div>
+    <div class="form-row"><label>Продления, шт</label><input type="number" id="mec-renewals" placeholder="12"></div>
+  </div>
+  <div class="grid3">
+    <div class="form-row"><label>CV лид→запись, %</label><input type="number" id="mec-cv1" placeholder="60"></div>
+    <div class="form-row"><label>CV запись→приход, %</label><input type="number" id="mec-cv2" placeholder="70"></div>
+    <div class="form-row"><label>CV приход→продажа, %</label><input type="number" id="mec-cv3" placeholder="50"></div>
+  </div>
+
+  <div class="divider"></div>
+  <div id="plan-msg" style="display:none" class="alert alert-green">✓ План сохранён</div>
+  <div style="display:flex;gap:8px;justify-content:flex-end">
+    <button class="btn" onclick="closeModal()">Отмена</button>
+    <button class="btn btn-primary" onclick="savePlan()">💾 Сохранить план</button>
+  </div>
+</div>
+</div>
+
+<script>
+const PIN = '8387';
+const SUPABASE_URL = 'https://nhiyoilfegmmvdtqsgkm.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oaXlvaWxmZWdtbXZkdHFzZ2ttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2MDc0MTMsImV4cCI6MjA5NjE4MzQxM30.VL7a64jalOvhGC3yLMdeR-qR1Jlffht-uYcYmwDn7oQ';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let shifts = [];
+let plans = {};
+
+function fmt(n){return Math.round(n||0).toLocaleString('ru-RU')}
+function today(){return new Date().toISOString().slice(0,10)}
+function monthKey(){return today().slice(0,7)}
+function monthLabel(){return new Date().toLocaleString('ru-RU',{month:'long',year:'numeric'})}
+
+function checkPin(){
+  const v = document.getElementById('pin-field').value;
+  if(v.length < 4) return;
+  if(v === PIN){
+    document.getElementById('pin-screen').style.display='none';
+    document.getElementById('main-app').style.display='block';
+    init();
+  } else {
+    document.getElementById('pin-err').style.display='block';
+    document.getElementById('pin-field').value='';
+  }
+}
+
+async function init(){
+  document.getElementById('month-label').textContent = monthLabel();
+  await loadData();
+}
+
+async function loadData(){
+  document.getElementById('sync-label').textContent = 'загрузка...';
+  const m = monthKey();
+  const {data} = await sb.from('shifts').select('*').gte('date',m+'-01').lte('date',m+'-31');
+  shifts = (data||[]).map(r=>({
+    id:r.id, date:r.date, studio:r.studio, admin:r.admin,
+    newSales:+r.new_sales||0, renew:+r.renew||0, restore:+r.restore||0,
+    certs:r.certs||[],
+    leads:+r.leads||0, bookings:+r.bookings||0, visits:+r.visits||0
+  }));
+  try{plans=JSON.parse(localStorage.getItem('ls_plans_v2')||'{}');}catch(e){plans={};}
+  document.getElementById('sync-label').textContent = 'обновлено ✓';
+  renderAll();
+}
+
+function getStudioFact(studio){
+  const ss = shifts.filter(s=>s.studio===studio);
+  const revenue = ss.reduce((a,s)=>a+s.newSales+s.renew+s.restore,0);
+  const leads = ss.reduce((a,s)=>a+s.leads,0);
+  const bookings = ss.reduce((a,s)=>a+s.bookings,0);
+  const visits = ss.reduce((a,s)=>a+s.visits,0);
+  const newSalesCount = ss.filter(s=>s.newSales>0).length;
+  const renewals = ss.filter(s=>s.renew>0).length;
+  const n = ss.length;
+  const rr = n>0?Math.round(revenue/n*30):0;
+  const cv1 = leads>0?Math.round(bookings/leads*100):null;
+  const cv2 = bookings>0?Math.round(visits/bookings*100):null;
+  const cv3 = visits>0?Math.round(newSalesCount/visits*100):null;
+  return{revenue, leads, bookings, visits, newSalesCount, renewals, rr, cv1, cv2, cv3, n};
+}
+
+function getPlan(studio){
+  return plans[monthKey()+'_'+studio]||{};
+}
+
+function badge(p){
+  if(p===null||p===undefined)return'<span class="badge" style="background:var(--bg2);color:var(--text3)">нет данных</span>';
+  if(p>=100)return`<span class="badge badge-green">✓ В плане</span>`;
+  if(p>=85)return`<span class="badge badge-amber">⚠ Нужно ускориться</span>`;
+  return`<span class="badge badge-red">✗ Отстаём</span>`;
+}
+
+function cvClass(val, target){
+  if(!target||val===null)return'delta-neu';
+  if(val>=target)return'cv-good delta-pos';
+  if(val>=target*0.85)return'cv-mid';
+  return'cv-bad delta-neg';
+}
+
+function funnelHtml(fact, plan){
+  const stages=[
+    {label:'Лиды', fact:fact.leads, plan:plan.leads||0},
+    {label:'Записи на пробное', fact:fact.bookings, plan:plan.bookings||0, cv:fact.cv1, cvPlan:plan.cv1||0, cvLabel:'CV лид→запись'},
+    {label:'Доходимость', fact:fact.visits, plan:plan.visits||0, cv:fact.cv2, cvPlan:plan.cv2||0, cvLabel:'CV запись→приход'},
+    {label:'Новые продажи', fact:fact.newSalesCount, plan:plan.new_clients||0, cv:fact.cv3, cvPlan:plan.cv3||0, cvLabel:'CV приход→продажа'},
+  ];
+
+  return `<div class="funnel-wrap">
+    ${stages.map((s,i)=>`
+      ${i>0?`<div class="funnel-arrow">↓ ${s.cv!==null?`<span class="${cvClass(s.cv,s.cvPlan)}" style="font-size:12px;font-weight:600">${s.cv}%${s.cvPlan?` (план ${s.cvPlan}%)`:''}</span>`:'нет данных'}</div>`:''}
+      <div class="funnel-stage">
+        <span class="funnel-label">${s.label}</span>
+        <span class="funnel-val">${s.fact}</span>
+        ${s.plan?`<span style="font-size:11px;color:var(--text3);min-width:50px;text-align:right">план ${s.plan}</span>`:''}
+      </div>
+    `).join('')}
+  </div>`;
+}
+
+function renderAll(){renderOverview();renderStudios();renderAdmins();renderPlans();}
+
+function renderOverview(){
+  const studios=['Империал','Мечта'];
+  const totalFact = shifts.reduce((a,s)=>a+s.newSales+s.renew+s.restore,0);
+  const impPlan = getPlan('Империал');
+  const mecPlan = getPlan('Мечта');
+  const totalPlan = (impPlan.revenue||0)+(mecPlan.revenue||0);
+
+  let html = `<div class="grid3" style="margin-bottom:12px">
+    <div class="metric"><div class="metric-label">Факт выручки (обе студии)</div><div class="metric-val">${fmt(totalFact)} ₽</div></div>
+    <div class="metric"><div class="metric-label">План (обе студии)</div><div class="metric-val">${totalPlan?fmt(totalPlan)+' ₽':'—'}</div></div>
+    <div class="metric"><div class="metric-label">Смен внесено</div><div class="metric-val">${shifts.length}</div></div>
+  </div>`;
+
+  studios.forEach(st=>{
+    const fact = getStudioFact(st);
+    const plan = getPlan(st);
+    const rrPct = plan.revenue>0?Math.round(fact.rr/plan.revenue*100):null;
+    const factPct = plan.revenue>0?Math.round(fact.revenue/plan.revenue*100):null;
+    const fill = Math.min(factPct||0,100);
+    const color = rrPct>=100?'var(--green)':rrPct>=85?'var(--amber)':'var(--red)';
+    const pill = st==='Империал'?'pill-imp':'pill-mec';
+
+    html+=`<div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <span class="studio-header" style="margin:0"><span class="${pill}">${st}</span></span>
+        ${plan.revenue?badge(rrPct):'<span class="badge" style="background:var(--bg2);color:var(--text3)">План не задан</span>'}
+      </div>
+      <div class="grid4" style="margin-bottom:12px">
+        <div class="metric"><div class="metric-label">Факт</div><div class="metric-val" style="font-size:15px">${fmt(fact.revenue)} ₽</div></div>
+        <div class="metric"><div class="metric-label">Ран рейт</div><div class="metric-val" style="font-size:15px">${fmt(fact.rr)} ₽</div></div>
+        <div class="metric"><div class="metric-label">% плана</div><div class="metric-val" style="font-size:15px">${factPct!==null?factPct+'%':'—'}</div></div>
+        <div class="metric"><div class="metric-label">Смен</div><div class="metric-val" style="font-size:15px">${fact.n}</div></div>
+      </div>
+      ${plan.revenue?`<div class="progress-wrap"><div class="progress-fill" style="width:${fill}%;background:${color}"></div></div>
+      <div style="display:flex;justify-content:space-between;margin-top:5px;font-size:11px;color:var(--text3)"><span>Факт: ${factPct}%</span><span>План: ${fmt(plan.revenue)} ₽</span></div>`:''}
+      ${fact.leads>0?`<div class="divider"></div>
+        <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Воронка конверсий</div>
+        ${funnelHtml(fact, plan)}`:'<div style="margin-top:10px;font-size:12px;color:var(--text3)">Данные по воронке появятся после внесения смен с лидами</div>'}
+    </div>`;
+  });
+
+  document.getElementById('overview-content').innerHTML=html;
+}
+
+function renderStudios(){
+  const studios=['Империал','Мечта'];
+  let html='';
+  studios.forEach(st=>{
+    const fact = getStudioFact(st);
+    const plan = getPlan(st);
+    const pill = st==='Империал'?'pill-imp':'pill-mec';
+
+    const kpis=[
+      {label:'Выручка', fact:fmt(fact.revenue)+' ₽', plan:plan.revenue?fmt(plan.revenue)+' ₽':'—', pv:plan.revenue?Math.round(fact.revenue/plan.revenue*100):null},
+      {label:'Ран рейт', fact:fmt(fact.rr)+' ₽', plan:plan.revenue?fmt(plan.revenue)+' ₽':'—', pv:plan.revenue?Math.round(fact.rr/plan.revenue*100):null},
+      {label:'Лиды', fact:fact.leads+' шт', plan:plan.leads?plan.leads+' шт':'—', pv:plan.leads?Math.round(fact.leads/plan.leads*100):null},
+      {label:'Записи на пробное', fact:fact.bookings+' шт', plan:plan.bookings?plan.bookings+' шт':'—', pv:plan.bookings?Math.round(fact.bookings/plan.bookings*100):null},
+      {label:'Доходимость', fact:fact.visits+' чел', plan:plan.visits?plan.visits+' чел':'—', pv:plan.visits?Math.round(fact.visits/plan.visits*100):null},
+      {label:'Новые абонементы', fact:fact.newSalesCount+' шт', plan:plan.new_clients?plan.new_clients+' шт':'—', pv:plan.new_clients?Math.round(fact.newSalesCount/plan.new_clients*100):null},
+      {label:'Продления', fact:fact.renewals+' шт', plan:plan.renewals?plan.renewals+' шт':'—', pv:plan.renewals?Math.round(fact.renewals/plan.renewals*100):null},
+      {label:'CV лид→запись', fact:fact.cv1!==null?fact.cv1+'%':'—', plan:plan.cv1?plan.cv1+'%':'—', pv:plan.cv1&&fact.cv1!==null?Math.round(fact.cv1/plan.cv1*100):null, isConv:true},
+      {label:'CV запись→приход', fact:fact.cv2!==null?fact.cv2+'%':'—', plan:plan.cv2?plan.cv2+'%':'—', pv:plan.cv2&&fact.cv2!==null?Math.round(fact.cv2/plan.cv2*100):null, isConv:true},
+      {label:'CV приход→продажа', fact:fact.cv3!==null?fact.cv3+'%':'—', plan:plan.cv3?plan.cv3+'%':'—', pv:plan.cv3&&fact.cv3!==null?Math.round(fact.cv3/plan.cv3*100):null, isConv:true},
+    ];
+
+    html+=`<div class="card">
+      <div class="studio-header"><span class="${pill}">${st}</span> — детализация KPI</div>
+      <table class="kpi-table">
+        <thead><tr><th>Показатель</th><th>Факт</th><th>План</th><th>%</th><th>Статус</th></tr></thead>
+        <tbody>
+          ${kpis.map(k=>{
+            const cls=k.pv===null?'delta-neu':k.pv>=100?'delta-pos':k.pv>=85?'delta-neu':'delta-neg';
+            return`<tr${k.isConv?' style="background:var(--bg2)"':''}>
+              <td>${k.isConv?'<span style="color:var(--text3);font-size:11px">⟳</span> ':''}<b>${k.label}</b></td>
+              <td><b>${k.fact}</b></td><td>${k.plan}</td>
+              <td class="${cls}">${k.pv!==null?k.pv+'%':'—'}</td>
+              <td>${k.pv!==null?badge(k.pv):'<span style="color:var(--text3);font-size:12px">нет плана</span>'}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+      ${plan.revenue?`<div class="divider"></div>
+      <div style="font-size:12px;color:var(--text3)">
+        Нужно в день: <b>${fmt(plan.revenue/30)} ₽</b> · 
+        Отставание: <b>${fmt(Math.max(0,plan.revenue-fact.revenue))} ₽</b>
+      </div>`:''}
+    </div>`;
+  });
+  document.getElementById('studios-content').innerHTML=html;
+}
+
+function renderAdmins(){
+  const admins=[...new Set(shifts.map(s=>s.admin))].filter(Boolean).sort();
+  if(!admins.length){document.getElementById('admins-content').innerHTML='<div style="color:var(--text3);padding:2rem;text-align:center">Нет данных за этот месяц</div>';return;}
+
+  let html='<div class="card"><div class="section-title">Рейтинг администраторов</div>';
+  html+='<table class="kpi-table"><thead><tr><th>Администратор</th><th>Студия</th><th>Смен</th><th>Выручка</th><th>Лиды</th><th>Приход</th><th>CV приход→продажа</th></tr></thead><tbody>';
+
+  const adminData = admins.map(admin=>{
+    const ss=shifts.filter(s=>s.admin===admin);
+    const studio=ss[0]?.studio||'—';
+    const revenue=ss.reduce((a,s)=>a+s.newSales+s.renew+s.restore,0);
+    const leads=ss.reduce((a,s)=>a+s.leads,0);
+    const visits=ss.reduce((a,s)=>a+s.visits,0);
+    const sales=ss.filter(s=>s.newSales>0).length;
+    const cv3=visits>0?Math.round(sales/visits*100):null;
+    return{admin,studio,n:ss.length,revenue,leads,visits,sales,cv3};
+  }).sort((a,b)=>b.revenue-a.revenue);
+
+  adminData.forEach((d,i)=>{
+    const pill=d.studio==='Империал'?'pill-imp':'pill-mec';
+    const cvCls=d.cv3===null?'delta-neu':d.cv3>=55?'delta-pos':d.cv3>=40?'delta-neu':'delta-neg';
+    html+=`<tr>
+      <td><b>${i+1}. ${d.admin}</b></td>
+      <td><span class="${pill}">${d.studio}</span></td>
+      <td>${d.n}</td>
+      <td><b>${fmt(d.revenue)} ₽</b></td>
+      <td>${d.leads||'—'}</td>
+      <td>${d.visits||'—'}</td>
+      <td class="${cvCls}">${d.cv3!==null?d.cv3+'%':'—'}</td>
+    </tr>`;
+  });
+  html+='</tbody></table></div>';
+
+  // Certs
+  const allCerts=shifts.flatMap(s=>(s.certs||[]).map(c=>({...c,admin:s.admin})));
+  if(allCerts.length){
+    html+=`<div class="card"><div class="section-title">Реферальные сертификаты</div>
+      <table class="kpi-table"><thead><tr><th>Администратор</th><th>Кто дал</th><th>Кто пришёл</th><th>Пришёл</th><th>Купил</th><th>Сумма</th></tr></thead><tbody>
+      ${allCerts.map(c=>`<tr><td>${c.admin}</td><td>${c.giver||'—'}</td><td>${c.visitor||'—'}</td><td>${c.came?'✅':'❌'}</td><td>${c.bought?'✅':'❌'}</td><td>${c.bought?fmt(c.amount)+' ₽':'—'}</td></tr>`).join('')}
+      </tbody></table></div>`;
+  }
+
+  document.getElementById('admins-content').innerHTML=html;
+}
+
+function renderPlans(){
+  const m=monthKey();
+  const studios=['Империал','Мечта'];
+  let html=`<div class="card-muted" style="margin-bottom:12px">
+    <div style="font-size:13px;color:var(--text2);margin-bottom:8px">Планы на <b>${monthLabel()}</b></div>
+    <button class="btn btn-primary btn-sm" onclick="openPlanModal()">✏️ Изменить планы</button>
+  </div>`;
+
+  studios.forEach(st=>{
+    const plan=getPlan(st);
+    const pill=st==='Империал'?'pill-imp':'pill-mec';
+    if(!plan.revenue){html+=`<div class="card"><div class="studio-header"><span class="${pill}">${st}</span></div><div style="color:var(--text3);font-size:13px">Планы не заданы.</div></div>`;return;}
+    html+=`<div class="card">
+      <div class="studio-header"><span class="${pill}">${st}</span></div>
+      <div class="grid3" style="margin-bottom:10px">
+        <div class="metric"><div class="metric-label">Выручка</div><div class="metric-val">${fmt(plan.revenue)} ₽</div><div class="metric-sub">${fmt(plan.revenue/30)} ₽/день</div></div>
+        <div class="metric"><div class="metric-label">Новые абонементы</div><div class="metric-val">${plan.new_clients||'—'}</div></div>
+        <div class="metric"><div class="metric-label">Продления</div><div class="metric-val">${plan.renewals||'—'}</div></div>
+      </div>
+      <div class="grid3" style="margin-bottom:10px">
+        <div class="metric"><div class="metric-label">Лиды</div><div class="metric-val">${plan.leads||'—'}</div></div>
+        <div class="metric"><div class="metric-label">Записи</div><div class="metric-val">${plan.bookings||'—'}</div></div>
+        <div class="metric"><div class="metric-label">Доходимость</div><div class="metric-val">${plan.visits||'—'}</div></div>
+      </div>
+      <div class="grid3">
+        <div class="metric"><div class="metric-label">CV лид→запись</div><div class="metric-val">${plan.cv1||'—'}${plan.cv1?'%':''}</div></div>
+        <div class="metric"><div class="metric-label">CV запись→приход</div><div class="metric-val">${plan.cv2||'—'}${plan.cv2?'%':''}</div></div>
+        <div class="metric"><div class="metric-label">CV приход→продажа</div><div class="metric-val">${plan.cv3||'—'}${plan.cv3?'%':''}</div></div>
+      </div>
+    </div>`;
+  });
+  document.getElementById('plans-content').innerHTML=html;
+}
+
+function openPlanModal(){
+  const m=monthKey();
+  document.getElementById('plan-month').value=m;
+  ['Империал','Мечта'].forEach(st=>{
+    const plan=getPlan(st);
+    const pfx=st==='Империал'?'imp':'mec';
+    document.getElementById(pfx+'-revenue').value=plan.revenue||'';
+    document.getElementById(pfx+'-new').value=plan.new_clients||'';
+    document.getElementById(pfx+'-leads').value=plan.leads||'';
+    document.getElementById(pfx+'-bookings').value=plan.bookings||'';
+    document.getElementById(pfx+'-visits').value=plan.visits||'';
+    document.getElementById(pfx+'-renewals').value=plan.renewals||'';
+    document.getElementById(pfx+'-cv1').value=plan.cv1||'';
+    document.getElementById(pfx+'-cv2').value=plan.cv2||'';
+    document.getElementById(pfx+'-cv3').value=plan.cv3||'';
+  });
+  document.getElementById('plan-msg').style.display='none';
+  document.getElementById('plan-modal').style.display='flex';
+}
+
+function savePlan(){
+  const m=document.getElementById('plan-month').value||monthKey();
+  ['Империал','Мечта'].forEach(st=>{
+    const pfx=st==='Империал'?'imp':'mec';
+    plans[m+'_'+st]={
+      revenue:+document.getElementById(pfx+'-revenue').value||0,
+      new_clients:+document.getElementById(pfx+'-new').value||0,
+      leads:+document.getElementById(pfx+'-leads').value||0,
+      bookings:+document.getElementById(pfx+'-bookings').value||0,
+      visits:+document.getElementById(pfx+'-visits').value||0,
+      renewals:+document.getElementById(pfx+'-renewals').value||0,
+      cv1:+document.getElementById(pfx+'-cv1').value||0,
+      cv2:+document.getElementById(pfx+'-cv2').value||0,
+      cv3:+document.getElementById(pfx+'-cv3').value||0,
+    };
+  });
+  localStorage.setItem('ls_plans_v2',JSON.stringify(plans));
+  document.getElementById('plan-msg').style.display='block';
+  setTimeout(()=>{closeModal();renderAll();},900);
+}
+
+function closeModal(){document.getElementById('plan-modal').style.display='none';}
+
+function switchTab(t){
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['overview','studios','admins','plans'][i]===t));
+  document.querySelectorAll('.section').forEach(el=>el.classList.remove('active'));
+  document.getElementById('tab-'+t).classList.add('active');
+}
+
+document.getElementById('pin-field').focus();
+</script>
+</body>
+</html>
