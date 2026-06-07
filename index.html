@@ -486,7 +486,7 @@ function renderShifts(){
         ${s.newSales>0?`<span class="chip">Новые: ${fmt(s.newSales)} ₽</span>`:''}
         ${s.renew>0?`<span class="chip">Продления: ${fmt(s.renew)} ₽</span>`:''}
         ${s.restore>0?`<span class="chip">Восст.: ${fmt(s.restore)} ₽</span>`:''}
-        <span class="chip chip-blue">ЗП: ${fmt(sal.total)} ₽</span>
+
       </div>
       <div class="chips">
         ${leads>0?`<span class="chip chip-green">Лиды: ${leads}</span>`:''}
@@ -873,7 +873,7 @@ function renderProfileHome(){
           <span style="color:var(--text3);min-width:80px">${s.date}</span>
           <span class="tag ${cls}" style="font-size:11px">${s.studio}</span>
           <span style="font-weight:600">${fmt(cash)} ₽</span>
-          <span style="color:var(--blue-text);font-weight:600">${fmt(sal.total)} ₽ ЗП</span>
+
         </div>`;
       }).join(''):'<div style="color:var(--text3);text-align:center;padding:1rem">Смен ещё нет</div>'}
     </div>`;
