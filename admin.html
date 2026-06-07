@@ -130,6 +130,7 @@ textarea{resize:vertical;min-height:70px}
     <button class="tab" onclick="switchTab('studios')">🏢 Студии</button>
     <button class="tab" onclick="switchTab('admins')">👤 Администраторы</button>
     <button class="tab" onclick="switchTab('marathons')">🏆 Марафоны</button>
+    <button class="tab" onclick="switchTab('staff')">👥 Сотрудники</button>
     <button class="tab" onclick="switchTab('plans')">🎯 Планы</button>
   </div>
 
@@ -138,6 +139,7 @@ textarea{resize:vertical;min-height:70px}
   <div id="tab-studios" class="section"><div id="studios-content"></div></div>
   <div id="tab-admins" class="section"><div id="admins-content"></div></div>
   <div id="tab-marathons" class="section"><div id="marathons-content"></div></div>
+  <div id="tab-staff" class="section"><div id="staff-content"></div></div>
   <div id="tab-plans" class="section"><div id="plans-content"></div></div>
 </div>
 </div>
@@ -215,6 +217,7 @@ textarea{resize:vertical;min-height:70px}
       <option value="visits">Доходимость, чел</option>
       <option value="massage">Записей на массаж, шт</option>
       <option value="reviews">Отзывов, шт</option>
+      <option value="restore">Возврат клиентов, шт</option>
       <option value="conv_cv3">Конверсия приход→продажа, %</option>
     </select>
   </div>
@@ -713,10 +716,57 @@ async function deleteMarathon(id){
 
 function closeModal(id){document.getElementById(id).style.display='none';}
 
+async function renderStaff(){
+  const {data}=await sb.from('profiles').select('*').order('created_at',{ascending:false});
+  const profiles=data||[];
+  if(!profiles.length){document.getElementById('staff-content').innerHTML='<div style="color:var(--text3);padding:2rem;text-align:center">Нет зарегистрированных сотрудников</div>';return;}
+  
+  const active=profiles.filter(p=>p.active);
+  const pending=profiles.filter(p=>!p.active);
+  
+  let html='';
+  
+  if(pending.length){
+    html+=`<div class="card" style="border-color:var(--amber)">
+      <div style="font-size:14px;font-weight:600;color:var(--amber-text);margin-bottom:12px">⏳ Ожидают активации (${pending.length})</div>
+      ${pending.map(p=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
+        <div>
+          <div style="font-weight:600">${p.name}</div>
+          <div style="font-size:12px;color:var(--text3)">Зарегистрирован: ${p.created_at?p.created_at.slice(0,10):'—'}</div>
+        </div>
+        <button class="btn btn-sm btn-primary" onclick="toggleStaff(${p.id},true)">✓ Активировать</button>
+      </div>`).join('')}
+    </div>`;
+  }
+  
+  if(active.length){
+    html+=`<div class="card">
+      <div style="font-size:14px;font-weight:600;margin-bottom:12px">✅ Активные сотрудники (${active.length})</div>
+      ${active.map(p=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
+        <div>
+          <div style="font-weight:600">${p.name}</div>
+          <div style="font-size:12px;color:var(--text3)">С ${p.created_at?p.created_at.slice(0,10):'—'}</div>
+        </div>
+        <button class="btn btn-sm btn-danger" onclick="toggleStaff(${p.id},false)">Деактивировать</button>
+      </div>`).join('')}
+    </div>`;
+  }
+  
+  document.getElementById('staff-content').innerHTML=html;
+}
+
+async function toggleStaff(id,active){
+  const msg=active?'Активировать сотрудника?':'Деактивировать сотрудника? Он потеряет доступ.';
+  if(!confirm(msg))return;
+  await sb.from('profiles').update({active}).eq('id',id);
+  renderStaff();
+}
+
 function switchTab(t){
-  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['overview','mom','studios','admins','marathons','plans'][i]===t));
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['overview','mom','studios','admins','marathons','staff','plans'][i]===t));
   document.querySelectorAll('.section').forEach(el=>el.classList.remove('active'));
   document.getElementById('tab-'+t).classList.add('active');
+  if(t==='staff')renderStaff();
 }
 
 document.getElementById('pin-field').focus();
