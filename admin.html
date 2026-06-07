@@ -22,8 +22,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;ba
 .topbar{background:var(--purple);color:#fff;padding:14px 20px;border-radius:var(--radius);margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
 .topbar-title{font-size:17px;font-weight:600}
 .topbar-sub{font-size:12px;opacity:.8;margin-top:2px}
-.tabs{display:flex;gap:4px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:4px;margin-bottom:1rem;flex-wrap:wrap}
-.tab{flex:1;min-width:80px;padding:8px 10px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:none;color:var(--text2);border-radius:var(--radius-sm);transition:all .15s;font-family:inherit;white-space:nowrap}
+.tabs{display:flex;gap:4px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:4px;margin-bottom:1rem;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}
+.tab{flex:1;padding:8px 6px;font-size:12px;font-weight:500;cursor:pointer;border:none;background:none;color:var(--text2);border-radius:var(--radius-sm);transition:all .15s;font-family:inherit;white-space:nowrap;text-align:center}.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -4px;padding:0 4px}
 .tab.active{background:var(--purple);color:#fff}
 .section{display:none}.section.active{display:block}
 .card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;margin-bottom:1rem;box-shadow:var(--shadow)}
@@ -89,18 +89,13 @@ textarea{resize:vertical;min-height:70px}
 .marathon-prize{font-size:22px;font-weight:800;color:var(--amber-text)}
 .marathon-card.inactive .marathon-prize{color:var(--text3)}
 /* MoM */
-.mom-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
-.mom-row:last-child{border-bottom:none}
-.mom-label{flex:1;color:var(--text2)}
-.mom-cur{font-weight:700;min-width:90px;text-align:right;color:var(--purple-text)}
-.mom-prev{color:var(--text3);min-width:80px;text-align:right}
-.mom-delta{min-width:60px;text-align:right;font-size:12px;font-weight:600}
+/* mom styles removed - using inline */
 /* Admin progress row */
-.admin-progress-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
+.admin-progress-row{padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
 .admin-progress-row:last-child{border-bottom:none}
-.admin-progress-name{min-width:100px;font-weight:500}
-.admin-progress-bar{flex:1}
-.admin-progress-val{min-width:80px;text-align:right;font-size:12px;color:var(--text2)}
+.admin-progress-name{font-weight:500;margin-bottom:4px;font-size:13px}
+.admin-progress-bar{width:100%;margin:4px 0}
+.admin-progress-val{font-size:12px;color:var(--text2);margin-top:2px}
 .admin-done{color:var(--green-text);font-weight:700}
 </style>
 </head>
@@ -468,17 +463,13 @@ function renderMoM(){
     ];
     html+=`<div class="card">
       <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px"><span class="${pill}">${st}</span><span style="font-size:12px;color:var(--text3)">${monthLabel()} vs ${prevMonthLabel()}</span></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 60px;margin-bottom:4px">
-        <div style="font-size:11px;color:var(--text3);font-weight:600">Показатель</div>
-        <div style="font-size:11px;color:var(--purple-text);font-weight:600;text-align:right">Сейчас</div>
-        <div style="font-size:11px;color:var(--text3);font-weight:600;text-align:right">Прошлый</div>
-        <div style="font-size:11px;color:var(--text3);font-weight:600;text-align:right">%</div>
-      </div>
-      ${rows.map(r=>`<div class="mom-row">
-        <span class="mom-label">${r.label}</span>
-        <span class="mom-cur">${r.cur}</span>
-        <span class="mom-prev">${r.prev}</span>
-        <span class="mom-delta">${r.d||'—'}</span>
+      ${rows.map(r=>`<div style="padding:8px 0;border-bottom:1px solid var(--border)">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:4px;flex-wrap:wrap">
+          <span style="font-size:12px;color:var(--text2);flex:1;min-width:100px">${r.label}</span>
+          <span style="font-size:13px;font-weight:700;color:var(--purple-text)">${r.cur}</span>
+          <span style="font-size:12px;color:var(--text3);min-width:70px;text-align:right">${r.prev}</span>
+          <span style="min-width:50px;text-align:right;font-size:12px;font-weight:600">${r.d||'—'}</span>
+        </div>
       </div>`).join('')}
     </div>`;
   });
@@ -505,11 +496,16 @@ function renderStudios(){
     ];
     html+=`<div class="card">
       <div style="margin-bottom:12px"><span class="${pill}">${st}</span></div>
-      <table class="kpi-table"><thead><tr><th>Показатель</th><th>Факт</th><th>План</th><th>%</th><th>Статус</th></tr></thead>
-      <tbody>${kpis.map(k=>{
-        const cls=k.pv===null?'delta-neu':k.pv>=100?'delta-pos':k.pv>=85?'':' delta-neg';
-        return`<tr><td><b>${k.label}</b></td><td><b>${k.fact}</b></td><td>${k.plan}</td><td class="${cls}">${k.pv!==null?k.pv+'%':'—'}</td><td>${k.pv!==null?badge(k.pv):'<span style="color:var(--text3);font-size:12px">нет плана</span>'}</td></tr>`;
-      }).join('')}</tbody></table>
+      <div>${kpis.map(k=>{
+        const cls=k.pv===null?'delta-neu':k.pv>=100?'delta-pos':k.pv>=85?'':'delta-neg';
+        return`<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);gap:8px;flex-wrap:wrap">
+          <span style="font-size:13px;color:var(--text2);flex:1;min-width:120px">${k.label}</span>
+          <span style="font-size:13px;font-weight:700">${k.fact}</span>
+          <span style="font-size:12px;color:var(--text3);min-width:60px;text-align:right">${k.plan}</span>
+          <span class="${cls}" style="font-size:12px;min-width:36px;text-align:right">${k.pv!==null?k.pv+'%':'—'}</span>
+          <span style="min-width:90px;text-align:right">${k.pv!==null?badge(k.pv):'<span style=\'color:var(--text3);font-size:11px\'>нет плана</span>'}</span>
+        </div>`;
+      }).join('')}</div>
       ${plan.revenue?`<div class="divider"></div><div style="font-size:12px;color:var(--text3)">Нужно в день: <b>${fmt(plan.revenue/30)} ₽</b> · Отставание: <b>${fmt(Math.max(0,plan.revenue-fact.revenue))} ₽</b></div>`:''}
     </div>`;
   });
@@ -520,7 +516,7 @@ function renderAdmins(){
   const admins=[...new Set(shifts.map(s=>s.admin))].filter(Boolean).sort();
   if(!admins.length){document.getElementById('admins-content').innerHTML='<div style="color:var(--text3);padding:2rem;text-align:center">Нет данных</div>';return;}
   let html='<div class="card"><div class="section-title">Рейтинг администраторов</div>';
-  html+='<table class="kpi-table"><thead><tr><th>Администратор</th><th>Студия</th><th>Смен</th><th>Выручка</th><th>Записи</th><th>Массаж</th><th>Отзывы</th><th>CV→продажа</th></tr></thead><tbody>';
+  html+='<div class="table-wrap" style="min-width:0"><table class="kpi-table" style="min-width:560px"><thead><tr><th>Администратор</th><th>Студия</th><th>Смен</th><th>Выручка</th><th>Записи</th><th>Массаж</th><th>Отзывы</th><th>CV→продажа</th></tr></thead><tbody>';
   admins.map(admin=>{
     const ss=shifts.filter(s=>s.admin===admin);
     const st=getStats(ss);
@@ -569,12 +565,12 @@ function renderMarathons(){
         const ss=shifts.filter(s=>s.admin===admin);
         const prog=marathonProgress(m,ss);
         const barColor=prog.done?'var(--green)':prog.pct>=50?'var(--amber)':'var(--red)';
+        const valStr=m.condition_type==='revenue'?fmt(prog.val)+' ₽':String(prog.val);
+        const targetStr=m.condition_type==='revenue'?fmt(prog.target)+' ₽':String(prog.target);
         html+=`<div class="admin-progress-row">
-          <span class="admin-progress-name">${admin}</span>
-          <div class="admin-progress-bar">
-            <div class="progress-wrap-sm"><div class="progress-fill-sm" style="width:${prog.pct}%;background:${barColor}"></div></div>
-          </div>
-          <span class="admin-progress-val ${prog.done?'admin-done':''}">${prog.done?'✅ ':''} ${m.condition_type==='revenue'?fmt(prog.val)+' ₽':prog.val} / ${m.condition_type==='revenue'?fmt(prog.target)+' ₽':prog.target} (${prog.pct}%)</span>
+          <div class="admin-progress-name">${prog.done?'✅ ':''}<b>${admin}</b></div>
+          <div class="admin-progress-bar"><div class="progress-wrap-sm"><div class="progress-fill-sm" style="width:${prog.pct}%;background:${barColor}"></div></div></div>
+          <div class="admin-progress-val ${prog.done?'admin-done':''}">${valStr} / ${targetStr} · ${prog.pct}%</div>
         </div>`;
       });
       html+=`</div>`;

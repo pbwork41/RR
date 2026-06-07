@@ -22,8 +22,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;ba
 .topbar{background:var(--blue);color:#fff;padding:14px 20px;border-radius:var(--radius);margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center}
 .topbar-title{font-size:17px;font-weight:600}
 .topbar-sub{font-size:12px;opacity:.8;margin-top:2px}
-.tabs{display:flex;gap:4px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:4px;margin-bottom:1rem}
-.tab{flex:1;padding:8px 12px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:none;color:var(--text2);border-radius:var(--radius-sm);transition:all .15s;font-family:inherit}
+.tabs{display:flex;gap:4px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:4px;margin-bottom:1rem;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}
+.tab{flex:1;padding:8px 6px;font-size:12px;font-weight:500;cursor:pointer;border:none;background:none;color:var(--text2);border-radius:var(--radius-sm);transition:all .15s;font-family:inherit;white-space:nowrap;text-align:center}
 .tab.active{background:var(--blue);color:#fff}
 .section{display:none}.section.active{display:block}
 .card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;margin-bottom:1rem;box-shadow:var(--shadow)}
@@ -95,6 +95,13 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue)}
 .marathon-banner-title{font-size:14px;font-weight:700;color:var(--amber-text);margin-bottom:2px}
 .marathon-banner-desc{font-size:12px;color:var(--text2);margin-bottom:8px}
 .marathon-banner-prize{font-size:22px;font-weight:800;color:var(--amber-text)}
+
+.profile-avatar{width:64px;height:64px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;margin:0 auto 12px}
+.profile-name{font-size:20px;font-weight:700;text-align:center;margin-bottom:4px}
+.profile-studio{text-align:center;margin-bottom:16px}
+.profile-section{font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin:16px 0 8px}
+.history-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;gap:8px;flex-wrap:wrap}
+.history-row:last-child{border-bottom:none}
 </style>
 </head>
 <body>
@@ -115,7 +122,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue)}
   <div class="tabs">
     <button class="tab active" onclick="switchTab('dashboard')">📊 Сводка</button>
     <button class="tab" onclick="switchTab('shifts')">📅 Смены</button>
-    <button class="tab" onclick="switchTab('salary')">💰 Зарплата</button>
+    <button class="tab" onclick="switchTab('profile')">👤 Кабинет</button>
   </div>
 
   <div id="tab-dashboard" class="section active">
@@ -135,18 +142,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue)}
     </div>
     <div id="shifts-list"></div>
   </div>
-  <div id="tab-salary" class="section">
-    <div class="card-muted" style="margin-bottom:12px">
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <select id="sal-admin" onchange="renderSalary()" style="max-width:180px"><option value="all">Все администраторы</option></select>
-        <select id="sal-studio" onchange="renderSalary()" style="max-width:160px">
-          <option value="all">Обе студии</option>
-          <option value="Империал">Империал</option>
-          <option value="Мечта">Мечта</option>
-        </select>
-      </div>
-    </div>
-    <div id="salary-detail"></div>
+
+
+  <div id="tab-profile" class="section">
+    <div id="profile-content"></div>
   </div>
 </div>
 
@@ -664,11 +663,211 @@ function checkPin(){
 function closeModal(id){document.getElementById(id).style.display='none';}
 function showErr(id,msg){const el=document.getElementById(id);el.textContent=msg;el.style.display='block';}
 function switchTab(t){
-  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['dashboard','shifts','salary'][i]===t));
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['dashboard','shifts','profile'][i]===t));
   document.querySelectorAll('.section').forEach(el=>el.classList.remove('active'));
   document.getElementById('tab-'+t).classList.add('active');
   if(t==='shifts')renderShifts();
-  if(t==='salary')renderSalary();
+  if(t==='profile')renderProfile();
+}
+
+// =================== PROFILE ===================
+let currentProfile = null; // {name, studio}
+
+async function renderProfile(){
+  const el = document.getElementById('profile-content');
+  if(currentProfile){
+    renderProfileHome();
+  } else {
+    renderProfileAuth();
+  }
+}
+
+function renderProfileAuth(){
+  const el = document.getElementById('profile-content');
+  el.innerHTML = `
+    <div class="card" style="max-width:360px;margin:0 auto">
+      <div style="text-align:center;margin-bottom:20px">
+        <div style="font-size:40px;margin-bottom:8px">👤</div>
+        <div style="font-size:17px;font-weight:700;margin-bottom:4px">Личный кабинет</div>
+        <div style="font-size:13px;color:var(--text3)">Войдите или зарегистрируйтесь</div>
+      </div>
+      <div class="form-row"><label>Ваше имя</label>
+        <select id="auth-name">
+          <option value="">— выберите —</option>
+          <option>Анна</option><option>Мария</option><option>Екатерина</option><option>Юлия</option>
+        </select>
+      </div>
+      <div class="form-row"><label>Пароль</label>
+        <input type="password" id="auth-pass" placeholder="Введите пароль" maxlength="20">
+      </div>
+      <div id="auth-error" class="alert alert-red" style="display:none"></div>
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <button class="btn btn-primary" style="flex:1" onclick="doLogin()">Войти</button>
+        <button class="btn" style="flex:1" onclick="doRegister()">Регистрация</button>
+      </div>
+    </div>`;
+}
+
+function simpleHash(str){
+  let h=0;
+  for(let i=0;i<str.length;i++){h=Math.imul(31,h)+str.charCodeAt(i)|0;}
+  return Math.abs(h).toString(36);
+}
+
+async function doLogin(){
+  const name=document.getElementById('auth-name').value;
+  const pass=document.getElementById('auth-pass').value;
+  if(!name||!pass){showAuthErr('Заполните все поля');return;}
+  const hash=simpleHash(name+pass);
+  const {data}=await sb.from('profiles').select('*').eq('name',name).single();
+  if(!data){showAuthErr('Пользователь не найден. Сначала зарегистрируйтесь.');return;}
+  if(data.password_hash!==hash){showAuthErr('Неверный пароль');return;}
+  currentProfile={name,studio:data.studio||''};
+  renderProfileHome();
+}
+
+async function doRegister(){
+  const name=document.getElementById('auth-name').value;
+  const pass=document.getElementById('auth-pass').value;
+  if(!name||!pass){showAuthErr('Заполните все поля');return;}
+  if(pass.length<4){showAuthErr('Пароль минимум 4 символа');return;}
+  const hash=simpleHash(name+pass);
+  // Check if exists
+  const {data:existing}=await sb.from('profiles').select('id').eq('name',name).single();
+  if(existing){showAuthErr('Пользователь уже зарегистрирован. Войдите.');return;}
+  // Detect studio from shifts
+  const myShifts=shifts.filter(s=>s.admin===name);
+  const studio=myShifts.length>0?myShifts[0].studio:'';
+  const {error}=await sb.from('profiles').insert({name,password_hash:hash,studio});
+  if(error){showAuthErr('Ошибка: '+error.message);return;}
+  currentProfile={name,studio};
+  renderProfileHome();
+}
+
+function showAuthErr(msg){
+  const el=document.getElementById('auth-error');
+  el.textContent=msg;el.style.display='block';
+}
+
+function renderProfileHome(){
+  const el=document.getElementById('profile-content');
+  const name=currentProfile.name;
+  const myShifts=shifts.filter(s=>s.admin===name);
+  const m=monthKey();
+  const myShiftsMonth=myShifts.filter(s=>s.date.startsWith(m));
+
+  // Stats
+  const revenue=myShiftsMonth.reduce((a,s)=>a+s.newSales+s.renew+s.restore,0);
+  const leads=myShiftsMonth.reduce((a,s)=>a+s.leads,0);
+  const bookings=myShiftsMonth.reduce((a,s)=>a+s.bookings,0);
+  const visits=myShiftsMonth.reduce((a,s)=>a+s.visits,0);
+  const newSales=myShiftsMonth.filter(s=>s.newSales>0).length;
+  const renewals=myShiftsMonth.filter(s=>s.renew>0).length;
+  const massage=myShiftsMonth.reduce((a,s)=>a+s.massage,0);
+  const reviews=myShiftsMonth.reduce((a,s)=>a+s.reviews,0);
+  const cv3=visits>0?Math.round(newSales/visits*100):null;
+  const studio=myShiftsMonth[0]?.studio||currentProfile.studio||'—';
+
+  // Salary
+  let fix=0,pNew=0,pRenew=0,pRestore=0,bonus=0,certB=0,pCert=0;
+  myShiftsMonth.forEach(s=>{const sal=calcShift(s);fix+=sal.fix;pNew+=sal.pNew;pRenew+=sal.pRenew;pRestore+=sal.pRestore;bonus+=sal.bonus;certB+=sal.certBonus;pCert+=sal.pCert;});
+  const salTotal=fix+pNew+pRenew+pRestore+bonus+certB+pCert;
+  const now=new Date();
+  const day=now.getDate();
+  const dim=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
+  const salEst=day>0?Math.round(salTotal/day*dim):0;
+
+  // Active marathons progress
+  const activeM=marathons.filter(mm=>mm.active&&mm.date_end>=today());
+
+  // History (last 10 shifts)
+  const history=[...myShifts].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,10);
+
+  const pillCls=studio==='Империал'?'tag-imp':'tag-mec';
+
+  el.innerHTML=`
+    <div class="card">
+      <div class="profile-avatar">${name[0]}</div>
+      <div class="profile-name">${name}</div>
+      <div class="profile-studio"><span class="tag ${pillCls}">${studio}</span></div>
+      <button class="btn btn-sm" style="display:block;margin:0 auto" onclick="logoutProfile()">Выйти</button>
+    </div>
+
+    <div class="profile-section">📊 Мои показатели — ${monthLabel()}</div>
+    <div class="grid3" style="margin-bottom:12px">
+      <div class="metric"><div class="metric-label">Выручка</div><div class="metric-val" style="font-size:17px">${fmt(revenue)} ₽</div></div>
+      <div class="metric"><div class="metric-label">Смен</div><div class="metric-val" style="font-size:17px">${myShiftsMonth.length}</div></div>
+      <div class="metric"><div class="metric-label">CV→продажа</div><div class="metric-val" style="font-size:17px">${cv3!==null?cv3+'%':'—'}</div></div>
+    </div>
+    <div class="grid4" style="margin-bottom:4px">
+      <div class="metric"><div class="metric-label">Лиды</div><div class="metric-val" style="font-size:16px">${leads||'—'}</div></div>
+      <div class="metric"><div class="metric-label">Записи</div><div class="metric-val" style="font-size:16px">${bookings||'—'}</div></div>
+      <div class="metric"><div class="metric-label">Массаж</div><div class="metric-val" style="font-size:16px">${massage||'—'}</div></div>
+      <div class="metric"><div class="metric-label">Отзывы</div><div class="metric-val" style="font-size:16px">${reviews||'—'}</div></div>
+    </div>
+
+    <div class="profile-section">💰 Моя зарплата</div>
+    <div class="salary-box">
+      <div style="font-size:11px;color:var(--blue-text);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">За ${myShiftsMonth.length} смен этого месяца</div>
+      <div class="salary-total">${fmt(salTotal)} ₽</div>
+      <div style="font-size:13px;color:var(--blue-text);margin-top:6px;font-weight:600">Прогноз на месяц: ${fmt(salEst)} ₽</div>
+    </div>
+    <div class="card">
+      ${[
+        {label:`Оклад (${myShiftsMonth.length} × 1 500 ₽)`,val:fix},
+        {label:'Новые абонементы (5%)',val:pNew},
+        {label:'Продления (8%)',val:pRenew},
+        {label:'Восстановление (10%)',val:pRestore},
+        {label:'Бонус за кассу',val:bonus},
+        {label:'Сертификаты',val:certB+pCert},
+      ].map(i=>`<div class="history-row"><span style="color:var(--text2)">${i.label}</span><span style="font-weight:600">${fmt(i.val)} ₽</span></div>`).join('')}
+      <div style="display:flex;justify-content:space-between;padding:10px 0;font-size:15px;font-weight:700;border-top:2px solid var(--border);margin-top:4px"><span>Итого</span><span>${fmt(salTotal)} ₽</span></div>
+    </div>
+
+    ${activeM.length?`<div class="profile-section">🏆 Мои марафоны</div>
+    ${activeM.map(mm=>{
+      const prog=marathonProgress(mm,myShiftsMonth);
+      const color=prog.done?'var(--green)':prog.pct>=50?'var(--amber)':'var(--red)';
+      return`<div class="marathon-banner" style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;gap:12px">
+          <div style="flex:1">
+            <div class="marathon-banner-title">🏆 ${mm.title}</div>
+            <div class="marathon-banner-desc">${mm.condition_type?conditionLabel(mm.condition_type,mm.condition_value):mm.description||''}</div>
+            <div class="progress-wrap-sm"><div class="progress-fill-sm" style="width:${prog.pct}%;background:${color}"></div></div>
+            <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:11px;color:var(--amber-text)">
+              <span>${prog.done?'✅ Выполнено!':'Мой прогресс: '+prog.val+' / '+prog.target}</span>
+              <span>${prog.pct}%</span>
+            </div>
+          </div>
+          <div class="marathon-banner-prize">${fmt(mm.prize)} ₽</div>
+        </div>
+      </div>`;
+    }).join('')}`:''}
+
+    <div class="profile-section">📅 История смен</div>
+    <div class="card">
+      ${history.length?history.map(s=>{
+        const sal=calcShift(s);
+        const cash=s.newSales+s.renew+s.restore;
+        const cls=s.studio==='Империал'?'tag-imp':'tag-mec';
+        return`<div class="history-row">
+          <span style="color:var(--text3);min-width:80px">${s.date}</span>
+          <span class="tag ${cls}" style="font-size:11px">${s.studio}</span>
+          <span style="font-weight:600">${fmt(cash)} ₽</span>
+          <span style="color:var(--blue-text);font-weight:600">${fmt(sal.total)} ₽ ЗП</span>
+        </div>`;
+      }).join(''):'<div style="color:var(--text3);text-align:center;padding:1rem">Смен ещё нет</div>'}
+    </div>`;
+}
+
+function logoutProfile(){
+  currentProfile=null;
+  renderProfileAuth();
+}
+
+function conditionLabel(type,val){
+  const labels={revenue:'Выручка ≥ '+fmt(val)+' ₽',new_sales:'Новых продаж ≥ '+val+' шт',renewals:'Продлений ≥ '+val+' шт',bookings:'Записей ≥ '+val+' шт',visits:'Доходимость ≥ '+val+' чел',massage:'Массаж ≥ '+val+' шт',reviews:'Отзывов ≥ '+val+' шт',conv_cv3:'CV приход→продажа ≥ '+val+'%'};
+  return labels[type]||val;
 }
 
 document.getElementById('month-label').textContent=monthLabel();
