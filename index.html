@@ -17,7 +17,7 @@
   --red:#dc2626;--red-bg:#fef2f2;--red-text:#b91c1c;
   --radius:10px;--radius-sm:6px;--shadow:0 1px 3px rgba(0,0,0,.08);
 }
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:var(--bg3);color:var(--text);font-size:15px;min-height:100vh}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:var(--bg3);color:var(--text);font-size:15px;min-height:100vh;overflow-x:hidden}
 .app{max-width:860px;margin:0 auto;padding:1rem}
 .topbar{background:var(--blue);color:#fff;padding:14px 20px;border-radius:var(--radius);margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center}
 .topbar-title{font-size:17px;font-weight:600}
@@ -149,6 +149,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue)}
         <button class="pin-btn" onclick="pinPress('login',0)">0</button>
         <button class="pin-btn del" onclick="pinDel('login')">⌫</button>
       </div>
+      <button class="btn btn-primary btn-block" style="margin-top:14px" onclick="doLogin()">Войти</button>
       <div id="login-error" class="alert alert-red" style="display:none;margin-top:12px"></div>
     </div>
 
@@ -179,6 +180,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue)}
         <button class="pin-btn" onclick="pinPress('reg',0)">0</button>
         <button class="pin-btn del" onclick="pinDel('reg')">⌫</button>
       </div>
+      <button class="btn btn-primary btn-block" style="margin-top:14px" onclick="doRegister()">Зарегистрироваться</button>
       <div id="reg-error" class="alert alert-red" style="display:none;margin-top:12px"></div>
     </div>
   </div>
@@ -244,11 +246,15 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue)}
   </div>
   <div class="form-row"><label>Собрано отзывов</label><input type="number" id="f-reviews" value="0" min="0"></div>
   <div class="divider"></div>
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-    <div class="subsection-title" style="margin:0">Реферальные сертификаты</div>
-    <button class="btn btn-sm" onclick="addCert('add')">+ Добавить</button>
+  <div class="subsection-title">Активность</div>
+  <div class="grid2">
+    <div class="form-row"><label>Звонков сделано</label><input type="number" id="f-calls" value="0" min="0"></div>
+    <div class="form-row"><label>Задач закрыто (АМО)</label><input type="number" id="f-tasks" value="0" min="0"></div>
   </div>
-  <div id="add-certs"></div>
+  <div class="grid2">
+    <div class="form-row"><label>Записей на йогу</label><input type="number" id="f-yoga" value="0" min="0"></div>
+    <div class="form-row"><label>Записей на мастер-класс</label><input type="number" id="f-mc" value="0" min="0"></div>
+  </div>
   <div id="add-error" class="alert alert-red" style="display:none"></div>
   <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:1.25rem">
     <button class="btn" onclick="closeModal('add-modal')">Отмена</button>
@@ -289,11 +295,15 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue)}
   </div>
   <div class="form-row"><label>Собрано отзывов</label><input type="number" id="e-reviews" min="0"></div>
   <div class="divider"></div>
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-    <div class="subsection-title" style="margin:0">Реферальные сертификаты</div>
-    <button class="btn btn-sm" onclick="addCert('edit')">+ Добавить</button>
+  <div class="subsection-title">Активность</div>
+  <div class="grid2">
+    <div class="form-row"><label>Звонков сделано</label><input type="number" id="e-calls" min="0"></div>
+    <div class="form-row"><label>Задач закрыто (АМО)</label><input type="number" id="e-tasks" min="0"></div>
   </div>
-  <div id="edit-certs"></div>
+  <div class="grid2">
+    <div class="form-row"><label>Записей на йогу</label><input type="number" id="e-yoga" min="0"></div>
+    <div class="form-row"><label>Записей на мастер-класс</label><input type="number" id="e-mc" min="0"></div>
+  </div>
   <div id="edit-error" class="alert alert-red" style="display:none"></div>
   <div style="display:flex;justify-content:space-between;margin-top:1.25rem">
     <button class="btn btn-danger btn-sm" onclick="deleteShift()">🗑 Удалить</button>
@@ -348,12 +358,10 @@ function pinPress(mode,n){
     if(loginPin.length>=4)return;
     loginPin+=n;
     updateDots('login');
-    if(loginPin.length===4)doLogin();
   } else {
     if(regPin.length>=4)return;
     regPin+=n;
     updateDots('reg');
-    if(regPin.length===4)doRegister();
   }
 }
 
@@ -441,7 +449,8 @@ async function loadData(){
     id:r.id,date:r.date,studio:r.studio,admin:r.admin,
     newSales:+r.new_sales||0,renew:+r.renew||0,restore:+r.restore||0,
     certs:r.certs||[],leads:+r.leads||0,bookings:+r.bookings||0,visits:+r.visits||0,
-    massage:+r.massage_bookings||0,reviews:+r.reviews||0
+    massage:+r.massage_bookings||0,reviews:+r.reviews||0,
+    calls:+r.calls||0,tasks:+r.tasks||0,yoga:+r.yoga_bookings||0,mc:+r.masterclass_bookings||0
   }));
   marathons=md||[];
   document.getElementById('sync-text').textContent='обновлено ✓';
@@ -584,7 +593,7 @@ function renderShifts(){
     const cash=s.newSales+s.renew+s.restore;
     const isMe=s.admin===currentUser.name;
     const leads=+s.leads||0,bookings=+s.bookings||0,visits=+s.visits||0;
-    const certsHtml=(s.certs||[]).map(c=>`<div style="font-size:11px;color:var(--text2);margin-top:6px;padding:6px 10px;background:var(--bg2);border-radius:var(--radius-sm);border:1px solid var(--border)">🎫 <b>${c.giver||'—'}</b> → <b>${c.visitor||'—'}</b> ${c.came?'<span class="badge badge-green" style="font-size:10px;padding:1px 6px">Пришёл</span>':'<span class="badge badge-amber" style="font-size:10px;padding:1px 6px">Не пришёл</span>'}${c.bought?`<span class="badge badge-green" style="font-size:10px;padding:1px 6px">Купил ${fmt(c.amount||0)} ₽</span>`:''}</div>`).join('');
+
     return`<div class="shift-card">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
         <div>
@@ -606,11 +615,14 @@ function renderShifts(){
             ${visits>0?`<span class="chip chip-green">Приход: ${visits}${bookings>0?' ('+Math.round(visits/bookings*100)+'%)':''}</span>`:''}
             ${s.massage>0?`<span class="chip chip-green">Массаж: ${s.massage}</span>`:''}
             ${s.reviews>0?`<span class="chip chip-green">Отзывы: ${s.reviews}</span>`:''}
+            ${s.calls>0?`<span class="chip chip-green">Звонки: ${s.calls}</span>`:''}
+            ${s.tasks>0?`<span class="chip chip-green">Задачи: ${s.tasks}</span>`:''}
+            ${s.yoga>0?`<span class="chip chip-green">Йога: ${s.yoga}</span>`:''}
+            ${s.mc>0?`<span class="chip chip-green">МК: ${s.mc}</span>`:''}
           </div>
         </div>
         ${isMe?`<button class="btn btn-sm" onclick="openEdit(${s.id})">✏️</button>`:''}
       </div>
-      ${certsHtml}
     </div>`;
   }).join('');
 }
@@ -728,7 +740,7 @@ function openAddShift(){
   // Auto-set studio from user's last shift
   const myLast=shifts.filter(s=>s.admin===currentUser.name).sort((a,b)=>b.date.localeCompare(a.date));
   if(myLast.length)document.getElementById('f-studio').value=myLast[0].studio;
-  ['f-new','f-renew','f-restore','f-leads','f-bookings','f-visits','f-massage','f-reviews'].forEach(id=>document.getElementById(id).value='0');
+  ['f-new','f-renew','f-restore','f-leads','f-bookings','f-visits','f-massage','f-reviews','f-calls','f-tasks','f-yoga','f-mc'].forEach(id=>document.getElementById(id).value='0');
   document.getElementById('add-certs').innerHTML='';
   document.getElementById('add-error').style.display='none';
   addCertN=0;
@@ -749,7 +761,11 @@ async function saveShift(){
     visits:+document.getElementById('f-visits').value||0,
     massage_bookings:+document.getElementById('f-massage').value||0,
     reviews:+document.getElementById('f-reviews').value||0,
-    certs:getCerts('add-certs')
+    calls:+document.getElementById('f-calls').value||0,
+    tasks:+document.getElementById('f-tasks').value||0,
+    yoga_bookings:+document.getElementById('f-yoga').value||0,
+    masterclass_bookings:+document.getElementById('f-mc').value||0,
+    certs:[]
   });
   btn.disabled=false;btn.innerHTML='✓ Сохранить';
   if(error){showErr('add-error','Ошибка: '+error.message);return;}
@@ -769,8 +785,10 @@ function openEdit(id){
   document.getElementById('e-visits').value=s.visits||0;
   document.getElementById('e-massage').value=s.massage||0;
   document.getElementById('e-reviews').value=s.reviews||0;
-  document.getElementById('edit-certs').innerHTML='';editCertN=0;
-  (s.certs||[]).forEach(c=>{
+  document.getElementById('e-calls').value=s.calls||0;
+  document.getElementById('e-tasks').value=s.tasks||0;
+  document.getElementById('e-yoga').value=s.yoga||0;
+  document.getElementById('e-mc').value=s.mc||0;
     addCert('edit');const n=editCertN-1;
     const b=document.getElementById(`cert-edit-${n}`);
     b.querySelector('[data-f="giver"]').value=c.giver||'';
@@ -796,7 +814,11 @@ async function updateShift(){
     visits:+document.getElementById('e-visits').value||0,
     massage_bookings:+document.getElementById('e-massage').value||0,
     reviews:+document.getElementById('e-reviews').value||0,
-    certs:getCerts('edit-certs')
+    calls:+document.getElementById('e-calls').value||0,
+    tasks:+document.getElementById('e-tasks').value||0,
+    yoga_bookings:+document.getElementById('e-yoga').value||0,
+    masterclass_bookings:+document.getElementById('e-mc').value||0,
+    certs:[]
   }).eq('id',editingId);
   btn.disabled=false;btn.innerHTML='✓ Сохранить';
   if(error){showErr('edit-error','Ошибка: '+error.message);return;}
