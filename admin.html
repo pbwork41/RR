@@ -17,7 +17,7 @@
   --purple:#7c3aed;--purple-bg:#f5f3ff;--purple-text:#6d28d9;
   --radius:10px;--radius-sm:6px;--shadow:0 1px 3px rgba(0,0,0,.08);
 }
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:var(--bg3);color:var(--text);font-size:15px;min-height:100vh}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:var(--bg3);color:var(--text);font-size:15px;min-height:100vh;overflow-x:hidden}
 .app{max-width:960px;margin:0 auto;padding:1rem}
 .topbar{background:var(--purple);color:#fff;padding:14px 20px;border-radius:var(--radius);margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
 .topbar-title{font-size:17px;font-weight:600}
@@ -130,8 +130,10 @@ textarea{resize:vertical;min-height:70px}
     <button class="tab" onclick="switchTab('studios')">🏢 Студии</button>
     <button class="tab" onclick="switchTab('admins')">👤 Администраторы</button>
     <button class="tab" onclick="switchTab('marathons')">🏆 Марафоны</button>
+    <button class="tab" onclick="switchTab('reports')">📋 Отчёты</button>
     <button class="tab" onclick="switchTab('staff')">👥 Сотрудники</button>
     <button class="tab" onclick="switchTab('plans')">🎯 Планы</button>
+    <button class="tab" onclick="switchTab('salary')">💰 Зарплаты</button>
   </div>
 
   <div id="tab-overview" class="section active"><div id="overview-content"></div></div>
@@ -139,8 +141,10 @@ textarea{resize:vertical;min-height:70px}
   <div id="tab-studios" class="section"><div id="studios-content"></div></div>
   <div id="tab-admins" class="section"><div id="admins-content"></div></div>
   <div id="tab-marathons" class="section"><div id="marathons-content"></div></div>
+  <div id="tab-reports" class="section"><div id="reports-content"></div></div>
   <div id="tab-staff" class="section"><div id="staff-content"></div></div>
   <div id="tab-plans" class="section"><div id="plans-content"></div></div>
+  <div id="tab-salary" class="section"><div id="salary-content"></div></div>
 </div>
 </div>
 
@@ -306,11 +310,15 @@ function getStats(ss){
   const renewals=ss.filter(s=>s.renew>0).length;
   const massage=ss.reduce((a,s)=>a+s.massage,0);
   const reviews=ss.reduce((a,s)=>a+s.reviews,0);
+  const calls=ss.reduce((a,s)=>a+s.calls,0);
+  const tasks=ss.reduce((a,s)=>a+s.tasks,0);
+  const yoga=ss.reduce((a,s)=>a+s.yoga,0);
+  const mc=ss.reduce((a,s)=>a+s.mc,0);
   const rr=calcRR(revenue);
   const cv1=leads>0?Math.round(bookings/leads*100):null;
   const cv2=bookings>0?Math.round(visits/bookings*100):null;
   const cv3=visits>0?Math.round(newSalesCount/visits*100):null;
-  return{revenue,leads,bookings,visits,newSalesCount,renewals,massage,reviews,rr,cv1,cv2,cv3,n:ss.length};
+  return{revenue,leads,bookings,visits,newSalesCount,renewals,massage,reviews,calls,tasks,yoga,mc,rr,cv1,cv2,cv3,n:ss.length};
 }
 
 function getPlan(st){return plans[monthKey()+'_'+st]||{};}
@@ -527,7 +535,7 @@ function renderAdmins(){
   const admins=[...new Set(shifts.map(s=>s.admin))].filter(Boolean).sort();
   if(!admins.length){document.getElementById('admins-content').innerHTML='<div style="color:var(--text3);padding:2rem;text-align:center">Нет данных</div>';return;}
   let html='<div class="card"><div class="section-title">Рейтинг администраторов</div>';
-  html+='<div class="table-wrap" style="min-width:0"><table class="kpi-table" style="min-width:560px"><thead><tr><th>Администратор</th><th>Студия</th><th>Смен</th><th>Выручка</th><th>Записи</th><th>Массаж</th><th>Отзывы</th><th>CV→продажа</th></tr></thead><tbody>';
+  html+='<div class="table-wrap" style="min-width:0"><table class="kpi-table" style="min-width:600px"><thead><tr><th>Администратор</th><th>Студия</th><th>Смен</th><th>Выручка</th><th>Звонки</th><th>Задачи</th><th>Йога</th><th>МК</th><th>CV→продажа</th></tr></thead><tbody>';
   admins.map(admin=>{
     const ss=shifts.filter(s=>s.admin===admin);
     const st=getStats(ss);
@@ -535,7 +543,7 @@ function renderAdmins(){
   }).sort((a,b)=>b.revenue-a.revenue).forEach((d,i)=>{
     const pill=d.studio==='Империал'?'pill-imp':'pill-mec';
     const cvCls=d.cv3===null?'delta-neu':d.cv3>=55?'delta-pos':d.cv3>=40?'':'delta-neg';
-    html+=`<tr><td><b>${i+1}. ${d.admin}</b></td><td><span class="${pill}">${d.studio}</span></td><td>${d.n}</td><td><b>${fmt(d.revenue)} ₽</b></td><td>${d.bookings||'—'}</td><td>${d.massage||'—'}</td><td>${d.reviews||'—'}</td><td class="${cvCls}">${d.cv3!==null?d.cv3+'%':'—'}</td></tr>`;
+    html+=`<tr><td><b>${i+1}. ${d.admin}</b></td><td><span class="${pill}">${d.studio}</span></td><td>${d.n}</td><td><b>${fmt(d.revenue)} ₽</b></td><td>${d.calls||'—'}</td><td>${d.tasks||'—'}</td><td>${d.yoga||'—'}</td><td>${d.mc||'—'}</td><td class="${cvCls}">${d.cv3!==null?d.cv3+'%':'—'}</td></tr>`;
   });
   html+='</tbody></table></div>';
   document.getElementById('admins-content').innerHTML=html;
@@ -732,6 +740,85 @@ async function deleteMarathon(id){
 
 function closeModal(id){document.getElementById(id).style.display='none';}
 
+function renderReports(){
+  const admins=[...new Set(shifts.map(s=>s.admin))].filter(Boolean).sort();
+  if(!admins.length){document.getElementById('reports-content').innerHTML='<div style="color:var(--text3);padding:2rem;text-align:center">Нет данных за этот месяц</div>';return;}
+
+  const cols=[
+    {key:'n',label:'Смен'},
+    {key:'revenue',label:'Выручка',fmt:true},
+    {key:'leads',label:'Лиды'},
+    {key:'bookings',label:'Записи'},
+    {key:'visits',label:'Приход'},
+    {key:'newSalesCount',label:'Новые'},
+    {key:'renewals',label:'Продления'},
+    {key:'massage',label:'Массаж'},
+    {key:'reviews',label:'Отзывы'},
+    {key:'calls',label:'Звонки'},
+    {key:'tasks',label:'Задачи'},
+    {key:'yoga',label:'Йога'},
+    {key:'mc',label:'МК'},
+  ];
+
+  const adminData=admins.map(admin=>{
+    const ss=shifts.filter(s=>s.admin===admin);
+    const st=getStats(ss);
+    return{admin,studio:ss[0]?.studio||'—',...st};
+  });
+
+  let html=`<div class="card">
+    <div class="section-title">Сводный отчёт — ${monthLabel()}</div>
+    <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+    <table class="kpi-table" style="min-width:700px">
+      <thead><tr>
+        <th>Администратор</th>
+        ${cols.map(c=>`<th>${c.label}</th>`).join('')}
+      </tr></thead>
+      <tbody>
+        ${adminData.map(d=>`<tr>
+          <td><b>${d.admin}</b><br><span class="${d.studio==='Империал'?'pill-imp':'pill-mec'}" style="font-size:11px">${d.studio}</span></td>
+          ${cols.map(c=>`<td>${c.fmt?fmt(d[c.key]):d[c.key]||'—'}</td>`).join('')}
+        </tr>`).join('')}
+        <tr style="background:var(--bg2);font-weight:600">
+          <td>Итого</td>
+          ${cols.map(c=>`<td>${c.fmt?fmt(adminData.reduce((a,d)=>a+(+d[c.key]||0),0)):adminData.reduce((a,d)=>a+(+d[c.key]||0),0)||'—'}</td>`).join('')}
+        </tr>
+      </tbody>
+    </table>
+    </div>
+  </div>`;
+
+  // Daily breakdown
+  const allDates=[...new Set(shifts.map(s=>s.date))].sort((a,b)=>b.localeCompare(a));
+  if(allDates.length){
+    html+=`<div class="card">
+      <div class="section-title">По дням</div>
+      <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+      <table class="kpi-table" style="min-width:600px">
+        <thead><tr><th>Дата</th><th>Администратор</th><th>Выручка</th><th>Звонки</th><th>Задачи</th><th>Йога</th><th>МК</th><th>Отзывы</th></tr></thead>
+        <tbody>
+          ${allDates.map(date=>{
+            const ds=shifts.filter(s=>s.date===date);
+            return ds.map(s=>`<tr>
+              <td>${date}</td>
+              <td>${s.admin}</td>
+              <td>${fmt(s.newSales+s.renew+s.restore)} ₽</td>
+              <td>${s.calls||'—'}</td>
+              <td>${s.tasks||'—'}</td>
+              <td>${s.yoga||'—'}</td>
+              <td>${s.mc||'—'}</td>
+              <td>${s.reviews||'—'}</td>
+            </tr>`).join('');
+          }).join('')}
+        </tbody>
+      </table>
+      </div>
+    </div>`;
+  }
+
+  document.getElementById('reports-content').innerHTML=html;
+}
+
 async function renderStaff(){
   const {data}=await sb.from('profiles').select('*').order('created_at',{ascending:false});
   const profiles=data||[];
@@ -778,11 +865,135 @@ async function toggleStaff(id,active){
   renderStaff();
 }
 
+function calcShift(s){
+  const cash=(+s.newSales||0)+(+s.renew||0)+(+s.restore||0);
+  const fix=1500,pNew=Math.round((+s.newSales||0)*0.05),pRenew=Math.round((+s.renew||0)*0.08),pRestore=Math.round((+s.restore||0)*0.10);
+  const bonus=cashBonus(s.studio,cash);
+  return{fix,pNew,pRenew,pRestore,bonus,cash,total:fix+pNew+pRenew+pRestore+bonus};
+}
+function cashBonus(studio,cash){
+  if(studio==='Империал'){if(cash>=100000)return 2500;if(cash>=80000)return 1500;if(cash>=60000)return 1000;return 0;}
+  else{if(cash>=70000)return 2500;if(cash>=55000)return 1500;if(cash>=40000)return 1000;return 0;}
+}
+
+async function renderSalary(){
+  const el=document.getElementById('salary-content');
+  
+  // Period selector UI
+  const now=new Date();
+  const curMonth=now.toISOString().slice(0,7);
+  
+  el.innerHTML=`
+    <div class="card-muted" style="margin-bottom:12px">
+      <div style="font-size:14px;font-weight:600;margin-bottom:10px">Выберите период</div>
+      <div class="grid2">
+        <div class="form-row"><label>С</label><input type="date" id="sal-from" value="${curMonth}-01"></div>
+        <div class="form-row"><label>По</label><input type="date" id="sal-to" value="${now.toISOString().slice(0,10)}"></div>
+      </div>
+      <button class="btn btn-primary btn-sm" id="sal-load-btn">Загрузить</button>
+    </div>
+    <div id="sal-result"></div>`;
+  
+  document.getElementById('sal-load-btn').addEventListener('click', loadSalaryData);
+  
+  // Load current month by default
+  loadSalaryData();
+}
+
+async function loadSalaryData(){
+  const from=document.getElementById('sal-from').value;
+  const to=document.getElementById('sal-to').value;
+  if(!from||!to){return;}
+  
+  const btn=document.getElementById('sal-load-btn');
+  btn.disabled=true;btn.textContent='Загрузка...';
+  
+  const {data:sd}=await sb.from('shifts').select('*').gte('date',from).lte('date',to);
+  
+  btn.disabled=false;btn.textContent='Загрузить';
+  
+  const periodShifts=(sd||[]).map(r=>({
+    id:r.id,date:r.date,studio:r.studio,admin:r.admin,
+    newSales:+r.new_sales||0,renew:+r.renew||0,restore:+r.restore||0,
+    leads:+r.leads||0,bookings:+r.bookings||0,visits:+r.visits||0,
+    massage:+r.massage_bookings||0,reviews:+r.reviews||0,
+    calls:+r.calls||0,tasks:+r.tasks||0,yoga:+r.yoga_bookings||0,mc:+r.masterclass_bookings||0
+  }));
+  
+  const admins=[...new Set(periodShifts.map(s=>s.admin))].filter(Boolean).sort();
+  
+  if(!admins.length){
+    document.getElementById('sal-result').innerHTML='<div style="color:var(--text3);text-align:center;padding:2rem">Нет данных за выбранный период</div>';
+    return;
+  }
+  
+  const adminData=admins.map(admin=>{
+    const ss=periodShifts.filter(s=>s.admin===admin);
+    const studio=ss[0]?.studio||'—';
+    const n=ss.length;
+    const revenue=ss.reduce((a,s)=>a+s.newSales+s.renew+s.restore,0);
+    let fix=0,pNew=0,pRenew=0,pRestore=0,bonus=0;
+    ss.forEach(s=>{
+      const sal=calcShift(s);
+      fix+=sal.fix;pNew+=sal.pNew;pRenew+=sal.pRenew;pRestore+=sal.pRestore;bonus+=sal.bonus;
+    });
+    const total=fix+pNew+pRenew+pRestore+bonus;
+    return{admin,studio,n,revenue,fix,pNew,pRenew,pRestore,bonus,total};
+  }).sort((a,b)=>b.total-a.total);
+  
+  const grandTotal=adminData.reduce((a,d)=>a+d.total,0);
+  
+  let html=`
+    <div class="card" style="margin-bottom:12px;background:linear-gradient(135deg,var(--purple-bg),#f0f4ff);border-color:#c4b5fd">
+      <div style="font-size:12px;color:var(--purple-text);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Итого к выплате за период ${from} — ${to}</div>
+      <div style="font-size:32px;font-weight:800;color:var(--purple-text)">${fmt(grandTotal)} ₽</div>
+      <div style="font-size:13px;color:var(--text2);margin-top:4px">${admins.length} сотрудников · ${periodShifts.length} смен</div>
+    </div>`;
+  
+  // Cards per admin
+  adminData.forEach(d=>{
+    const pill=d.studio==='Империал'?'pill-imp':'pill-mec';
+    html+=`<div class="card" style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+        <div>
+          <div style="font-size:16px;font-weight:700">${d.admin}</div>
+          <span class="${pill}">${d.studio}</span>
+          <span style="font-size:12px;color:var(--text3);margin-left:8px">${d.n} смен</span>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:22px;font-weight:800;color:var(--purple-text)">${fmt(d.total)} ₽</div>
+          <div style="font-size:11px;color:var(--text3)">выручка: ${fmt(d.revenue)} ₽</div>
+        </div>
+      </div>
+      <div style="background:var(--bg2);border-radius:var(--radius-sm);padding:.75rem">
+        ${[
+          {label:`Оклад (${d.n} × 1 500 ₽)`,val:d.fix},
+          {label:'Новые абонементы (5%)',val:d.pNew},
+          {label:'Продления (8%)',val:d.pRenew},
+          {label:'Восстановление (10%)',val:d.pRestore},
+          {label:'Бонус за кассу',val:d.bonus},
+        ].filter(i=>i.val>0).map(i=>`
+          <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);font-size:13px">
+            <span style="color:var(--text2)">${i.label}</span>
+            <span style="font-weight:600">${fmt(i.val)} ₽</span>
+          </div>`).join('')}
+        <div style="display:flex;justify-content:space-between;padding:8px 0 0;font-size:14px;font-weight:700">
+          <span>Итого</span><span style="color:var(--purple-text)">${fmt(d.total)} ₽</span>
+        </div>
+      </div>
+    </div>`;
+  });
+  
+  document.getElementById('sal-result').innerHTML=html;
+}
+
 function switchTab(t){
-  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['overview','mom','studios','admins','marathons','staff','plans'][i]===t));
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['overview','mom','studios','admins','marathons','reports','staff','plans','salary'][i]===t));
   document.querySelectorAll('.section').forEach(el=>el.classList.remove('active'));
   document.getElementById('tab-'+t).classList.add('active');
+  if(t==='reports')renderReports();
   if(t==='staff')renderStaff();
+  if(t==='salary')renderSalary();
 }
 
 document.getElementById('pin-field').focus();
