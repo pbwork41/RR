@@ -178,15 +178,17 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue)}
 <div id="main-app" style="display:none">
 <div class="app">
   <div class="topbar">
-    <div>
-      <div class="topbar-title">Lady Stretch</div>
-      <div class="topbar-sub" id="month-label"></div>
-    </div>
-    <div style="display:flex;gap:8px;align-items:center">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div>
+        <div class="topbar-title">Lady Stretch</div>
+        <div class="topbar-sub" id="month-label"></div>
+      </div>
       <span style="font-size:11px;opacity:.8" id="sync-text">загрузка...</span>
-      <button class="btn btn-sm" style="background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.3)" onclick="openDailyPlan()">+ План на день</button>
-      <button class="btn btn-sm" style="background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.3)" onclick="openInterimReport()">+ Промежуточный отчёт</button>
-      <button class="btn btn-sm" style="background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.3)" onclick="openAddShift()">+ Закрытие смены</button>
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px">
+      <button class="btn btn-sm" style="background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.3);white-space:nowrap;flex:1" onclick="openDailyPlan()">+ План на день</button>
+      <button class="btn btn-sm" style="background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.3);white-space:nowrap;flex:1" onclick="openInterimReport()">+ Пром. отчёт</button>
+      <button class="btn btn-sm" style="background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.3);white-space:nowrap;flex:1" onclick="openAddShift()">+ Закрытие смены</button>
     </div>
   </div>
 
@@ -365,7 +367,7 @@ const SUPABASE_URL='https://nhiyoilfegmmvdtqsgkm.supabase.co';
 const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oaXlvaWxmZWdtbXZkdHFzZ2ttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2MDc0MTMsImV4cCI6MjA5NjE4MzQxM30.VL7a64jalOvhGC3yLMdeR-qR1Jlffht-uYcYmwDn7oQ';
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
-const IMP_PLAN=1800000,MEC_PLAN=1200000;
+let IMP_PLAN=1800000,MEC_PLAN=1200000; // will be updated from Supabase
 let shifts=[],marathons=[],currentUser=null,editingId=null,addCertN=0,editCertN=0;
 let loginPin='',regPin='';
 
@@ -503,12 +505,18 @@ async function checkSession(){
 async function loadData(){
   document.getElementById('sync-text').textContent='загрузка...';
   const m=monthKey();
-  const [{data:sd},{data:md},{data:spd},{data:allMy}]=await Promise.all([
+  const [{data:sd},{data:md},{data:spd},{data:allMy},{data:plansData}]=await Promise.all([
     sb.from('shifts').select('*').gte('date',m+'-01').lte('date',m+'-31').order('date',{ascending:false}),
     sb.from('marathons').select('*').eq('active',true).lte('date_start',today()).gte('date_end',today()),
     currentUser?sb.from('staff_plans').select('*').eq('profile_id',currentUser.id).eq('month',m):Promise.resolve({data:[]}),
-    currentUser?sb.from('shifts').select('*').eq('admin',currentUser.name).order('date',{ascending:false}):Promise.resolve({data:[]})
+    currentUser?sb.from('shifts').select('*').eq('admin',currentUser.name).order('date',{ascending:false}):Promise.resolve({data:[]}),
+    sb.from('plans').select('*').eq('month',m)
   ]);
+  // Update plans from Supabase
+  (plansData||[]).forEach(p=>{
+    if(p.studio==='Империал'&&p.revenue)IMP_PLAN=p.revenue;
+    if(p.studio==='Мечта'&&p.revenue)MEC_PLAN=p.revenue;
+  });
   const myPlan=(spd&&spd[0])||null;
   const allMyShifts=(allMy||[]).map(r=>({
     id:r.id,date:r.date,studio:r.studio,admin:r.admin,
@@ -740,9 +748,7 @@ function renderProfile(){
       <div class="profile-avatar">${name[0]}</div>
       <div style="font-size:18px;font-weight:700;margin-bottom:6px">${name}</div>
       ${studio?`<span class="tag ${pill}" style="font-size:12px">${studio}</span>`:''}
-      <div style="margin-top:12px;display:flex;gap:8px;justify-content:center">
-        <button class="btn btn-sm" onclick="openDailyPlan()">+ План на день</button>
-      <button class="btn btn-sm" style="background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.3)" onclick="openInterimReport()">📊 Отчёт</button>
+      <div style="margin-top:12px">
         <button class="btn btn-sm btn-danger" onclick="doLogout()">Выйти</button>
       </div>
     </div>
