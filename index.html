@@ -146,15 +146,29 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue)}
         <div class="form-row"><label>Имя</label><input type="text" id="reg-first" placeholder="Анна"></div>
         <div class="form-row"><label>Фамилия</label><input type="text" id="reg-last" placeholder="Иванова"></div>
       </div>
-      <div style="font-size:12px;color:var(--text2);font-weight:500;margin-bottom:8px">Придумайте пин-код</div>
-      <div class="pin-dots" id="reg-dots">
-        <div class="pin-dot" id="rd0"></div>
-        <div class="pin-dot" id="rd1"></div>
-        <div class="pin-dot" id="rd2"></div>
-        <div class="pin-dot" id="rd3"></div>
+      <div id="reg-step1">
+        <div style="font-size:12px;color:var(--text2);font-weight:500;margin-bottom:8px">Придумайте пин-код</div>
+        <div class="pin-dots" id="reg-dots">
+          <div class="pin-dot" id="rd0"></div>
+          <div class="pin-dot" id="rd1"></div>
+          <div class="pin-dot" id="rd2"></div>
+          <div class="pin-dot" id="rd3"></div>
+        </div>
+        <div class="pin-pad" id="reg-pad"></div>
+        <button class="btn btn-primary btn-block" style="margin-top:14px" id="reg-next-btn">Далее →</button>
       </div>
-      <div class="pin-pad" id="reg-pad"></div>
-      <button class="btn btn-primary btn-block" style="margin-top:14px" id="reg-submit-btn">Зарегистрироваться</button>
+      <div id="reg-step2" style="display:none">
+        <div style="font-size:12px;color:var(--text2);font-weight:500;margin-bottom:8px">Повторите пин-код</div>
+        <div class="pin-dots" id="reg-dots2">
+          <div class="pin-dot" id="rd20"></div>
+          <div class="pin-dot" id="rd21"></div>
+          <div class="pin-dot" id="rd22"></div>
+          <div class="pin-dot" id="rd23"></div>
+        </div>
+        <div class="pin-pad" id="reg-pad2"></div>
+        <button class="btn btn-sm" style="margin-top:10px;width:100%" id="reg-back-btn">← Назад</button>
+        <button class="btn btn-primary btn-block" style="margin-top:8px" id="reg-submit-btn">Зарегистрироваться</button>
+      </div>
       <div id="reg-error" class="alert alert-red" style="display:none;margin-top:12px"></div>
     </div>
   </div>
@@ -311,6 +325,8 @@ function simpleHash(str){
 }
 
 // ===== AUTH =====
+let regPin2='';
+
 function buildPinPad(padId, mode){
   const pad=document.getElementById(padId);
   if(!pad)return;
@@ -324,11 +340,13 @@ function buildPinPad(padId, mode){
       btn.addEventListener('click',function(e){
         e.preventDefault();
         if(n==='⌫'){
-          if(mode==='login'){loginPin=loginPin.slice(0,-1);}
-          else{regPin=regPin.slice(0,-1);}
+          if(mode==='login')loginPin=loginPin.slice(0,-1);
+          else if(mode==='reg')regPin=regPin.slice(0,-1);
+          else if(mode==='reg2')regPin2=regPin2.slice(0,-1);
         } else {
-          if(mode==='login'&&loginPin.length<4){loginPin+=String(n);}
-          else if(mode==='reg'&&regPin.length<4){regPin+=String(n);}
+          if(mode==='login'&&loginPin.length<4)loginPin+=String(n);
+          else if(mode==='reg'&&regPin.length<4)regPin+=String(n);
+          else if(mode==='reg2'&&regPin2.length<4)regPin2+=String(n);
         }
         updateDots(mode);
       });
@@ -346,8 +364,10 @@ function switchAuthTab(t){
 }
 
 function updateDots(mode){
-  const pin=mode==='login'?loginPin:regPin;
-  const prefix=mode==='login'?'ld':'rd';
+  let pin,prefix;
+  if(mode==='login'){pin=loginPin;prefix='ld';}
+  else if(mode==='reg'){pin=regPin;prefix='rd';}
+  else{pin=regPin2;prefix='rd2';}
   for(let i=0;i<4;i++){
     const d=document.getElementById(prefix+i);
     if(d)d.classList.toggle('filled',i<pin.length);
@@ -387,15 +407,16 @@ async function doRegister(){
   const last=document.getElementById('reg-last').value.trim();
   if(!first||!last){showAuthErr('reg','Введите имя и фамилию');return;}
   if(regPin.length<4){showAuthErr('reg','Введите 4 цифры пин-кода');return;}
+  if(regPin2.length<4){showAuthErr('reg','Повторите пин-код');return;}
+  if(regPin!==regPin2){showAuthErr('reg','Пин-коды не совпадают');regPin2='';updateDots('reg2');return;}
   const fullName=first+' '+last;
   const hash=simpleHash(fullName+regPin);
   const {data:existing}=await sb.from('profiles').select('id').eq('name',fullName).single();
   if(existing){showAuthErr('reg','Пользователь уже зарегистрирован');return;}
   const {error}=await sb.from('profiles').insert({name:fullName,password_hash:hash,active:false});
   if(error){showAuthErr('reg','Ошибка: '+error.message);return;}
-  // Show success
-  document.getElementById('auth-register').innerHTML=`<div class="alert alert-green">✓ Регистрация прошла успешно! Дождитесь активации от руководителя.</div>`;
-  regPin='';
+  document.getElementById('auth-register').innerHTML=`<div class="alert alert-green" style="text-align:center;padding:1.5rem"><div style="font-size:32px;margin-bottom:8px">✅</div><div style="font-weight:700;margin-bottom:4px">Регистрация прошла успешно!</div><div style="font-size:13px;color:var(--text2)">Дождитесь активации от руководителя</div></div>`;
+  regPin='';regPin2='';
 }
 
 function enterApp(){
@@ -425,10 +446,12 @@ async function checkSession(){
 async function loadData(){
   document.getElementById('sync-text').textContent='загрузка...';
   const m=monthKey();
-  const [{data:sd},{data:md}]=await Promise.all([
+  const [{data:sd},{data:md},{data:spd}]=await Promise.all([
     sb.from('shifts').select('*').gte('date',m+'-01').lte('date',m+'-31').order('date',{ascending:false}),
-    sb.from('marathons').select('*').eq('active',true).gte('date_end',today())
+    sb.from('marathons').select('*').eq('active',true).gte('date_end',today()),
+    currentUser?sb.from('staff_plans').select('*').eq('profile_id',currentUser.id).eq('month',m):Promise.resolve({data:[]})
   ]);
+  const myPlan=(spd&&spd[0])||null;
   shifts=(sd||[]).map(r=>({
     id:r.id,date:r.date,studio:r.studio,admin:r.admin,
     newSales:+r.new_sales||0,renew:+r.renew||0,restore:+r.restore||0,
@@ -493,7 +516,8 @@ function renderMarathonBanners(){
   if(!marathons.length){document.getElementById('marathon-banners').innerHTML='';return;}
   // Show only marathons relevant to user's studio
   const myStudio=getMyStudio();
-  document.getElementById('marathon-banners').innerHTML=marathons.map(m=>{
+  const visibleMarathons=marathons.filter(m=>!m.target_profile_id||m.target_profile_id===currentUser.id);
+  document.getElementById('marathon-banners').innerHTML=visibleMarathons.map(m=>{
     const myShifts=shifts.filter(s=>s.admin===currentUser.name);
     const prog=marathonProgress(m,myShifts);
     const color=prog.done?'var(--green)':prog.pct>=50?'var(--amber)':'var(--red)';
@@ -627,6 +651,8 @@ function renderProfile(){
   const cv3=visits>0?Math.round(newSales/visits*100):null;
   const studio=getMyStudio();
   const pill=studio==='Империал'?'tag-imp':'tag-mec';
+  // Get plan from loaded data
+  const plan=typeof myPlan!=='undefined'?myPlan:null;
 
   let fix=0,pNew=0,pRenew=0,pRestore=0,bonus=0,certB=0,pCert=0;
   ms.forEach(s=>{const sal=calcShift(s);fix+=sal.fix;pNew+=sal.pNew;pRenew+=sal.pRenew;pRestore+=sal.pRestore;bonus+=sal.bonus;certB+=sal.certBonus;pCert+=sal.pCert;});
@@ -634,7 +660,7 @@ function renderProfile(){
   const now=new Date(),day=now.getDate(),dim=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
   const salEst=day>0?Math.round(salTotal/day*dim):0;
 
-  const activeM=marathons;
+  const activeM=marathons.filter(m=>!m.target_profile_id||m.target_profile_id===currentUser.id);
   const history=[...myShifts].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,10);
 
   document.getElementById('profile-content').innerHTML=`
@@ -659,6 +685,18 @@ function renderProfile(){
       <div class="metric"><div class="metric-label">Массаж</div><div class="metric-val" style="font-size:16px">${massage||'—'}</div></div>
       <div class="metric"><div class="metric-label">Отзывы</div><div class="metric-val" style="font-size:16px">${reviews||'—'}</div></div>
     </div>
+
+    ${plan?`<div class="subsection-title" style="margin-top:4px">🎯 Мой план — ${monthLabel()}</div>
+    <div class="grid3" style="margin-bottom:4px">
+      ${plan.revenue?`<div class="metric"><div class="metric-label">Выручка</div><div class="metric-val" style="font-size:15px">${fmt(plan.revenue)} ₽</div><div class="progress-wrap-sm"><div class="progress-fill-sm" style="width:${Math.min(Math.round(revenue/plan.revenue*100),100)}%;background:${revenue>=plan.revenue?'var(--green)':'var(--blue)'}"></div></div><div style="font-size:11px;color:var(--text3);margin-top:3px">${Math.round(revenue/plan.revenue*100)}%</div></div>`:''}
+      ${plan.new_clients?`<div class="metric"><div class="metric-label">Новые клиенты</div><div class="metric-val" style="font-size:15px">${newSales} / ${plan.new_clients}</div><div class="progress-wrap-sm"><div class="progress-fill-sm" style="width:${Math.min(Math.round(newSales/plan.new_clients*100),100)}%;background:${newSales>=plan.new_clients?'var(--green)':'var(--blue)'}"></div></div></div>`:''}
+      ${plan.renewals?`<div class="metric"><div class="metric-label">Продления</div><div class="metric-val" style="font-size:15px">${renewals} / ${plan.renewals}</div><div class="progress-wrap-sm"><div class="progress-fill-sm" style="width:${Math.min(Math.round(renewals/plan.renewals*100),100)}%;background:${renewals>=plan.renewals?'var(--green)':'var(--blue)'}"></div></div></div>`:''}
+    </div>
+    <div class="grid3" style="margin-bottom:10px">
+      ${plan.bookings?`<div class="metric"><div class="metric-label">Записи на пробное</div><div class="metric-val" style="font-size:15px">${bookings} / ${plan.bookings}</div><div class="progress-wrap-sm"><div class="progress-fill-sm" style="width:${Math.min(Math.round(bookings/plan.bookings*100),100)}%;background:${bookings>=plan.bookings?'var(--green)':'var(--blue)'}"></div></div></div>`:''}
+      ${plan.calls?`<div class="metric"><div class="metric-label">Звонки</div><div class="metric-val" style="font-size:15px">${ms.reduce((a,s)=>a+s.calls,0)} / ${plan.calls}</div><div class="progress-wrap-sm"><div class="progress-fill-sm" style="width:${Math.min(Math.round(ms.reduce((a,s)=>a+s.calls,0)/plan.calls*100),100)}%;background:${ms.reduce((a,s)=>a+s.calls,0)>=plan.calls?'var(--green)':'var(--blue)'}"></div></div></div>`:''}
+      ${plan.reviews?`<div class="metric"><div class="metric-label">Отзывы</div><div class="metric-val" style="font-size:15px">${reviews} / ${plan.reviews}</div><div class="progress-wrap-sm"><div class="progress-fill-sm" style="width:${Math.min(Math.round(reviews/plan.reviews*100),100)}%;background:${reviews>=plan.reviews?'var(--green)':'var(--blue)'}"></div></div></div>`:''}
+    </div>`:''}
 
     <div class="subsection-title" style="margin-top:14px">💰 Моя зарплата</div>
     <div class="salary-box">
@@ -842,10 +880,25 @@ function switchTab(t){
 document.addEventListener('DOMContentLoaded', function(){
   buildPinPad('login-pad','login');
   buildPinPad('reg-pad','reg');
+  buildPinPad('reg-pad2','reg2');
   document.getElementById('auth-tab-login').addEventListener('click',()=>switchAuthTab('login'));
   document.getElementById('auth-tab-register').addEventListener('click',()=>switchAuthTab('register'));
   document.getElementById('login-submit-btn').addEventListener('click',doLogin);
   document.getElementById('reg-submit-btn').addEventListener('click',doRegister);
+  document.getElementById('reg-next-btn').addEventListener('click',()=>{
+    const first=document.getElementById('reg-first').value.trim();
+    const last=document.getElementById('reg-last').value.trim();
+    if(!first||!last){showAuthErr('reg','Введите имя и фамилию');return;}
+    if(regPin.length<4){showAuthErr('reg','Введите 4 цифры пин-кода');return;}
+    document.getElementById('reg-step1').style.display='none';
+    document.getElementById('reg-step2').style.display='block';
+    regPin2='';updateDots('reg2');
+  });
+  document.getElementById('reg-back-btn').addEventListener('click',()=>{
+    document.getElementById('reg-step2').style.display='none';
+    document.getElementById('reg-step1').style.display='block';
+    regPin2='';
+  });
 });
 checkSession();
 </script>

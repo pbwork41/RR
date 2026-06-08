@@ -115,7 +115,7 @@ textarea{resize:vertical;min-height:70px}
 <div class="app">
   <div class="topbar">
     <div>
-      <div class="topbar-title">👑 Управленческая панель</div>
+      <div class="topbar-title">👑 Управленческая панель <span id="pending-badge" style="display:none;background:var(--amber);color:#fff;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;margin-left:8px"></span></div>
       <div class="topbar-sub" id="month-label"></div>
     </div>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
@@ -227,11 +227,43 @@ textarea{resize:vertical;min-height:70px}
   </div>
   <div class="form-row"><label id="m-condition-label">Порог (≥)</label><input type="number" id="m-condition-value" placeholder="500000"></div>
   <div class="form-row"><label>Приз, ₽</label><input type="number" id="m-prize" placeholder="10000"></div>
+  <div class="form-row"><label>Для кого (оставьте пустым — для всех)</label>
+    <select id="m-target"><option value="">Для всех сотрудников</option></select>
+  </div>
   <div class="divider"></div>
   <div id="marathon-msg" style="display:none" class="alert alert-green">✓ Марафон создан</div>
   <div style="display:flex;gap:8px;justify-content:flex-end">
     <button class="btn" onclick="closeModal('marathon-modal')">Отмена</button>
     <button class="btn btn-primary" onclick="saveMarathon()">🏆 Запустить</button>
+  </div>
+</div>
+</div>
+
+<!-- STAFF PLAN MODAL -->
+<div id="splan-modal" style="display:none" class="modal-bg">
+<div class="modal">
+  <div class="modal-header">
+    <div class="modal-title">🎯 План для <span id="splan-name"></span></div>
+    <button class="btn btn-sm" onclick="closeModal('splan-modal')">✕</button>
+  </div>
+  <div class="form-row"><label>Месяц</label><input type="month" id="splan-month"></div>
+  <div class="divider"></div>
+  <div class="grid2">
+    <div class="form-row"><label>Выручка, ₽</label><input type="number" id="splan-revenue" placeholder="500000"></div>
+    <div class="form-row"><label>Новые клиенты, шт</label><input type="number" id="splan-new" placeholder="10"></div>
+  </div>
+  <div class="grid2">
+    <div class="form-row"><label>Продления, шт</label><input type="number" id="splan-renewals" placeholder="5"></div>
+    <div class="form-row"><label>Записей на пробное, шт</label><input type="number" id="splan-bookings" placeholder="30"></div>
+  </div>
+  <div class="grid2">
+    <div class="form-row"><label>Звонков, шт</label><input type="number" id="splan-calls" placeholder="20"></div>
+    <div class="form-row"><label>Отзывов, шт</label><input type="number" id="splan-reviews" placeholder="5"></div>
+  </div>
+  <div class="divider"></div>
+  <div style="display:flex;gap:8px;justify-content:flex-end">
+    <button class="btn" onclick="closeModal('splan-modal')">Отмена</button>
+    <button class="btn btn-primary" onclick="saveStaffPlan()">💾 Сохранить план</button>
   </div>
 </div>
 </div>
@@ -557,7 +589,7 @@ function renderMarathons(){
 
   let html=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
     <div class="section-title" style="margin:0">Активные марафоны</div>
-    <button class="btn btn-primary btn-sm" onclick="openMarathonModal()">🏆 Создать</button>
+    <button class="btn btn-primary btn-sm" onclick="openMarathonModalWithStaff()">🏆 Создать</button>
   </div>`;
 
   if(!active.length){html+=`<div class="card-muted" style="text-align:center;color:var(--text3);padding:2rem">Нет активных марафонов</div>`;}
@@ -708,9 +740,32 @@ function openMarathonModal(){
   document.getElementById('marathon-modal').style.display='flex';
 }
 
+async function openMarathonModalWithStaff(){
+  // Load active staff into selector
+  const {data:staff}=await sb.from('profiles').select('id,name').eq('active',true).order('name');
+  const sel=document.getElementById('m-target');
+  sel.innerHTML='<option value="">Для всех сотрудников</option>';
+  (staff||[]).forEach(p=>{
+    const opt=document.createElement('option');
+    opt.value=p.id;opt.textContent=p.name;
+    sel.appendChild(opt);
+  });
+  document.getElementById('m-title').value='';
+  document.getElementById('m-desc').value='';
+  document.getElementById('m-prize').value='';
+  document.getElementById('m-start').value=today();
+  document.getElementById('m-end').value='';
+  document.getElementById('m-condition-type').value='revenue';
+  document.getElementById('m-condition-value').value='';
+  updateConditionLabel();
+  document.getElementById('marathon-msg').style.display='none';
+  document.getElementById('marathon-modal').style.display='flex';
+}
+
 async function saveMarathon(){
   const title=document.getElementById('m-title').value.trim();
   if(!title){alert('Введите название');return;}
+  const targetVal=document.getElementById('m-target').value;
   const {error}=await sb.from('marathons').insert({
     title,
     description:document.getElementById('m-desc').value.trim(),
@@ -719,7 +774,8 @@ async function saveMarathon(){
     date_end:document.getElementById('m-end').value,
     condition_type:document.getElementById('m-condition-type').value,
     condition_value:+document.getElementById('m-condition-value').value||0,
-    active:true
+    active:true,
+    target_profile_id:targetVal?+targetVal:null
   });
   if(error){alert('Ошибка: '+error.message);return;}
   document.getElementById('marathon-msg').style.display='block';
@@ -819,8 +875,64 @@ function renderReports(){
   document.getElementById('reports-content').innerHTML=html;
 }
 
+async function resetPin(id, name){
+  const newPin=prompt(`Введите новый пин-код для ${name} (4 цифры):`);
+  if(!newPin||newPin.length!==4||!/^\d{4}$/.test(newPin)){alert('Пин должен быть 4 цифры');return;}
+  const hash=simpleHash(name+newPin);
+  await sb.from('profiles').update({password_hash:hash}).eq('id',id);
+  alert(`✓ Пин-код для ${name} сброшен. Новый пин: ${newPin}`);
+}
+
+function simpleHash(str){
+  let h=0;for(let i=0;i<str.length;i++){h=Math.imul(31,h)+str.charCodeAt(i)|0;}return Math.abs(h).toString(36);
+}
+
+let planModalProfileId=null;
+function setPlanModal(profileId, name){
+  planModalProfileId=profileId;
+  document.getElementById('splan-name').textContent=name;
+  const m=monthKey();
+  document.getElementById('splan-month').value=m;
+  // Clear fields
+  ['splan-revenue','splan-new','splan-renewals','splan-bookings','splan-calls','splan-reviews'].forEach(id=>{
+    document.getElementById(id).value='';
+  });
+  // Load existing plan
+  sb.from('staff_plans').select('*').eq('profile_id',profileId).eq('month',m).single().then(({data})=>{
+    if(data){
+      document.getElementById('splan-revenue').value=data.revenue||'';
+      document.getElementById('splan-new').value=data.new_clients||'';
+      document.getElementById('splan-renewals').value=data.renewals||'';
+      document.getElementById('splan-bookings').value=data.bookings||'';
+      document.getElementById('splan-calls').value=data.calls||'';
+      document.getElementById('splan-reviews').value=data.reviews||'';
+    }
+  });
+  document.getElementById('splan-modal').style.display='flex';
+}
+
+async function saveStaffPlan(){
+  const m=document.getElementById('splan-month').value||monthKey();
+  const row={
+    profile_id:planModalProfileId,month:m,
+    revenue:+document.getElementById('splan-revenue').value||0,
+    new_clients:+document.getElementById('splan-new').value||0,
+    renewals:+document.getElementById('splan-renewals').value||0,
+    bookings:+document.getElementById('splan-bookings').value||0,
+    calls:+document.getElementById('splan-calls').value||0,
+    reviews:+document.getElementById('splan-reviews').value||0,
+  };
+  await sb.from('staff_plans').upsert(row,{onConflict:'profile_id,month'});
+  closeModal('splan-modal');
+  alert('✓ План сохранён');
+}
+
 async function renderStaff(){
   const {data}=await sb.from('profiles').select('*').order('created_at',{ascending:false});
+  // Update pending badge
+  const pendingCount=(data||[]).filter(p=>!p.active).length;
+  const badge=document.getElementById('pending-badge');
+  if(badge){badge.style.display=pendingCount>0?'inline':'none';badge.textContent=pendingCount+' новых';}
   const profiles=data||[];
   if(!profiles.length){document.getElementById('staff-content').innerHTML='<div style="color:var(--text3);padding:2rem;text-align:center">Нет зарегистрированных сотрудников</div>';return;}
   
@@ -850,7 +962,11 @@ async function renderStaff(){
           <div style="font-weight:600">${p.name}</div>
           <div style="font-size:12px;color:var(--text3)">С ${p.created_at?p.created_at.slice(0,10):'—'}</div>
         </div>
-        <button class="btn btn-sm btn-danger" onclick="toggleStaff(${p.id},false)">Деактивировать</button>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-sm" onclick="resetPin(${p.id},'${p.name}')">🔑 Сбросить пин</button>
+          <button class="btn btn-sm" onclick="setPlanModal(${p.id},'${p.name}')">🎯 План</button>
+          <button class="btn btn-sm btn-danger" onclick="toggleStaff(${p.id},false)">Деактивировать</button>
+        </div>
       </div>`).join('')}
     </div>`;
   }
