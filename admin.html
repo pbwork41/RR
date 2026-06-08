@@ -283,7 +283,16 @@ async function loadData(){
   shifts=(cur||[]).map(parse);
   shiftsLast=(prev||[]).map(parse);
   marathons=mar||[];
-  try{plans=JSON.parse(localStorage.getItem('ls_plans_v2')||'{}');}catch(e){plans={};}
+  // Load plans from Supabase
+  const {data:plansData}=await sb.from('plans').select('*');
+  plans={};
+  (plansData||[]).forEach(p=>{
+    plans[p.month+'_'+p.studio]={
+      revenue:p.revenue||0,new_clients:p.new_clients||0,
+      leads:p.leads||0,bookings:p.bookings||0,visits:p.visits||0,
+      renewals:p.renewals||0,cv1:p.cv1||0,cv2:p.cv2||0,cv3:p.cv3||0
+    };
+  });
   document.getElementById('sync-label').textContent='обновлено ✓';
   renderAll();
 }
@@ -650,11 +659,15 @@ function openPlanModal(){
   document.getElementById('plan-modal').style.display='flex';
 }
 
-function savePlan(){
+async function savePlan(){
   const m=document.getElementById('plan-month').value||monthKey();
-  ['Империал','Мечта'].forEach(st=>{
+  const btn=document.querySelector('#plan-modal .btn-primary');
+  btn.disabled=true;btn.textContent='Сохранение...';
+  
+  for(const st of ['Империал','Мечта']){
     const pfx=st==='Империал'?'imp':'mec';
-    plans[m+'_'+st]={
+    const row={
+      month:m, studio:st,
       revenue:+document.getElementById(pfx+'-revenue').value||0,
       new_clients:+document.getElementById(pfx+'-new').value||0,
       leads:+document.getElementById(pfx+'-leads').value||0,
@@ -665,8 +678,11 @@ function savePlan(){
       cv2:+document.getElementById(pfx+'-cv2').value||0,
       cv3:+document.getElementById(pfx+'-cv3').value||0,
     };
-  });
-  localStorage.setItem('ls_plans_v2',JSON.stringify(plans));
+    await sb.from('plans').upsert(row,{onConflict:'month,studio'});
+    plans[m+'_'+st]=row;
+  }
+  
+  btn.disabled=false;btn.textContent='💾 Сохранить';
   document.getElementById('plan-msg').style.display='block';
   setTimeout(()=>{closeModal('plan-modal');renderAll();},900);
 }
