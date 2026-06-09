@@ -629,7 +629,8 @@ function renderBanners(){
       <div style="display:flex;justify-content:space-between;gap:12px">
         <div style="flex:1">
           <div class="marathon-banner-title">🏆 ${m.title}</div>
-          <div style="font-size:12px;color:var(--text2);margin-bottom:6px">${m.condition_type?conditionLabel(m.condition_type,m.condition_value):m.description||''}</div>
+          ${m.description?`<div style="font-size:12px;color:var(--text2);margin-bottom:4px">${m.description}</div>`:''}
+          ${m.condition_type?`<div style="font-size:12px;color:var(--amber-text);font-weight:500;margin-bottom:6px">🎯 ${conditionLabel(m.condition_type,m.condition_value)}</div>`:''}
           <div class="progress-wrap-sm"><div class="progress-fill-sm" style="width:${prog.pct}%;background:${col}"></div></div>
           <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:11px;color:var(--amber-text)">
             <span>${prog.done?'✅ Выполнено!':'Прогресс: '+prog.val+' / '+prog.target}</span><span>${prog.pct}%</span>
@@ -821,7 +822,8 @@ function renderProfile(){
         <div style="display:flex;justify-content:space-between;gap:12px">
           <div style="flex:1">
             <div class="marathon-banner-title">🏆 ${m.title}</div>
-            <div style="font-size:12px;color:var(--text2);margin-bottom:6px">${m.condition_type?conditionLabel(m.condition_type,m.condition_value):''}</div>
+            ${m.description?`<div style="font-size:12px;color:var(--text2);margin-bottom:4px">${m.description}</div>`:''}
+            ${m.condition_type?`<div style="font-size:12px;color:var(--amber-text);font-weight:500;margin-bottom:6px">🎯 ${conditionLabel(m.condition_type,m.condition_value)}</div>`:''}
             <div class="progress-wrap-sm"><div class="progress-fill-sm" style="width:${prog.pct}%;background:${col}"></div></div>
             <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:11px;color:var(--amber-text)">
               <span>${prog.done?'✅ Выполнено!':'Прогресс: '+prog.val+' / '+prog.target}</span><span>${prog.pct}%</span>
