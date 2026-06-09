@@ -134,6 +134,7 @@ textarea{resize:vertical;min-height:70px}
     <button class="tab" onclick="switchTab('staff')">👥 Сотрудники</button>
     <button class="tab" onclick="switchTab('plans')">🎯 Планы</button>
     <button class="tab" onclick="switchTab('salary')">💰 Зарплаты</button>
+    <button class="tab" onclick="switchTab('motivation')">🎯 Мотивация</button>
   </div>
 
   <div id="tab-overview" class="section active"><div id="overview-content"></div></div>
@@ -145,6 +146,7 @@ textarea{resize:vertical;min-height:70px}
   <div id="tab-staff" class="section"><div id="staff-content"></div></div>
   <div id="tab-plans" class="section"><div id="plans-content"></div></div>
   <div id="tab-salary" class="section"><div id="salary-content"></div></div>
+  <div id="tab-motivation" class="section"><div id="motivation-content"></div></div>
 </div>
 </div>
 
@@ -264,6 +266,21 @@ textarea{resize:vertical;min-height:70px}
   <div style="display:flex;gap:8px;justify-content:flex-end">
     <button class="btn" onclick="closeModal('splan-modal')">Отмена</button>
     <button class="btn btn-primary" onclick="saveStaffPlan()">💾 Сохранить план</button>
+  </div>
+</div>
+</div>
+
+<!-- MOTIVATION MODAL -->
+<div id="motivation-modal" style="display:none" class="modal-bg">
+<div class="modal">
+  <div class="modal-header">
+    <div class="modal-title" id="mot-modal-title">Схема мотивации</div>
+    <button class="btn btn-sm" onclick="closeModal('motivation-modal')">✕</button>
+  </div>
+  <div id="mot-form"></div>
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:1rem">
+    <button class="btn" onclick="closeModal('motivation-modal')">Отмена</button>
+    <button class="btn btn-primary" id="mot-save-btn">💾 Сохранить</button>
   </div>
 </div>
 </div>
@@ -629,7 +646,8 @@ function renderMarathons(){
 
     html+=`<div style="display:flex;gap:6px">
       <button class="btn btn-sm" onclick="editMarathon(${m.id})">✏️ Изменить</button>
-      <button class="btn btn-sm btn-danger" onclick="stopMarathon(${m.id})">⏹ Завершить</button>
+      <button class="btn btn-sm" onclick="stopMarathon(${m.id})">⏹ Завершить</button>
+      <button class="btn btn-sm btn-danger" onclick="deleteMarathon(${m.id})">🗑 Удалить</button>
     </div></div>`;
   });
 
@@ -643,7 +661,10 @@ function renderMarathons(){
           <div style="font-size:11px;color:var(--text3);margin-top:4px">📅 ${m.date_start} — ${m.date_end}</div></div>
           <div style="font-size:16px;font-weight:700;color:var(--text3)">${fmt(m.prize)} ₽</div>
         </div>
-        <div style="margin-top:10px"><button class="btn btn-sm btn-danger" onclick="deleteMarathon(${m.id})">🗑 Удалить</button></div>
+        <div style="margin-top:10px;display:flex;gap:6px">
+          <button class="btn btn-sm" onclick="editMarathon(${m.id})">✏️ Изменить</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteMarathon(${m.id})">🗑 Удалить</button>
+        </div>
       </div>`;
     });
   }
@@ -999,7 +1020,10 @@ async function renderStaff(){
           <div style="font-weight:600">${p.name}</div>
           <div style="font-size:12px;color:var(--text3)">Зарегистрирован: ${p.created_at?p.created_at.slice(0,10):'—'}</div>
         </div>
-        <button class="btn btn-sm btn-primary" onclick="toggleStaff(${p.id},true)">✓ Активировать</button>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-sm btn-primary" onclick="toggleStaff(${p.id},true)">✓ Активировать</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteStaff(${p.id},'${p.name}')">🗑</button>
+        </div>
       </div>`).join('')}
     </div>`;
   }
@@ -1016,6 +1040,7 @@ async function renderStaff(){
           <button class="btn btn-sm" onclick="resetPin(${p.id},'${p.name}')">🔑 Сбросить пин</button>
           <button class="btn btn-sm" onclick="setPlanModal(${p.id},'${p.name}')">🎯 План</button>
           <button class="btn btn-sm btn-danger" onclick="toggleStaff(${p.id},false)">Деактивировать</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteStaff(${p.id},'${p.name}')">🗑</button>
         </div>
       </div>`).join('')}
     </div>`;
@@ -1028,6 +1053,12 @@ async function toggleStaff(id,active){
   const msg=active?'Активировать сотрудника?':'Деактивировать сотрудника? Он потеряет доступ.';
   if(!confirm(msg))return;
   await sb.from('profiles').update({active}).eq('id',id);
+  renderStaff();
+}
+
+async function deleteStaff(id,name){
+  if(!confirm(`Удалить сотрудника "${name}"? Это действие необратимо. Данные смен сохранятся.`))return;
+  await sb.from('profiles').delete().eq('id',id);
   renderStaff();
 }
 
@@ -1153,13 +1184,169 @@ async function loadSalaryData(){
   document.getElementById('sal-result').innerHTML=html;
 }
 
+let motivationSchemes = [];
+
+async function renderMotivation(){
+  const el = document.getElementById('motivation-content');
+  el.innerHTML = '<div style="color:var(--text3);text-align:center;padding:2rem">Загрузка...</div>';
+  
+  const {data} = await sb.from('motivation_schemes').select('*').order('effective_from', {ascending:false});
+  motivationSchemes = data || [];
+  
+  let html = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div class="section-title" style="margin:0">История схем мотивации</div>
+      <button class="btn btn-primary btn-sm" onclick="openNewMotivation()">+ Новая схема</button>
+    </div>`;
+
+  if(!motivationSchemes.length){
+    html += '<div class="card-muted" style="text-align:center;color:var(--text3)">Схем ещё нет</div>';
+  } else {
+    motivationSchemes.forEach((s,i) => {
+      const isActive = i === 0;
+      html += `<div class="card" style="${isActive?'border-color:var(--green)':''}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+          <div>
+            <div style="font-size:15px;font-weight:700">С ${s.effective_from}</div>
+            ${isActive?'<span class="badge badge-green" style="margin-top:4px">Действует сейчас</span>':''}
+          </div>
+          <button class="btn btn-sm" onclick="openEditMotivation(${s.id})">✏️ Изменить</button>
+        </div>
+        <div class="grid3">
+          <div class="metric"><div class="metric-label">Оклад/смена</div><div class="metric-val" style="font-size:16px">${fmt(s.fix_per_shift)} ₽</div></div>
+          <div class="metric"><div class="metric-label">Новые</div><div class="metric-val" style="font-size:16px">${s.pct_new}%</div></div>
+          <div class="metric"><div class="metric-label">Продления</div><div class="metric-val" style="font-size:16px">${s.pct_renew}%</div></div>
+        </div>
+        <div class="grid3" style="margin-top:8px">
+          <div class="metric"><div class="metric-label">Возврат</div><div class="metric-val" style="font-size:16px">${s.pct_restore}%</div></div>
+          <div class="metric" style="grid-column:span 2">
+            <div class="metric-label">Бонус Империал</div>
+            <div style="font-size:12px;color:var(--text2);margin-top:4px">
+              ${fmt(s.imp_bonus_1_threshold)} → +${fmt(s.imp_bonus_1_amount)} ₽<br>
+              ${fmt(s.imp_bonus_2_threshold)} → +${fmt(s.imp_bonus_2_amount)} ₽<br>
+              ${fmt(s.imp_bonus_3_threshold)} → +${fmt(s.imp_bonus_3_amount)} ₽
+            </div>
+          </div>
+        </div>
+        <div class="metric" style="margin-top:8px">
+          <div class="metric-label">Бонус Мечта</div>
+          <div style="font-size:12px;color:var(--text2);margin-top:4px;display:flex;gap:16px;flex-wrap:wrap">
+            <span>${fmt(s.mec_bonus_1_threshold)} → +${fmt(s.mec_bonus_1_amount)} ₽</span>
+            <span>${fmt(s.mec_bonus_2_threshold)} → +${fmt(s.mec_bonus_2_amount)} ₽</span>
+            <span>${fmt(s.mec_bonus_3_threshold)} → +${fmt(s.mec_bonus_3_amount)} ₽</span>
+          </div>
+        </div>
+      </div>`;
+    });
+  }
+  el.innerHTML = html;
+}
+
+function motivationFormHTML(s){
+  s = s || {};
+  return `
+    <div class="form-row"><label>Действует с</label><input type="date" id="mot-from" value="${s.effective_from||today()}"></div>
+    <div class="divider"></div>
+    <div class="subsection-title">Оклад и проценты</div>
+    <div class="grid3">
+      <div class="form-row"><label>Оклад/смена, ₽</label><input type="number" id="mot-fix" value="${s.fix_per_shift||1500}" min="0"></div>
+      <div class="form-row"><label>Новые, %</label><input type="number" id="mot-new" value="${s.pct_new||5}" min="0" step="0.1"></div>
+      <div class="form-row"><label>Продления, %</label><input type="number" id="mot-renew" value="${s.pct_renew||8}" min="0" step="0.1"></div>
+    </div>
+    <div class="form-row"><label>Возврат клиентов, %</label><input type="number" id="mot-restore" value="${s.pct_restore||10}" min="0" step="0.1"></div>
+    <div class="divider"></div>
+    <div class="subsection-title">Бонус за кассу — Империал</div>
+    <div class="grid2">
+      <div class="form-row"><label>Порог 1, ₽</label><input type="number" id="mot-i1t" value="${s.imp_bonus_1_threshold||60000}" min="0"></div>
+      <div class="form-row"><label>Бонус 1, ₽</label><input type="number" id="mot-i1a" value="${s.imp_bonus_1_amount||1000}" min="0"></div>
+    </div>
+    <div class="grid2">
+      <div class="form-row"><label>Порог 2, ₽</label><input type="number" id="mot-i2t" value="${s.imp_bonus_2_threshold||80000}" min="0"></div>
+      <div class="form-row"><label>Бонус 2, ₽</label><input type="number" id="mot-i2a" value="${s.imp_bonus_2_amount||1500}" min="0"></div>
+    </div>
+    <div class="grid2">
+      <div class="form-row"><label>Порог 3, ₽</label><input type="number" id="mot-i3t" value="${s.imp_bonus_3_threshold||100000}" min="0"></div>
+      <div class="form-row"><label>Бонус 3, ₽</label><input type="number" id="mot-i3a" value="${s.imp_bonus_3_amount||2500}" min="0"></div>
+    </div>
+    <div class="divider"></div>
+    <div class="subsection-title">Бонус за кассу — Мечта</div>
+    <div class="grid2">
+      <div class="form-row"><label>Порог 1, ₽</label><input type="number" id="mot-m1t" value="${s.mec_bonus_1_threshold||40000}" min="0"></div>
+      <div class="form-row"><label>Бонус 1, ₽</label><input type="number" id="mot-m1a" value="${s.mec_bonus_1_amount||1000}" min="0"></div>
+    </div>
+    <div class="grid2">
+      <div class="form-row"><label>Порог 2, ₽</label><input type="number" id="mot-m2t" value="${s.mec_bonus_2_threshold||55000}" min="0"></div>
+      <div class="form-row"><label>Бонус 2, ₽</label><input type="number" id="mot-m2a" value="${s.mec_bonus_2_amount||1500}" min="0"></div>
+    </div>
+    <div class="grid2">
+      <div class="form-row"><label>Порог 3, ₽</label><input type="number" id="mot-m3t" value="${s.mec_bonus_3_threshold||70000}" min="0"></div>
+      <div class="form-row"><label>Бонус 3, ₽</label><input type="number" id="mot-m3a" value="${s.mec_bonus_3_amount||2500}" min="0"></div>
+    </div>`;
+}
+
+function openNewMotivation(){
+  document.getElementById('mot-modal-title').textContent='+ Новая схема мотивации';
+  document.getElementById('mot-form').innerHTML=motivationFormHTML();
+  document.getElementById('mot-save-btn').onclick=saveNewMotivation;
+  document.getElementById('motivation-modal').style.display='flex';
+}
+
+function openEditMotivation(id){
+  const s=motivationSchemes.find(x=>x.id===id);
+  if(!s)return;
+  document.getElementById('mot-modal-title').textContent='✏️ Редактировать схему';
+  document.getElementById('mot-form').innerHTML=motivationFormHTML(s);
+  document.getElementById('mot-save-btn').onclick=()=>updateMotivation(id);
+  document.getElementById('motivation-modal').style.display='flex';
+}
+
+function getMotivationFormData(){
+  return{
+    effective_from:document.getElementById('mot-from').value,
+    fix_per_shift:+document.getElementById('mot-fix').value||1500,
+    pct_new:+document.getElementById('mot-new').value||5,
+    pct_renew:+document.getElementById('mot-renew').value||8,
+    pct_restore:+document.getElementById('mot-restore').value||10,
+    imp_bonus_1_threshold:+document.getElementById('mot-i1t').value||60000,
+    imp_bonus_1_amount:+document.getElementById('mot-i1a').value||1000,
+    imp_bonus_2_threshold:+document.getElementById('mot-i2t').value||80000,
+    imp_bonus_2_amount:+document.getElementById('mot-i2a').value||1500,
+    imp_bonus_3_threshold:+document.getElementById('mot-i3t').value||100000,
+    imp_bonus_3_amount:+document.getElementById('mot-i3a').value||2500,
+    mec_bonus_1_threshold:+document.getElementById('mot-m1t').value||40000,
+    mec_bonus_1_amount:+document.getElementById('mot-m1a').value||1000,
+    mec_bonus_2_threshold:+document.getElementById('mot-m2t').value||55000,
+    mec_bonus_2_amount:+document.getElementById('mot-m2a').value||1500,
+    mec_bonus_3_threshold:+document.getElementById('mot-m3t').value||70000,
+    mec_bonus_3_amount:+document.getElementById('mot-m3a').value||2500,
+  };
+}
+
+async function saveNewMotivation(){
+  const row=getMotivationFormData();
+  if(!row.effective_from){alert('Укажите дату');return;}
+  const {error}=await sb.from('motivation_schemes').insert(row);
+  if(error){alert('Ошибка: '+error.message);return;}
+  closeModal('motivation-modal');
+  renderMotivation();
+}
+
+async function updateMotivation(id){
+  const row=getMotivationFormData();
+  const {error}=await sb.from('motivation_schemes').update(row).eq('id',id);
+  if(error){alert('Ошибка: '+error.message);return;}
+  closeModal('motivation-modal');
+  renderMotivation();
+}
+
 function switchTab(t){
-  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['overview','mom','studios','admins','marathons','reports','staff','plans','salary'][i]===t));
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['overview','mom','studios','admins','marathons','reports','staff','plans','salary','motivation'][i]===t));
   document.querySelectorAll('.section').forEach(el=>el.classList.remove('active'));
   document.getElementById('tab-'+t).classList.add('active');
   if(t==='reports')renderReports();
   if(t==='staff')renderStaff();
   if(t==='salary')renderSalary();
+  if(t==='motivation')renderMotivation();
 }
 
 document.getElementById('pin-field').focus();
