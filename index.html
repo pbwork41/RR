@@ -2,6 +2,9 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Lady Stretch</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -17,7 +20,7 @@
   --red:#dc2626;--red-bg:#fef2f2;--red-text:#b91c1c;
   --radius:10px;--radius-sm:6px;--shadow:0 1px 3px rgba(0,0,0,.08);
 }
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:var(--bg3);color:var(--text);font-size:15px;min-height:100vh;overflow-x:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:var(--bg3);color:var(--text);font-size:15px;min-height:100vh;overflow-x:hidden;position:relative}
 .app{max-width:860px;margin:0 auto;padding:1rem}
 .topbar{background:var(--blue);color:#fff;padding:14px 20px;border-radius:var(--radius);margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center}
 .topbar-title{font-size:17px;font-weight:600}
@@ -185,10 +188,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue)}
       </div>
       <span style="font-size:11px;opacity:.8" id="sync-text">загрузка...</span>
     </div>
-    <div style="display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px">
-      <button class="btn btn-sm" style="background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.3);white-space:nowrap;flex:1" onclick="openDailyPlan()">+ План на день</button>
-      <button class="btn btn-sm" style="background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.3);white-space:nowrap;flex:1" onclick="openInterimReport()">+ Пром. отчёт</button>
-      <button class="btn btn-sm" style="background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.3);white-space:nowrap;flex:1" onclick="openAddShift()">+ Закрытие смены</button>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+      <button style="padding:8px 4px;font-size:12px;font-weight:500;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:6px;cursor:pointer;font-family:inherit;text-align:center" onclick="openDailyPlan()">+ План на день</button>
+      <button style="padding:8px 4px;font-size:12px;font-weight:500;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:6px;cursor:pointer;font-family:inherit;text-align:center" onclick="openInterimReport()">+ Пром. отчёт</button>
+      <button style="padding:8px 4px;font-size:12px;font-weight:500;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:6px;cursor:pointer;font-family:inherit;text-align:center" onclick="openAddShift()">+ Закрытие смены</button>
     </div>
   </div>
 
@@ -237,22 +240,24 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue)}
   <div class="divider"></div>
   <div class="subsection-title">Входящий поток</div>
   <div class="grid2">
-    <div class="form-row"><label>Пробных сегодня, чел</label><input type="number" id="dp-trials" value="0" min="0" oninput="updateRecommendation()"></div>
-    <div class="form-row"><label>Продление (архив), чел</label><input type="number" id="dp-archive" value="0" min="0" oninput="updateRecommendation()"></div>
+    <div class="form-row"><label>Записано пробных, чел</label><input type="number" id="dp-trials" value="0" min="0" oninput="updateRecommendation()"></div>
+    <div class="form-row"><label>Продажи по архиву, ₽</label><input type="number" id="dp-archive-sum" value="0" min="0"></div>
+  </div>
+  <div class="grid2">
+    <div class="form-row"><label>Продажи новых абонементов, ₽</label><input type="number" id="dp-new-sum" value="0" min="0"></div>
+    <div class="form-row"><label>Продажи по возврату клиентов, ₽</label><input type="number" id="dp-restore-sum" value="0" min="0"></div>
   </div>
   <div class="divider"></div>
   <div class="subsection-title">Активность</div>
   <div class="grid2">
-    <div class="form-row"><label>Задач в АМО</label><input type="number" id="dp-tasks" value="0" min="0"></div>
-    <div class="form-row"><label>Звонков план</label><input type="number" id="dp-calls" value="0" min="0"></div>
+    <div class="form-row"><label>Сделано задач по АМО</label><input type="number" id="dp-tasks" value="0" min="0"></div>
+    <div class="form-row"><label>Сделано звонков</label><input type="number" id="dp-calls" value="0" min="0"></div>
   </div>
-  <div class="form-row"><label>Фото для карточки</label><input type="number" id="dp-photos" value="0" min="0"></div>
-  <div class="divider"></div>
-  <div class="form-row">
-    <label>💰 Мой план выручки на день, ₽</label>
-    <input type="number" id="dp-revenue" value="0" min="0">
-    <div class="hint" id="dp-revenue-hint"></div>
+  <div class="grid2">
+    <div class="form-row"><label>Сделано фото</label><input type="number" id="dp-photos" value="0" min="0"></div>
+    <div class="form-row"><label>Собрано отзывов</label><input type="number" id="dp-reviews-dp" value="0" min="0"></div>
   </div>
+  <div id="dp-revenue-hint" style="font-size:12px;color:var(--amber-text);margin-top:4px;font-weight:500"></div>
   <div id="dp-error" class="alert alert-red" style="display:none"></div>
   <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:1rem">
     <button class="btn" onclick="closeModal('daily-plan-modal')">Отмена</button>
@@ -1047,14 +1052,12 @@ async function openDailyPlan(){
 
   if(data){
     document.getElementById('dp-trials').value = data.trials_planned||0;
-    document.getElementById('dp-archive').value = data.archive_focus||0;
+    document.getElementById('dp-archive-sum').value = data.archive_focus||0;
     document.getElementById('dp-tasks').value = data.tasks_planned||0;
     document.getElementById('dp-calls').value = data.calls_planned||0;
     document.getElementById('dp-photos').value = data.photos_planned||0;
-    document.getElementById('dp-revenue').value = data.revenue_plan||0;
   } else {
-    ['dp-trials','dp-archive','dp-tasks','dp-calls','dp-photos'].forEach(id=>document.getElementById(id).value=0);
-    document.getElementById('dp-revenue').value=0;
+    ['dp-trials','dp-archive-sum','dp-new-sum','dp-restore-sum','dp-tasks','dp-calls','dp-photos','dp-reviews-dp'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=0;});
   }
 
   updateRecommendation();
@@ -1129,7 +1132,7 @@ function updateRecommendation(){
   </div>`;
 
   document.getElementById('dp-revenue-hint').textContent =
-    `Рекомендуем: ${fmt(recommended)} ₽ (потенциал: ${fmt(totalPotential)} ₽, рейт: ${fmt(needPerDay)} ₽)`;
+    trials>0||archive>0?`💡 Потенциал: ${fmt(totalPotential)} ₽ · Нужно по рейту: ${fmt(needPerDay)} ₽`:'';
 }
 
 async function saveDailyPlan(){
@@ -1141,12 +1144,12 @@ async function saveDailyPlan(){
   const row = {
     date, studio, admin: currentUser.name, profile_id: currentUser.id,
     trials_planned: +document.getElementById('dp-trials').value||0,
-    archive_focus: +document.getElementById('dp-archive').value||0,
+    archive_focus: +document.getElementById('dp-archive-sum').value||0,
     tasks_planned: +document.getElementById('dp-tasks').value||0,
     calls_planned: +document.getElementById('dp-calls').value||0,
     photos_planned: +document.getElementById('dp-photos').value||0,
-    revenue_plan: +document.getElementById('dp-revenue').value||0,
-    revenue_recommended: +document.getElementById('dp-revenue').value||0,
+    revenue_plan: (+document.getElementById('dp-archive-sum').value||0)+(+document.getElementById('dp-new-sum').value||0)+(+document.getElementById('dp-restore-sum').value||0),
+    revenue_recommended: (+document.getElementById('dp-archive-sum').value||0)+(+document.getElementById('dp-new-sum').value||0)+(+document.getElementById('dp-restore-sum').value||0),
   };
 
   await sb.from('daily_plans').delete().eq('profile_id',currentUser.id).eq('date',date);
@@ -1176,7 +1179,7 @@ function openInterimReport(){
     el.innerHTML = `<div class="card-muted" style="text-align:center;color:var(--text3);padding:1.5rem">
       <div style="font-size:24px;margin-bottom:8px">📋</div>
       План на сегодня не поставлен.<br>
-      <button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="closeModal('interim-modal');openDailyPlan()">+ Поставить план</button>
+      <button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="closeModal('interim-modal');openDailyPlan()">+ Поставить план на день</button>
     </div>`;
     document.getElementById('interim-modal').style.display='flex';
     return;
