@@ -3,8 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Lady Stretch</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -18,103 +16,138 @@
   --green:#16a34a;--green-bg:#f0fdf4;--green-text:#15803d;
   --amber:#d97706;--amber-bg:#fffbeb;--amber-text:#b45309;
   --red:#dc2626;--red-bg:#fef2f2;--red-text:#b91c1c;
+  --purple:#7c3aed;--purple-bg:#f5f3ff;--purple-text:#6d28d9;
   --radius:10px;--radius-sm:6px;--shadow:0 1px 3px rgba(0,0,0,.08);
 }
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:var(--bg3);color:var(--text);font-size:15px;min-height:100vh;overflow-x:hidden;position:relative}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:var(--bg3);color:var(--text);font-size:15px;min-height:100vh;overflow-x:hidden}
 .app{max-width:860px;margin:0 auto;padding:1rem}
-.topbar{background:var(--blue);color:#fff;padding:14px 20px;border-radius:var(--radius);margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center}
-.topbar-title{font-size:17px;font-weight:600}
+
+/* TOPBAR */
+.topbar{background:var(--blue);color:#fff;padding:12px 16px;border-radius:var(--radius);margin-bottom:1rem}
+.topbar-row1{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.topbar-title{font-size:17px;font-weight:700}
 .topbar-sub{font-size:12px;opacity:.8;margin-top:2px}
-.tabs{display:flex;gap:4px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:4px;margin-bottom:1rem;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
-.tabs::-webkit-scrollbar{display:none}
-.tab{flex:1;padding:8px 6px;font-size:12px;font-weight:500;cursor:pointer;border:none;background:none;color:var(--text2);border-radius:var(--radius-sm);transition:all .15s;font-family:inherit;white-space:nowrap;text-align:center}
+.topbar-btns{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.topbar-btn{padding:8px 4px;font-size:11px;font-weight:600;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:var(--radius-sm);cursor:pointer;font-family:inherit;text-align:center;-webkit-tap-highlight-color:transparent}
+.topbar-btn:active{background:rgba(255,255,255,.3)}
+
+/* TABS */
+.tabs{display:flex;gap:4px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:4px;margin-bottom:1rem}
+.tab{flex:1;padding:8px 4px;font-size:12px;font-weight:500;cursor:pointer;border:none;background:none;color:var(--text2);border-radius:var(--radius-sm);transition:all .15s;font-family:inherit;text-align:center}
 .tab.active{background:var(--blue);color:#fff}
 .section{display:none}.section.active{display:block}
+
+/* CARDS */
 .card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;margin-bottom:1rem;box-shadow:var(--shadow)}
 .card-muted{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;margin-bottom:1rem}
+
+/* GRID */
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
 .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-@media(max-width:580px){.grid2{grid-template-columns:1fr}.grid3{grid-template-columns:1fr 1fr}.grid4{grid-template-columns:1fr 1fr}}
-.metric{background:var(--bg2);border-radius:var(--radius-sm);padding:.75rem 1rem;border:1px solid var(--border)}
+@media(max-width:580px){.grid3{grid-template-columns:1fr 1fr}.grid4{grid-template-columns:1fr 1fr}}
+
+/* METRICS */
+.metric{background:var(--bg2);border-radius:var(--radius-sm);padding:.75rem;border:1px solid var(--border)}
 .metric-label{font-size:11px;color:var(--text3);margin-bottom:3px;text-transform:uppercase;letter-spacing:.03em}
-.metric-val{font-size:20px;font-weight:700;color:var(--text)}
+.metric-val{font-size:20px;font-weight:700}
 .metric-sub{font-size:11px;color:var(--text3);margin-top:3px}
+
+/* PROGRESS */
+.progress-wrap{height:8px;background:var(--bg3);border-radius:4px;overflow:hidden;margin-top:8px}
+.progress-fill{height:100%;border-radius:4px;transition:width .4s}
+.progress-wrap-sm{height:6px;background:rgba(0,0,0,.1);border-radius:3px;overflow:hidden;margin-top:4px}
+.progress-fill-sm{height:100%;border-radius:3px}
+
+/* BADGE */
 .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600}
 .badge-green{background:var(--green-bg);color:var(--green-text)}
 .badge-amber{background:var(--amber-bg);color:var(--amber-text)}
 .badge-red{background:var(--red-bg);color:var(--red-text)}
-.progress-wrap{height:8px;background:var(--bg3);border-radius:4px;overflow:hidden;margin-top:8px}
-.progress-fill{height:100%;border-radius:4px;transition:width .4s ease}
-.progress-wrap-sm{height:6px;background:rgba(0,0,0,.1);border-radius:3px;overflow:hidden;margin-top:4px}
-.progress-fill-sm{height:100%;border-radius:3px}
-label{display:block;font-size:12px;color:var(--text2);margin-bottom:4px;font-weight:500}
-input,select,textarea{width:100%;padding:8px 12px;font-size:16px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);font-family:inherit;transition:border .15s}
-input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue)}
-.form-row{margin-bottom:10px}
-.btn{padding:9px 18px;font-size:14px;font-weight:500;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);cursor:pointer;font-family:inherit;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
-.btn:hover{background:var(--bg2)}
-.btn-primary{background:var(--blue);color:#fff;border-color:var(--blue)}
-.btn-primary:hover{background:#1d4ed8}
-.btn-danger{color:var(--red-text);border-color:#fca5a5}
-.btn-danger:hover{background:var(--red-bg)}
-.btn-sm{padding:5px 12px;font-size:12px}
-.btn-block{width:100%;justify-content:center}
-.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
-.section-title{font-size:15px;font-weight:600;margin-bottom:12px;color:var(--text)}
-.subsection-title{font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+
+/* TAG */
 .tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500}
 .tag-imp{background:#eff6ff;color:#1d4ed8}
 .tag-mec{background:#f5f3ff;color:#6d28d9}
+
+/* CHIP */
 .chip{background:var(--bg2);border:1px solid var(--border);padding:3px 10px;border-radius:20px;font-size:12px;color:var(--text2)}
 .chip-green{background:var(--green-bg);color:var(--green-text);border-color:#86efac;font-weight:500}
 .chips{display:flex;gap:6px;flex-wrap:wrap}
-.shift-card{border:1px solid var(--border);border-radius:var(--radius-sm);padding:.875rem 1rem;margin-bottom:8px;background:var(--bg)}
-.cert-block{border:1px solid var(--border);border-radius:var(--radius-sm);padding:.875rem;margin-bottom:8px;background:var(--bg2)}
-.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:1000;padding:1rem}
-.modal{background:var(--bg);border-radius:var(--radius);padding:1.5rem;width:min(540px,100%);max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)}
-.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem}
-.modal-title{font-size:17px;font-weight:700}
+
+/* FORM */
+label{display:block;font-size:12px;color:var(--text2);margin-bottom:4px;font-weight:500}
+input,select,textarea{width:100%;padding:8px 12px;font-size:16px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);font-family:inherit;transition:border .15s}
+input:focus,select:focus{outline:none;border-color:var(--blue)}
+.form-row{margin-bottom:10px}
+.hint{font-size:11px;color:var(--text3);margin-top:4px}
+
+/* BUTTONS */
+.btn{padding:9px 18px;font-size:14px;font-weight:500;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px;-webkit-tap-highlight-color:transparent}
+.btn:active{opacity:.8}
+.btn-primary{background:var(--blue);color:#fff;border-color:var(--blue)}
+.btn-danger{color:var(--red-text);border-color:#fca5a5}
+.btn-danger:active{background:var(--red-bg)}
+.btn-sm{padding:5px 12px;font-size:12px}
+.btn-block{width:100%;justify-content:center}
+.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
+.subsection-title{font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
 .alert{padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;margin-bottom:12px}
 .alert-red{background:var(--red-bg);color:var(--red-text);border:1px solid #fca5a5}
 .alert-green{background:var(--green-bg);color:var(--green-text);border:1px solid #86efac}
 .empty-state{text-align:center;padding:3rem 1rem;color:var(--text3)}
+
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:100;padding:1rem}
+.modal{background:var(--bg);border-radius:var(--radius);padding:1.5rem;width:min(540px,100%);max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem}
+.modal-title{font-size:17px;font-weight:700}
+
+/* SHIFT CARD */
+.shift-card{border:1px solid var(--border);border-radius:var(--radius-sm);padding:.875rem;margin-bottom:8px;background:var(--bg)}
+
+/* SALARY */
 .salary-box{background:linear-gradient(135deg,var(--blue-bg),#f0f4ff);border:1px solid #bfdbfe;border-radius:var(--radius);padding:1.25rem;margin-bottom:1rem}
 .salary-total{font-size:32px;font-weight:800;color:var(--blue-text)}
-.hint{font-size:11px;color:var(--text3);margin-top:4px}
+
+/* FUNNEL */
 .funnel-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px}
 .funnel-row:last-child{border-bottom:none}
 .funnel-label{flex:1;color:var(--text2)}
 .funnel-val{font-weight:600;min-width:40px;text-align:right}
 .funnel-pct{min-width:50px;text-align:right;color:var(--text3);font-size:12px}
-.marathon-banner{border:2px solid var(--amber);background:var(--amber-bg);border-radius:var(--radius);padding:1rem 1.25rem;margin-bottom:10px}
+
+/* MARATHON */
+.marathon-banner{border:2px solid var(--amber);background:var(--amber-bg);border-radius:var(--radius);padding:1rem;margin-bottom:10px}
 .marathon-banner-title{font-size:14px;font-weight:700;color:var(--amber-text);margin-bottom:2px}
 .marathon-banner-prize{font-size:22px;font-weight:800;color:var(--amber-text)}
+
+/* PROFILE */
 .profile-avatar{width:60px;height:60px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;margin:0 auto 12px}
 .history-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;gap:8px;flex-wrap:wrap}
 .history-row:last-child{border-bottom:none}
-/* AUTH SCREEN */
-.auth-screen{position:fixed;inset:0;background:linear-gradient(135deg,#1d4ed8,#7c3aed);overflow-y:auto;-webkit-overflow-scrolling:touch;padding:1rem;z-index:999;display:flex;align-items:flex-start;justify-content:center}
-.auth-card{background:var(--bg);border-radius:16px;padding:1.25rem;width:min(380px,100%);box-shadow:0 20px 60px rgba(0,0,0,.3);margin:auto}
+
+/* AUTH */
+.auth-screen{position:fixed;inset:0;background:linear-gradient(135deg,#1d4ed8,#7c3aed);overflow-y:auto;-webkit-overflow-scrolling:touch;padding:1rem;z-index:200;display:flex;align-items:flex-start;justify-content:center}
+.auth-card{background:var(--bg);border-radius:16px;padding:1.5rem;width:min(380px,100%);box-shadow:0 20px 60px rgba(0,0,0,.3);margin:auto}
 .auth-logo{text-align:center;margin-bottom:16px}
 .auth-logo-title{font-size:20px;font-weight:800;color:var(--blue);margin-bottom:2px}
 .auth-logo-sub{font-size:12px;color:var(--text3)}
-.auth-tabs{display:flex;background:var(--bg2);border-radius:var(--radius-sm);padding:3px;margin-bottom:14px;gap:3px}
-.auth-tab{flex:1;padding:7px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:none;border-radius:var(--radius-sm);font-family:inherit;color:var(--text2);transition:all .15s;text-align:center}
+.auth-tabs{display:flex;background:var(--bg2);border-radius:var(--radius-sm);padding:3px;margin-bottom:16px;gap:3px}
+.auth-tab{flex:1;padding:7px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:none;border-radius:var(--radius-sm);font-family:inherit;color:var(--text2);text-align:center;-webkit-tap-highlight-color:transparent}
 .auth-tab.active{background:var(--bg);color:var(--blue);font-weight:600;box-shadow:var(--shadow)}
 .pin-dots{display:flex;gap:10px;justify-content:center;margin:10px 0}
 .pin-dot{width:12px;height:12px;border-radius:50%;background:var(--border2);transition:all .2s}
 .pin-dot.filled{background:var(--blue)}
 .pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:6px}
-.pin-btn{padding:12px;font-size:18px;font-weight:600;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);cursor:pointer;font-family:inherit;transition:all .15s;text-align:center}
-.pin-btn:active{background:var(--blue-bg);border-color:var(--blue)}
+.pin-btn{padding:14px;font-size:20px;font-weight:600;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);cursor:pointer;font-family:inherit;text-align:center;-webkit-tap-highlight-color:transparent}
+.pin-btn:active{background:var(--blue-bg)}
 .pin-btn.del{font-size:14px;color:var(--text3)}
-.inactive-msg{text-align:center;padding:1.5rem;color:var(--amber-text);background:var(--amber-bg);border-radius:var(--radius);border:1px solid var(--amber);font-size:14px}
 </style>
 </head>
 <body>
 
-<!-- AUTH SCREEN -->
+<!-- AUTH -->
 <div id="auth-screen" class="auth-screen">
   <div class="auth-card">
     <div class="auth-logo">
@@ -123,56 +156,54 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue)}
       <div class="auth-logo-sub">Система учёта смен</div>
     </div>
     <div class="auth-tabs">
-      <button class="auth-tab active" id="auth-tab-login">Вход</button>
-      <button class="auth-tab" id="auth-tab-register">Регистрация</button>
+      <button class="auth-tab active" id="tab-login-btn">Вход</button>
+      <button class="auth-tab" id="tab-reg-btn">Регистрация</button>
     </div>
 
     <!-- LOGIN -->
-    <div id="auth-login">
+    <div id="login-form">
       <div class="form-row"><label>Имя</label><input type="text" id="login-first" placeholder="Анна" autocomplete="given-name"></div>
       <div class="form-row"><label>Фамилия</label><input type="text" id="login-last" placeholder="Иванова" autocomplete="family-name"></div>
       <div style="font-size:12px;color:var(--text2);font-weight:500;margin-bottom:8px">Пин-код</div>
-      <div class="pin-dots" id="login-dots">
-        <div class="pin-dot" id="ld0"></div>
-        <div class="pin-dot" id="ld1"></div>
-        <div class="pin-dot" id="ld2"></div>
-        <div class="pin-dot" id="ld3"></div>
+      <div class="pin-dots">
+        <div class="pin-dot" id="ld0"></div><div class="pin-dot" id="ld1"></div>
+        <div class="pin-dot" id="ld2"></div><div class="pin-dot" id="ld3"></div>
       </div>
       <div class="pin-pad" id="login-pad"></div>
-      <button class="btn btn-primary btn-block" style="margin-top:14px" id="login-submit-btn">Войти</button>
-      <div id="login-error" class="alert alert-red" style="display:none;margin-top:12px"></div>
+      <button class="btn btn-primary btn-block" style="margin-top:12px" id="do-login-btn">Войти</button>
+      <div id="login-err" class="alert alert-red" style="display:none;margin-top:10px"></div>
     </div>
 
     <!-- REGISTER -->
-    <div id="auth-register" style="display:none">
+    <div id="reg-form" style="display:none">
       <div class="grid2">
         <div class="form-row"><label>Имя</label><input type="text" id="reg-first" placeholder="Анна"></div>
         <div class="form-row"><label>Фамилия</label><input type="text" id="reg-last" placeholder="Иванова"></div>
       </div>
+      <!-- Step 1 -->
       <div id="reg-step1">
         <div style="font-size:12px;color:var(--text2);font-weight:500;margin-bottom:8px">Придумайте пин-код</div>
-        <div class="pin-dots" id="reg-dots">
-          <div class="pin-dot" id="rd0"></div>
-          <div class="pin-dot" id="rd1"></div>
-          <div class="pin-dot" id="rd2"></div>
-          <div class="pin-dot" id="rd3"></div>
+        <div class="pin-dots">
+          <div class="pin-dot" id="rd0"></div><div class="pin-dot" id="rd1"></div>
+          <div class="pin-dot" id="rd2"></div><div class="pin-dot" id="rd3"></div>
         </div>
         <div class="pin-pad" id="reg-pad"></div>
-        <button class="btn btn-primary btn-block" style="margin-top:14px" id="reg-next-btn">Далее →</button>
+        <button class="btn btn-primary btn-block" style="margin-top:12px" id="reg-next-btn">Далее →</button>
       </div>
+      <!-- Step 2 -->
       <div id="reg-step2" style="display:none">
         <div style="font-size:12px;color:var(--text2);font-weight:500;margin-bottom:8px">Повторите пин-код</div>
-        <div class="pin-dots" id="reg-dots2">
-          <div class="pin-dot" id="rd20"></div>
-          <div class="pin-dot" id="rd21"></div>
-          <div class="pin-dot" id="rd22"></div>
-          <div class="pin-dot" id="rd23"></div>
+        <div class="pin-dots">
+          <div class="pin-dot" id="rd20"></div><div class="pin-dot" id="rd21"></div>
+          <div class="pin-dot" id="rd22"></div><div class="pin-dot" id="rd23"></div>
         </div>
         <div class="pin-pad" id="reg-pad2"></div>
-        <button class="btn btn-sm" style="margin-top:10px;width:100%" id="reg-back-btn">← Назад</button>
-        <button class="btn btn-primary btn-block" style="margin-top:8px" id="reg-submit-btn">Зарегистрироваться</button>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="btn btn-block" id="reg-back-btn" style="flex:1">← Назад</button>
+          <button class="btn btn-primary btn-block" id="do-reg-btn" style="flex:2">Зарегистрироваться</button>
+        </div>
       </div>
-      <div id="reg-error" class="alert alert-red" style="display:none;margin-top:12px"></div>
+      <div id="reg-err" class="alert alert-red" style="display:none;margin-top:10px"></div>
     </div>
   </div>
 </div>
@@ -181,136 +212,81 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue)}
 <div id="main-app" style="display:none">
 <div class="app">
   <div class="topbar">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+    <div class="topbar-row1">
       <div>
         <div class="topbar-title">Lady Stretch</div>
         <div class="topbar-sub" id="month-label"></div>
       </div>
       <span style="font-size:11px;opacity:.8" id="sync-text">загрузка...</span>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
-      <button id="btn-daily-plan" style="padding:8px 4px;font-size:12px;font-weight:500;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:6px;cursor:pointer;font-family:inherit;text-align:center">+ План на день</button>
-      <button id="btn-interim" style="padding:8px 4px;font-size:12px;font-weight:500;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:6px;cursor:pointer;font-family:inherit;text-align:center">+ Пром. отчёт</button>
-      <button id="btn-add-shift" style="padding:8px 4px;font-size:12px;font-weight:500;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:6px;cursor:pointer;font-family:inherit;text-align:center">+ Закрытие смены</button>
+    <div class="topbar-btns">
+      <button class="topbar-btn" id="btn-plan">+ План на день</button>
+      <button class="topbar-btn" id="btn-interim">+ Пром. отчёт</button>
+      <button class="topbar-btn" id="btn-shift">+ Закрытие смены</button>
     </div>
   </div>
 
   <div id="marathon-banners"></div>
 
   <div class="tabs">
-    <button class="tab active" onclick="switchTab('dashboard')">📊 Сводка</button>
-    <button class="tab" onclick="switchTab('shifts')">📅 Смены</button>
-    <button class="tab" onclick="switchTab('profile')">👤 Кабинет</button>
+    <button class="tab active" id="tab-dashboard">📊 Сводка</button>
+    <button class="tab" id="tab-shifts">📅 Смены</button>
+    <button class="tab" id="tab-profile">👤 Кабинет</button>
   </div>
 
-  <div id="tab-dashboard" class="section active"><div id="studio-card"></div></div>
-  <div id="tab-shifts" class="section"><div id="shifts-list"></div></div>
-  <div id="tab-profile" class="section"><div id="profile-content"></div></div>
+  <div id="sec-dashboard" class="section active"><div id="dashboard-content"></div></div>
+  <div id="sec-shifts" class="section"><div id="shifts-content"></div></div>
+  <div id="sec-profile" class="section"><div id="profile-content"></div></div>
 </div>
 </div>
 
-<!-- INTERIM REPORT MODAL -->
-<div id="interim-modal" style="display:none" class="modal-bg">
+<!-- MODALS -->
+
+<!-- SHIFT MODAL -->
+<div id="shift-modal" style="display:none" class="modal-bg">
 <div class="modal">
   <div class="modal-header">
-    <div class="modal-title">📊 Промежуточный отчёт</div>
-    <button class="btn btn-sm" onclick="closeModal('interim-modal')">✕</button>
-  </div>
-  <div id="interim-content"></div>
-  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:1rem">
-    <button class="btn" onclick="closeModal('interim-modal')">Закрыть</button>
-  </div>
-</div>
-</div>
-
-<!-- DAILY PLAN MODAL -->
-<div id="daily-plan-modal" style="display:none" class="modal-bg">
-<div class="modal">
-  <div class="modal-header">
-    <div class="modal-title">План на день</div>
-    <button class="btn btn-sm" onclick="closeModal('daily-plan-modal')">✕</button>
-  </div>
-  <div id="daily-plan-recommendation" style="margin-bottom:14px"></div>
-  <div class="grid2">
-    <div class="form-row"><label>📅 Дата</label><input type="date" id="dp-date"></div>
-    <div class="form-row"><label>🏢 Студия</label>
-      <select id="dp-studio"><option>Империал</option><option>Мечта</option></select>
-    </div>
-  </div>
-  <div class="divider"></div>
-  <div class="subsection-title">Входящий поток</div>
-  <div class="grid2">
-    <div class="form-row"><label>Записано пробных, чел</label><input type="number" id="dp-trials" value="0" min="0" oninput="updateRecommendation()"></div>
-    <div class="form-row"><label>Продажи по архиву, ₽</label><input type="number" id="dp-archive-sum" value="0" min="0"></div>
+    <div class="modal-title" id="shift-modal-title">Закрытие смены</div>
+    <button class="btn btn-sm" id="close-shift-modal">✕</button>
   </div>
   <div class="grid2">
-    <div class="form-row"><label>Продажи новых абонементов, ₽</label><input type="number" id="dp-new-sum" value="0" min="0"></div>
-    <div class="form-row"><label>Продажи по возврату клиентов, ₽</label><input type="number" id="dp-restore-sum" value="0" min="0"></div>
-  </div>
-  <div class="divider"></div>
-  <div class="subsection-title">Активность</div>
-  <div class="grid2">
-    <div class="form-row"><label>Сделано задач по АМО</label><input type="number" id="dp-tasks" value="0" min="0"></div>
-    <div class="form-row"><label>Сделано звонков</label><input type="number" id="dp-calls" value="0" min="0"></div>
-  </div>
-  <div class="grid2">
-    <div class="form-row"><label>Сделано фото</label><input type="number" id="dp-photos" value="0" min="0"></div>
-    <div class="form-row"><label>Собрано отзывов</label><input type="number" id="dp-reviews-dp" value="0" min="0"></div>
-  </div>
-  <div id="dp-revenue-hint" style="font-size:12px;color:var(--amber-text);margin-top:4px;font-weight:500"></div>
-  <div id="dp-error" class="alert alert-red" style="display:none"></div>
-  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:1rem">
-    <button class="btn" onclick="closeModal('daily-plan-modal')">Отмена</button>
-    <button class="btn btn-primary" id="dp-save-btn" onclick="saveDailyPlan()">💾 Сохранить план</button>
-  </div>
-</div>
-</div>
-
-<!-- ADD MODAL -->
-<div id="add-modal" style="display:none" class="modal-bg">
-<div class="modal">
-  <div class="modal-header">
-    <div class="modal-title">Внести смену</div>
-    <button class="btn btn-sm" onclick="closeModal('add-modal')">✕</button>
-  </div>
-  <div class="grid2">
-    <div class="form-row"><label>Дата смены</label><input type="date" id="f-date"></div>
+    <div class="form-row"><label>Дата</label><input type="date" id="f-date"></div>
     <div class="form-row"><label>Студия</label>
       <select id="f-studio"><option>Империал</option><option>Мечта</option></select>
     </div>
   </div>
   <div class="divider"></div>
-  <div class="subsection-title">Воронка за смену</div>
+  <div class="subsection-title">Воронка</div>
   <div class="grid3">
-    <div class="form-row"><label>Лидов пришло</label><input type="number" id="f-leads" value="0" min="0"></div>
-    <div class="form-row"><label>Записей на пробное</label><input type="number" id="f-bookings" value="0" min="0"></div>
-    <div class="form-row"><label>Пришло на пробное</label><input type="number" id="f-visits" value="0" min="0"></div>
+    <div class="form-row"><label>Лидов</label><input type="number" id="f-leads" value="0" min="0"></div>
+    <div class="form-row"><label>Записей</label><input type="number" id="f-bookings" value="0" min="0"></div>
+    <div class="form-row"><label>Пришло</label><input type="number" id="f-visits" value="0" min="0"></div>
   </div>
   <div class="divider"></div>
-  <div class="subsection-title">Продажи за смену</div>
+  <div class="subsection-title">Продажи</div>
   <div class="grid2">
     <div class="form-row"><label>Новые абонементы, ₽</label><input type="number" id="f-new" value="0" min="0"></div>
     <div class="form-row"><label>Продления, ₽</label><input type="number" id="f-renew" value="0" min="0"></div>
   </div>
   <div class="grid2">
-    <div class="form-row"><label>Восстановление клиента, ₽</label><input type="number" id="f-restore" value="0" min="0"></div>
-    <div class="form-row"><label>Записей на массаж</label><input type="number" id="f-massage" value="0" min="0"></div>
+    <div class="form-row"><label>Возврат клиентов, ₽</label><input type="number" id="f-restore" value="0" min="0"></div>
+    <div class="form-row"><label>Массаж, записей</label><input type="number" id="f-massage" value="0" min="0"></div>
   </div>
-  <div class="form-row"><label>Собрано отзывов</label><input type="number" id="f-reviews" value="0" min="0"></div>
+  <div class="form-row"><label>Отзывов</label><input type="number" id="f-reviews" value="0" min="0"></div>
   <div class="divider"></div>
   <div class="subsection-title">Активность</div>
   <div class="grid2">
-    <div class="form-row"><label>Звонков сделано</label><input type="number" id="f-calls" value="0" min="0"></div>
-    <div class="form-row"><label>Задач закрыто (АМО)</label><input type="number" id="f-tasks" value="0" min="0"></div>
+    <div class="form-row"><label>Звонков</label><input type="number" id="f-calls" value="0" min="0"></div>
+    <div class="form-row"><label>Задач в АМО</label><input type="number" id="f-tasks" value="0" min="0"></div>
   </div>
   <div class="grid2">
-    <div class="form-row"><label>Записей на йогу</label><input type="number" id="f-yoga" value="0" min="0"></div>
-    <div class="form-row"><label>Записей на мастер-класс</label><input type="number" id="f-mc" value="0" min="0"></div>
+    <div class="form-row"><label>Йога, записей</label><input type="number" id="f-yoga" value="0" min="0"></div>
+    <div class="form-row"><label>Мастер-класс, записей</label><input type="number" id="f-mc" value="0" min="0"></div>
   </div>
-  <div id="add-error" class="alert alert-red" style="display:none"></div>
-  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:1.25rem">
-    <button class="btn" onclick="closeModal('add-modal')">Отмена</button>
-    <button class="btn btn-primary" id="save-btn" onclick="saveShift()">✓ Сохранить</button>
+  <div id="shift-err" class="alert alert-red" style="display:none"></div>
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:1rem">
+    <button class="btn" id="cancel-shift-btn">Отмена</button>
+    <button class="btn btn-primary" id="save-shift-btn">✓ Сохранить</button>
   </div>
 </div>
 </div>
@@ -320,231 +296,126 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue)}
 <div class="modal">
   <div class="modal-header">
     <div class="modal-title">Редактировать смену</div>
-    <button class="btn btn-sm" onclick="closeModal('edit-modal')">✕</button>
+    <button class="btn btn-sm" id="close-edit-modal">✕</button>
   </div>
   <div class="grid2">
-    <div class="form-row"><label>Дата смены</label><input type="date" id="e-date"></div>
+    <div class="form-row"><label>Дата</label><input type="date" id="e-date"></div>
     <div class="form-row"><label>Студия</label>
       <select id="e-studio"><option>Империал</option><option>Мечта</option></select>
     </div>
   </div>
   <div class="divider"></div>
-  <div class="subsection-title">Воронка за смену</div>
+  <div class="subsection-title">Воронка</div>
   <div class="grid3">
-    <div class="form-row"><label>Лидов пришло</label><input type="number" id="e-leads" value="0" min="0"></div>
-    <div class="form-row"><label>Записей на пробное</label><input type="number" id="e-bookings" value="0" min="0"></div>
-    <div class="form-row"><label>Пришло на пробное</label><input type="number" id="e-visits" value="0" min="0"></div>
+    <div class="form-row"><label>Лидов</label><input type="number" id="e-leads" value="0" min="0"></div>
+    <div class="form-row"><label>Записей</label><input type="number" id="e-bookings" value="0" min="0"></div>
+    <div class="form-row"><label>Пришло</label><input type="number" id="e-visits" value="0" min="0"></div>
   </div>
   <div class="divider"></div>
-  <div class="subsection-title">Продажи за смену</div>
+  <div class="subsection-title">Продажи</div>
   <div class="grid2">
-    <div class="form-row"><label>Новые абонементы, ₽</label><input type="number" id="e-new" min="0"></div>
-    <div class="form-row"><label>Продления, ₽</label><input type="number" id="e-renew" min="0"></div>
+    <div class="form-row"><label>Новые абонементы, ₽</label><input type="number" id="e-new" value="0" min="0"></div>
+    <div class="form-row"><label>Продления, ₽</label><input type="number" id="e-renew" value="0" min="0"></div>
   </div>
   <div class="grid2">
-    <div class="form-row"><label>Восстановление клиента, ₽</label><input type="number" id="e-restore" min="0"></div>
-    <div class="form-row"><label>Записей на массаж</label><input type="number" id="e-massage" min="0"></div>
+    <div class="form-row"><label>Возврат клиентов, ₽</label><input type="number" id="e-restore" value="0" min="0"></div>
+    <div class="form-row"><label>Массаж, записей</label><input type="number" id="e-massage" value="0" min="0"></div>
   </div>
-  <div class="form-row"><label>Собрано отзывов</label><input type="number" id="e-reviews" min="0"></div>
+  <div class="form-row"><label>Отзывов</label><input type="number" id="e-reviews" value="0" min="0"></div>
   <div class="divider"></div>
   <div class="subsection-title">Активность</div>
   <div class="grid2">
-    <div class="form-row"><label>Звонков сделано</label><input type="number" id="e-calls" min="0"></div>
-    <div class="form-row"><label>Задач закрыто (АМО)</label><input type="number" id="e-tasks" min="0"></div>
+    <div class="form-row"><label>Звонков</label><input type="number" id="e-calls" value="0" min="0"></div>
+    <div class="form-row"><label>Задач в АМО</label><input type="number" id="e-tasks" value="0" min="0"></div>
   </div>
   <div class="grid2">
-    <div class="form-row"><label>Записей на йогу</label><input type="number" id="e-yoga" min="0"></div>
-    <div class="form-row"><label>Записей на мастер-класс</label><input type="number" id="e-mc" min="0"></div>
+    <div class="form-row"><label>Йога, записей</label><input type="number" id="e-yoga" value="0" min="0"></div>
+    <div class="form-row"><label>Мастер-класс, записей</label><input type="number" id="e-mc" value="0" min="0"></div>
   </div>
-  <div id="edit-error" class="alert alert-red" style="display:none"></div>
-  <div style="display:flex;justify-content:space-between;margin-top:1.25rem">
-    <button class="btn btn-danger btn-sm" onclick="deleteShift()">🗑 Удалить</button>
+  <div id="edit-err" class="alert alert-red" style="display:none"></div>
+  <div style="display:flex;justify-content:space-between;margin-top:1rem">
+    <button class="btn btn-danger btn-sm" id="delete-shift-btn">🗑 Удалить</button>
     <div style="display:flex;gap:8px">
-      <button class="btn" onclick="closeModal('edit-modal')">Отмена</button>
-      <button class="btn btn-primary" id="update-btn" onclick="updateShift()">✓ Сохранить</button>
+      <button class="btn" id="cancel-edit-btn">Отмена</button>
+      <button class="btn btn-primary" id="update-shift-btn">✓ Сохранить</button>
     </div>
   </div>
 </div>
 </div>
 
+<!-- DAILY PLAN MODAL -->
+<div id="plan-modal" style="display:none" class="modal-bg">
+<div class="modal">
+  <div class="modal-header">
+    <div class="modal-title">План на день</div>
+    <button class="btn btn-sm" id="close-plan-modal">✕</button>
+  </div>
+  <div id="plan-recommendation"></div>
+  <div class="grid2">
+    <div class="form-row"><label>Дата</label><input type="date" id="p-date"></div>
+    <div class="form-row"><label>Студия</label>
+      <select id="p-studio"><option>Империал</option><option>Мечта</option></select>
+    </div>
+  </div>
+  <div class="divider"></div>
+  <div class="subsection-title">Входящий поток</div>
+  <div class="grid2">
+    <div class="form-row"><label>Записано пробных, чел</label><input type="number" id="p-trials" value="0" min="0"></div>
+    <div class="form-row"><label>Продажи по архиву, ₽</label><input type="number" id="p-archive" value="0" min="0"></div>
+  </div>
+  <div class="grid2">
+    <div class="form-row"><label>Продажи новых абонементов, ₽</label><input type="number" id="p-new-sum" value="0" min="0"></div>
+    <div class="form-row"><label>Продажи по возврату, ₽</label><input type="number" id="p-restore-sum" value="0" min="0"></div>
+  </div>
+  <div class="divider"></div>
+  <div class="subsection-title">Активность</div>
+  <div class="grid2">
+    <div class="form-row"><label>Сделано задач по АМО</label><input type="number" id="p-tasks" value="0" min="0"></div>
+    <div class="form-row"><label>Сделано звонков</label><input type="number" id="p-calls" value="0" min="0"></div>
+  </div>
+  <div class="grid2">
+    <div class="form-row"><label>Сделано фото</label><input type="number" id="p-photos" value="0" min="0"></div>
+    <div class="form-row"><label>Собрано отзывов</label><input type="number" id="p-reviews" value="0" min="0"></div>
+  </div>
+  <div id="plan-err" class="alert alert-red" style="display:none"></div>
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:1rem">
+    <button class="btn" id="cancel-plan-btn">Отмена</button>
+    <button class="btn btn-primary" id="save-plan-btn">💾 Сохранить план</button>
+  </div>
+</div>
+</div>
+
+<!-- INTERIM MODAL -->
+<div id="interim-modal" style="display:none" class="modal-bg">
+<div class="modal">
+  <div class="modal-header">
+    <div class="modal-title">Промежуточный отчёт</div>
+    <button class="btn btn-sm" id="close-interim-modal">✕</button>
+  </div>
+  <div id="interim-content"></div>
+</div>
+</div>
+
 <script>
-const SUPABASE_URL='https://nhiyoilfegmmvdtqsgkm.supabase.co';
-const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oaXlvaWxmZWdtbXZkdHFzZ2ttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2MDc0MTMsImV4cCI6MjA5NjE4MzQxM30.VL7a64jalOvhGC3yLMdeR-qR1Jlffht-uYcYmwDn7oQ';
-const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const SB_URL='https://nhiyoilfegmmvdtqsgkm.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oaXlvaWxmZWdtbXZkdHFzZ2ttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2MDc0MTMsImV4cCI6MjA5NjE4MzQxM30.VL7a64jalOvhGC3yLMdeR-qR1Jlffht-uYcYmwDn7oQ';
+const sb = supabase.createClient(SB_URL, SB_KEY);
 
-let IMP_PLAN=1800000,MEC_PLAN=1200000; // will be updated from Supabase
-let shifts=[],marathons=[],currentUser=null,editingId=null,addCertN=0,editCertN=0;
-let loginPin='',regPin='';
+let shifts=[], marathons=[], allMyShifts=[], currentUser=null, editingId=null, todayPlan=null;
+let IMP_PLAN=1800000, MEC_PLAN=1200000;
+let loginPin='', regPin='', regPin2='';
 
-function fmt(n){return Math.round(n||0).toLocaleString('ru-RU')}
-function today(){return new Date().toISOString().slice(0,10)}
-function monthKey(){return today().slice(0,7)}
-function monthLabel(){return new Date().toLocaleString('ru-RU',{month:'long',year:'numeric'})}
+// ===== UTILS =====
+const fmt = n => Math.round(n||0).toLocaleString('ru-RU');
+const today = () => new Date().toISOString().slice(0,10);
+const monthKey = () => today().slice(0,7);
+const monthLabel = () => new Date().toLocaleString('ru-RU',{month:'long',year:'numeric'});
+const simpleHash = str => { let h=0; for(let i=0;i<str.length;i++){h=Math.imul(31,h)+str.charCodeAt(i)|0;} return Math.abs(h).toString(36); };
+const badge = p => p>=100?'<span class="badge badge-green">✓ В плане</span>':p>=85?'<span class="badge badge-amber">⚠ Ускориться</span>':'<span class="badge badge-red">✗ Отстаём</span>';
+
 function calcRR(fact){
   const now=new Date(),d=now.getDate(),dim=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
   return d>0?Math.round(fact/d*dim):0;
-}
-function simpleHash(str){
-  let h=0;for(let i=0;i<str.length;i++){h=Math.imul(31,h)+str.charCodeAt(i)|0;}return Math.abs(h).toString(36);
-}
-
-// ===== AUTH =====
-let regPin2='';
-
-function buildPinPad(padId, mode){
-  const pad=document.getElementById(padId);
-  if(!pad)return;
-  pad.innerHTML='';
-  [1,2,3,4,5,6,7,8,9,'',0,'⌫'].forEach(n=>{
-    const btn=document.createElement('button');
-    btn.className='pin-btn'+(n==='⌫'?' del':'');
-    btn.textContent=n;
-    if(n===''){btn.style.visibility='hidden';}
-    else{
-      btn.addEventListener('click',function(e){
-        e.preventDefault();
-        if(n==='⌫'){
-          if(mode==='login')loginPin=loginPin.slice(0,-1);
-          else if(mode==='reg')regPin=regPin.slice(0,-1);
-          else if(mode==='reg2')regPin2=regPin2.slice(0,-1);
-        } else {
-          if(mode==='login'&&loginPin.length<4)loginPin+=String(n);
-          else if(mode==='reg'&&regPin.length<4)regPin+=String(n);
-          else if(mode==='reg2'&&regPin2.length<4)regPin2+=String(n);
-        }
-        updateDots(mode);
-      });
-    }
-    pad.appendChild(btn);
-  });
-}
-
-function switchAuthTab(t){
-  document.getElementById('auth-login').style.display=t==='login'?'block':'none';
-  document.getElementById('auth-register').style.display=t==='register'?'block':'none';
-  document.getElementById('auth-tab-login').classList.toggle('active',t==='login');
-  document.getElementById('auth-tab-register').classList.toggle('active',t==='register');
-  loginPin='';regPin='';updateDots('login');updateDots('reg');
-}
-
-function updateDots(mode){
-  let pin,prefix;
-  if(mode==='login'){pin=loginPin;prefix='ld';}
-  else if(mode==='reg'){pin=regPin;prefix='rd';}
-  else{pin=regPin2;prefix='rd2';}
-  for(let i=0;i<4;i++){
-    const d=document.getElementById(prefix+i);
-    if(d)d.classList.toggle('filled',i<pin.length);
-  }
-}
-
-function showAuthErr(mode,msg){
-  const id=mode==='login'?'login-error':'reg-error';
-  const el=document.getElementById(id);
-  el.textContent=msg;el.style.display='block';
-  setTimeout(()=>{el.style.display='none';},3000);
-  if(mode==='login'){loginPin='';updateDots('login');}
-  else{regPin='';updateDots('reg');}
-}
-
-async function doLogin(){
-  const first=document.getElementById('login-first').value.trim();
-  const last=document.getElementById('login-last').value.trim();
-  if(!first||!last){showAuthErr('login','Введите имя и фамилию');return;}
-  const fullName=first+' '+last;
-  const hash=simpleHash(fullName+loginPin);
-  const {data,error}=await sb.from('profiles').select('*').eq('name',fullName).single();
-  if(!data){showAuthErr('login','Пользователь не найден');return;}
-  if(data.password_hash!==hash){showAuthErr('login','Неверный пин-код');return;}
-  if(!data.active){
-    document.getElementById('auth-screen').innerHTML=`<div class="auth-card"><div class="auth-logo"><div style="font-size:40px">⏳</div><div class="auth-logo-title">Lady Stretch</div></div><div class="inactive-msg">Ваш аккаунт ожидает активации руководителем. Обратитесь к администратору.</div><button class="btn btn-sm" style="margin-top:16px;display:block;margin-left:auto;margin-right:auto" onclick="location.reload()">↩ Назад</button></div>`;
-    return;
-  }
-  // Save session
-  localStorage.setItem('ls_session',JSON.stringify({name:fullName,id:data.id}));
-  currentUser={name:fullName,id:data.id};
-  enterApp();
-}
-
-async function doRegister(){
-  const first=document.getElementById('reg-first').value.trim();
-  const last=document.getElementById('reg-last').value.trim();
-  if(!first||!last){showAuthErr('reg','Введите имя и фамилию');return;}
-  if(regPin.length<4){showAuthErr('reg','Введите 4 цифры пин-кода');return;}
-  if(regPin2.length<4){showAuthErr('reg','Повторите пин-код');return;}
-  if(regPin!==regPin2){showAuthErr('reg','Пин-коды не совпадают');regPin2='';updateDots('reg2');return;}
-  const fullName=first+' '+last;
-  const hash=simpleHash(fullName+regPin);
-  const {data:existing}=await sb.from('profiles').select('id').eq('name',fullName).single();
-  if(existing){showAuthErr('reg','Пользователь уже зарегистрирован');return;}
-  const {error}=await sb.from('profiles').insert({name:fullName,password_hash:hash,active:false});
-  if(error){showAuthErr('reg','Ошибка: '+error.message);return;}
-  document.getElementById('auth-register').innerHTML=`<div class="alert alert-green" style="text-align:center;padding:1.5rem"><div style="font-size:32px;margin-bottom:8px">✅</div><div style="font-weight:700;margin-bottom:4px">Регистрация прошла успешно!</div><div style="font-size:13px;color:var(--text2)">Дождитесь активации от руководителя</div></div>`;
-  regPin='';regPin2='';
-}
-
-function enterApp(){
-  document.getElementById('auth-screen').style.display='none';
-  document.getElementById('main-app').style.display='block';
-  document.getElementById('month-label').textContent=monthLabel();
-  // Attach topbar button listeners after app is shown
-  document.getElementById('btn-daily-plan').addEventListener('click', openDailyPlan);
-  document.getElementById('btn-interim').addEventListener('click', openInterimReport);
-  document.getElementById('btn-add-shift').addEventListener('click', openAddShift);
-  loadData();
-}
-
-// Check saved session on load
-async function checkSession(){
-  const saved=localStorage.getItem('ls_session');
-  if(!saved){return;}
-  try{
-    const s=JSON.parse(saved);
-    const {data}=await sb.from('profiles').select('*').eq('id',s.id).single();
-    if(data&&data.active){
-      currentUser={name:data.name,id:data.id};
-      enterApp();
-    } else {
-      localStorage.removeItem('ls_session');
-    }
-  }catch(e){localStorage.removeItem('ls_session');}
-}
-
-// ===== DATA =====
-async function loadData(){
-  document.getElementById('sync-text').textContent='загрузка...';
-  const m=monthKey();
-  const [{data:sd},{data:md},{data:spd},{data:allMy},{data:plansData}]=await Promise.all([
-    sb.from('shifts').select('*').gte('date',m+'-01').lte('date',m+'-31').order('date',{ascending:false}),
-    sb.from('marathons').select('*').eq('active',true).lte('date_start',today()).gte('date_end',today()),
-    currentUser?sb.from('staff_plans').select('*').eq('profile_id',currentUser.id).eq('month',m):Promise.resolve({data:[]}),
-    currentUser?sb.from('shifts').select('*').eq('admin',currentUser.name).order('date',{ascending:false}):Promise.resolve({data:[]}),
-    sb.from('plans').select('*').eq('month',m)
-  ]);
-  // Update plans from Supabase
-  (plansData||[]).forEach(p=>{
-    if(p.studio==='Империал'&&p.revenue)IMP_PLAN=p.revenue;
-    if(p.studio==='Мечта'&&p.revenue)MEC_PLAN=p.revenue;
-  });
-  const myPlan=(spd&&spd[0])||null;
-  const allMyShifts=(allMy||[]).map(r=>({
-    id:r.id,date:r.date,studio:r.studio,admin:r.admin,
-    newSales:+r.new_sales||0,renew:+r.renew||0,restore:+r.restore||0,
-    leads:+r.leads||0,bookings:+r.bookings||0,visits:+r.visits||0,
-    massage:+r.massage_bookings||0,reviews:+r.reviews||0,
-    calls:+r.calls||0,tasks:+r.tasks||0,yoga:+r.yoga_bookings||0,mc:+r.masterclass_bookings||0
-  }));
-  shifts=(sd||[]).map(r=>({
-    id:r.id,date:r.date,studio:r.studio,admin:r.admin,
-    newSales:+r.new_sales||0,renew:+r.renew||0,restore:+r.restore||0,
-    certs:r.certs||[],leads:+r.leads||0,bookings:+r.bookings||0,visits:+r.visits||0,
-    massage:+r.massage_bookings||0,reviews:+r.reviews||0,
-    calls:+r.calls||0,tasks:+r.tasks||0,yoga:+r.yoga_bookings||0,mc:+r.masterclass_bookings||0
-  }));
-  marathons=md||[];
-  document.getElementById('sync-text').textContent='обновлено ✓';
-  await loadTodayPlan();
-  renderAll();
 }
 
 function cashBonus(studio,cash){
@@ -553,31 +424,28 @@ function cashBonus(studio,cash){
 }
 
 function calcShift(s){
-  const cash=s.newSales+s.renew+s.restore;
-  const fix=1500,pNew=Math.round(s.newSales*0.05),pRenew=Math.round(s.renew*0.08),pRestore=Math.round(s.restore*0.10);
+  const cash=(+s.newSales||0)+(+s.renew||0)+(+s.restore||0);
+  const fix=1500,pNew=Math.round((+s.newSales||0)*0.05),pRenew=Math.round((+s.renew||0)*0.08),pRestore=Math.round((+s.restore||0)*0.10);
   const bonus=cashBonus(s.studio,cash);
-  const certs=s.certs||[];
-  const certBonus=certs.filter(c=>c.came).length*500;
-  const certSales=certs.filter(c=>c.came&&c.bought).reduce((a,c)=>a+(+c.amount||0),0);
-  const pCert=Math.round(certSales*0.05);
-  return{fix,pNew,pRenew,pRestore,bonus,certBonus,pCert,cash,total:fix+pNew+pRenew+pRestore+bonus+certBonus+pCert};
+  return{fix,pNew,pRenew,pRestore,bonus,cash,total:fix+pNew+pRenew+pRestore+bonus};
 }
 
-function badge(p){
-  if(p>=100)return`<span class="badge badge-green">✓ В плане</span>`;
-  if(p>=85)return`<span class="badge badge-amber">⚠ Ускориться</span>`;
-  return`<span class="badge badge-red">✗ Отстаём</span>`;
+function parseShift(r){
+  return{id:r.id,date:r.date,studio:r.studio,admin:r.admin,
+    newSales:+r.new_sales||0,renew:+r.renew||0,restore:+r.restore||0,
+    leads:+r.leads||0,bookings:+r.bookings||0,visits:+r.visits||0,
+    massage:+r.massage_bookings||0,reviews:+r.reviews||0,
+    calls:+r.calls||0,tasks:+r.tasks||0,yoga:+r.yoga_bookings||0,mc:+r.masterclass_bookings||0};
 }
 
 function conditionLabel(type,val){
-  const m={revenue:'Выручка ≥ '+fmt(val)+' ₽',new_sales:'Новых продаж ≥ '+val+' шт',renewals:'Продлений ≥ '+val+' шт',bookings:'Записей ≥ '+val+' шт',visits:'Доходимость ≥ '+val+' чел',massage:'Массаж ≥ '+val+' шт',reviews:'Отзывов ≥ '+val+' шт',conv_cv3:'CV ≥ '+val+'%',restore:'Возвратов ≥ '+val+' шт'};
+  const m={revenue:'Выручка ≥ '+fmt(val)+' ₽',new_sales:'Новых ≥ '+val,renewals:'Продлений ≥ '+val,restore:'Возвратов ≥ '+val,bookings:'Записей ≥ '+val,visits:'Приход ≥ '+val,massage:'Массаж ≥ '+val,reviews:'Отзывов ≥ '+val,conv_cv3:'CV ≥ '+val+'%'};
   return m[type]||val;
 }
 
 function marathonProgress(m,ss){
   const ms=ss.filter(s=>s.date>=m.date_start&&s.date<=m.date_end);
-  const type=m.condition_type;
-  let val=0;
+  const type=m.condition_type; let val=0;
   if(type==='revenue')val=ms.reduce((a,s)=>a+s.newSales+s.renew+s.restore,0);
   else if(type==='new_sales')val=ms.filter(s=>s.newSales>0).length;
   else if(type==='renewals')val=ms.filter(s=>s.renew>0).length;
@@ -592,28 +460,179 @@ function marathonProgress(m,ss){
   return{val,target,pct,done:val>=target};
 }
 
-// ===== RENDER =====
-function renderAll(){renderMarathonBanners();renderDashboard();renderShifts();renderProfile();}
+// ===== AUTH =====
+function buildPad(padId, mode){
+  const pad=document.getElementById(padId);
+  if(!pad)return;
+  pad.innerHTML='';
+  [1,2,3,4,5,6,7,8,9,'',0,'⌫'].forEach(n=>{
+    const btn=document.createElement('button');
+    btn.className='pin-btn'+(n==='⌫'?' del':'');
+    btn.textContent=n==='⌫'?'⌫':n;
+    if(n===''){btn.style.visibility='hidden';}
+    else{
+      btn.addEventListener('click',e=>{
+        e.preventDefault();e.stopPropagation();
+        if(n==='⌫'){
+          if(mode==='login')loginPin=loginPin.slice(0,-1);
+          else if(mode==='reg')regPin=regPin.slice(0,-1);
+          else regPin2=regPin2.slice(0,-1);
+        } else {
+          if(mode==='login'&&loginPin.length<4)loginPin+=n;
+          else if(mode==='reg'&&regPin.length<4)regPin+=n;
+          else if(mode==='reg2'&&regPin2.length<4)regPin2+=n;
+        }
+        updateDots(mode);
+      });
+    }
+    pad.appendChild(btn);
+  });
+}
 
-function renderMarathonBanners(){
-  if(!marathons.length){document.getElementById('marathon-banners').innerHTML='';return;}
-  // Show only marathons relevant to user's studio
-  const myStudio=getMyStudio();
-  const visibleMarathons=marathons.filter(m=>!m.target_profile_id||m.target_profile_id===currentUser.id);
-  document.getElementById('marathon-banners').innerHTML=visibleMarathons.map(m=>{
-    const myShifts=shifts.filter(s=>s.admin===currentUser.name);
-    const prog=marathonProgress(m,myShifts);
-    const color=prog.done?'var(--green)':prog.pct>=50?'var(--amber)':'var(--red)';
+function updateDots(mode){
+  let pin,pre;
+  if(mode==='login'){pin=loginPin;pre='ld';}
+  else if(mode==='reg'){pin=regPin;pre='rd';}
+  else{pin=regPin2;pre='rd2';}
+  for(let i=0;i<4;i++){
+    const d=document.getElementById(pre+i);
+    if(d)d.classList.toggle('filled',i<pin.length);
+  }
+}
+
+function showAuthTab(t){
+  document.getElementById('login-form').style.display=t==='login'?'block':'none';
+  document.getElementById('reg-form').style.display=t==='reg'?'block':'none';
+  document.getElementById('tab-login-btn').classList.toggle('active',t==='login');
+  document.getElementById('tab-reg-btn').classList.toggle('active',t==='reg');
+  loginPin='';regPin='';regPin2='';
+  updateDots('login');updateDots('reg');updateDots('reg2');
+}
+
+function showAuthErr(id,msg){
+  const el=document.getElementById(id);el.textContent=msg;el.style.display='block';
+  if(id==='login-err'){loginPin='';updateDots('login');}
+  else{regPin2='';updateDots('reg2');}
+}
+
+async function doLogin(){
+  const first=document.getElementById('login-first').value.trim();
+  const last=document.getElementById('login-last').value.trim();
+  if(!first||!last){showAuthErr('login-err','Введите имя и фамилию');return;}
+  if(loginPin.length<4){showAuthErr('login-err','Введите пин-код');return;}
+  const fullName=first+' '+last;
+  const hash=simpleHash(fullName+loginPin);
+  const {data}=await sb.from('profiles').select('*').eq('name',fullName).single();
+  if(!data){showAuthErr('login-err','Пользователь не найден');return;}
+  if(data.password_hash!==hash){showAuthErr('login-err','Неверный пин-код');return;}
+  if(!data.active){
+    document.getElementById('auth-screen').innerHTML=`<div class="auth-card"><div class="auth-logo"><div style="font-size:40px">⏳</div><div class="auth-logo-title">Ожидание активации</div><div class="auth-logo-sub">Обратитесь к руководителю</div></div></div>`;
+    return;
+  }
+  const myS=await sb.from('shifts').select('studio,date').eq('admin',fullName).order('date',{ascending:false}).limit(1);
+  const studio=myS.data&&myS.data[0]?myS.data[0].studio:'';
+  currentUser={name:fullName,id:data.id,studio};
+  localStorage.setItem('ls_session',JSON.stringify({name:fullName,id:data.id}));
+  enterApp();
+}
+
+async function doRegister(){
+  const first=document.getElementById('reg-first').value.trim();
+  const last=document.getElementById('reg-last').value.trim();
+  if(!first||!last){showAuthErr('reg-err','Введите имя и фамилию');return;}
+  if(regPin.length<4){showAuthErr('reg-err','Введите пин-код');return;}
+  if(regPin2.length<4){showAuthErr('reg-err','Повторите пин-код');return;}
+  if(regPin!==regPin2){showAuthErr('reg-err','Пин-коды не совпадают');regPin2='';updateDots('reg2');return;}
+  const fullName=first+' '+last;
+  const hash=simpleHash(fullName+regPin);
+  const {data:ex}=await sb.from('profiles').select('id').eq('name',fullName).single();
+  if(ex){showAuthErr('reg-err','Пользователь уже зарегистрирован');return;}
+  const {error}=await sb.from('profiles').insert({name:fullName,password_hash:hash,active:false});
+  if(error){showAuthErr('reg-err','Ошибка: '+error.message);return;}
+  document.getElementById('reg-form').innerHTML='<div class="alert alert-green" style="text-align:center;padding:1.5rem"><div style="font-size:32px">✅</div><div style="font-weight:700;margin-top:8px">Готово!</div><div style="font-size:13px;color:var(--text2);margin-top:4px">Дождитесь активации от руководителя</div></div>';
+}
+
+async function checkSession(){
+  const saved=localStorage.getItem('ls_session');
+  if(!saved)return;
+  try{
+    const s=JSON.parse(saved);
+    const {data}=await sb.from('profiles').select('*').eq('id',s.id).single();
+    if(data&&data.active){
+      const myS=await sb.from('shifts').select('studio,date').eq('admin',data.name).order('date',{ascending:false}).limit(1);
+      const studio=myS.data&&myS.data[0]?myS.data[0].studio:'';
+      currentUser={name:data.name,id:data.id,studio};
+      enterApp();
+    } else { localStorage.removeItem('ls_session'); }
+  }catch(e){localStorage.removeItem('ls_session');}
+}
+
+function enterApp(){
+  const auth=document.getElementById('auth-screen');
+  auth.style.display='none';
+  auth.style.pointerEvents='none';
+  document.getElementById('main-app').style.display='block';
+  document.getElementById('month-label').textContent=monthLabel();
+  loadData();
+}
+
+function doLogout(){
+  localStorage.removeItem('ls_session');
+  currentUser=null;location.reload();
+}
+
+// ===== DATA =====
+async function loadData(){
+  document.getElementById('sync-text').textContent='загрузка...';
+  const m=monthKey();
+  const [r1,r2,r3,r4,r5]=await Promise.all([
+    sb.from('shifts').select('*').gte('date',m+'-01').lte('date',m+'-31').order('date',{ascending:false}),
+    sb.from('marathons').select('*').eq('active',true).lte('date_start',today()).gte('date_end',today()),
+    currentUser?sb.from('shifts').select('*').eq('admin',currentUser.name).order('date',{ascending:false}):Promise.resolve({data:[]}),
+    currentUser?sb.from('daily_plans').select('*').eq('profile_id',currentUser.id).eq('date',today()).single():Promise.resolve({data:null}),
+    sb.from('plans').select('*').eq('month',m)
+  ]);
+  shifts=(r1.data||[]).map(parseShift);
+  marathons=r2.data||[];
+  allMyShifts=(r3.data||[]).map(parseShift);
+  todayPlan=r4.data||null;
+  (r5.data||[]).forEach(p=>{
+    if(p.studio==='Империал'&&p.revenue)IMP_PLAN=p.revenue;
+    if(p.studio==='Мечта'&&p.revenue)MEC_PLAN=p.revenue;
+  });
+  document.getElementById('sync-text').textContent='обновлено ✓';
+  renderAll();
+}
+
+// ===== RENDER =====
+function renderAll(){
+  renderBanners();
+  renderDashboard();
+  renderShifts();
+  renderProfile();
+}
+
+function getMyStudio(){
+  if(currentUser&&currentUser.studio)return currentUser.studio;
+  const myS=shifts.filter(s=>s.admin===currentUser.name);
+  return myS.length?myS[0].studio:'Империал';
+}
+
+function renderBanners(){
+  const visible=marathons.filter(m=>!m.target_profile_id||m.target_profile_id===currentUser.id);
+  if(!visible.length){document.getElementById('marathon-banners').innerHTML='';return;}
+  const myS=shifts.filter(s=>s.admin===currentUser.name);
+  document.getElementById('marathon-banners').innerHTML=visible.map(m=>{
+    const prog=marathonProgress(m,myS);
+    const col=prog.done?'var(--green)':prog.pct>=50?'var(--amber)':'var(--red)';
     return`<div class="marathon-banner">
       <div style="display:flex;justify-content:space-between;gap:12px">
         <div style="flex:1">
           <div class="marathon-banner-title">🏆 ${m.title}</div>
           <div style="font-size:12px;color:var(--text2);margin-bottom:6px">${m.condition_type?conditionLabel(m.condition_type,m.condition_value):m.description||''}</div>
-          <div style="font-size:11px;color:var(--text3);margin-bottom:6px">📅 ${m.date_start} — ${m.date_end}</div>
-          <div class="progress-wrap-sm"><div class="progress-fill-sm" style="width:${prog.pct}%;background:${color}"></div></div>
+          <div class="progress-wrap-sm"><div class="progress-fill-sm" style="width:${prog.pct}%;background:${col}"></div></div>
           <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:11px;color:var(--amber-text)">
-            <span>${prog.done?'✅ Выполнено!':'Мой прогресс: '+prog.val+' / '+prog.target}</span>
-            <span>${prog.pct}%</span>
+            <span>${prog.done?'✅ Выполнено!':'Прогресс: '+prog.val+' / '+prog.target}</span><span>${prog.pct}%</span>
           </div>
         </div>
         <div class="marathon-banner-prize">${fmt(m.prize)} ₽</div>
@@ -622,14 +641,8 @@ function renderMarathonBanners(){
   }).join('');
 }
 
-function getMyStudio(){
-  const myShifts=shifts.filter(s=>s.admin===currentUser.name);
-  if(!myShifts.length)return'';
-  return [...myShifts].sort((a,b)=>b.date.localeCompare(a.date))[0].studio;
-}
-
 function renderDashboard(){
-  const studio=getMyStudio()||'Империал';
+  const studio=getMyStudio();
   const plan=studio==='Империал'?IMP_PLAN:MEC_PLAN;
   const ss=shifts.filter(s=>s.studio===studio);
   const fact=ss.reduce((a,s)=>a+s.newSales+s.renew+s.restore,0);
@@ -640,33 +653,33 @@ function renderDashboard(){
   const rr=calcRR(fact);
   const rrPct=Math.round(rr/plan*100);
   const factPct=Math.round(fact/plan*100);
-  const color=rrPct>=100?'var(--green)':rrPct>=85?'var(--amber)':'var(--red)';
+  const col=rrPct>=100?'var(--green)':rrPct>=85?'var(--amber)':'var(--red)';
   const now=new Date();
-  const daysLeft=new Date(now.getFullYear(),now.getMonth()+1,0).getDate()-now.getDate();
-  const needPerDay=daysLeft>0?Math.max(0,Math.round((plan-fact)/daysLeft)):0;
+  const dLeft=new Date(now.getFullYear(),now.getMonth()+1,0).getDate()-now.getDate();
+  const needDay=dLeft>0?Math.max(0,Math.round((plan-fact)/dLeft)):0;
   const cv1=leads>0?Math.round(bookings/leads*100):null;
   const cv2=bookings>0?Math.round(visits/bookings*100):null;
   const cv3=visits>0?Math.round(sales/visits*100):null;
   const pill=studio==='Империал'?'tag-imp':'tag-mec';
 
-  document.getElementById('studio-card').innerHTML=`
+  document.getElementById('dashboard-content').innerHTML=`
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
         <span class="tag ${pill}" style="font-size:13px;padding:4px 12px">${studio}</span>${badge(rrPct)}
       </div>
       <div class="grid2" style="margin-bottom:10px">
         <div class="metric"><div class="metric-label">Факт</div><div class="metric-val">${fmt(fact)} ₽</div></div>
-        <div class="metric"><div class="metric-label">Ран рейт</div><div class="metric-val" style="color:${color}">${fmt(rr)} ₽</div><div class="metric-sub">прогноз на конец месяца</div></div>
+        <div class="metric"><div class="metric-label">Ран рейт</div><div class="metric-val" style="color:${col}">${fmt(rr)} ₽</div><div class="metric-sub">прогноз на конец месяца</div></div>
       </div>
-      <div class="metric" style="margin-bottom:10px;background:${needPerDay===0?'var(--green-bg)':'var(--bg2)'};border-color:${needPerDay===0?'#86efac':'var(--border)'}">
-        <div class="metric-label">Нужно продавать в день</div>
-        <div class="metric-val" style="font-size:18px;color:${needPerDay===0?'var(--green-text)':'var(--text)'}">${needPerDay===0?'✓ План выполнен':fmt(needPerDay)+' ₽'}</div>
-        <div class="metric-sub">${daysLeft} дней осталось · план ${fmt(plan)} ₽</div>
+      <div class="metric" style="margin-bottom:10px;background:${needDay===0?'var(--green-bg)':'var(--bg2)'};border-color:${needDay===0?'#86efac':'var(--border)'}">
+        <div class="metric-label">Нужно в день</div>
+        <div class="metric-val" style="font-size:18px;color:${needDay===0?'var(--green-text)':'var(--text)'}">${needDay===0?'✓ План выполнен':fmt(needDay)+' ₽'}</div>
+        <div class="metric-sub">${dLeft} дней · план ${fmt(plan)} ₽</div>
       </div>
-      <div class="progress-wrap"><div class="progress-fill" style="width:${Math.min(factPct,100)}%;background:${color}"></div></div>
+      <div class="progress-wrap"><div class="progress-fill" style="width:${Math.min(factPct,100)}%;background:${col}"></div></div>
       <div style="display:flex;justify-content:space-between;margin-top:5px;font-size:11px;color:var(--text3)"><span>Факт: ${factPct}%</span><span>Ран рейт: ${rrPct}%</span></div>
       ${leads>0?`<div class="divider"></div>
-      <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">Воронка студии</div>
+      <div class="subsection-title">Воронка студии</div>
       <div class="funnel-row"><span class="funnel-label">Лиды</span><span class="funnel-val">${leads}</span><span class="funnel-pct"></span></div>
       <div class="funnel-row"><span style="color:var(--text3);font-size:11px">↓</span><span class="funnel-label">Записи</span><span class="funnel-val">${bookings}</span><span class="funnel-pct">${cv1!==null?cv1+'%':'—'}</span></div>
       <div class="funnel-row"><span style="color:var(--text3);font-size:11px">↓</span><span class="funnel-label">Доходимость</span><span class="funnel-val">${visits}</span><span class="funnel-pct">${cv2!==null?cv2+'%':'—'}</span></div>
@@ -676,15 +689,12 @@ function renderDashboard(){
 
 function renderShifts(){
   const studio=getMyStudio();
-  const list=studio?shifts.filter(s=>s.studio===studio):[...shifts];
-  list.sort((a,b)=>b.date.localeCompare(a.date));
-  if(!list.length){document.getElementById('shifts-list').innerHTML=`<div class="empty-state">Смен за этот месяц ещё нет.</div>`;return;}
-  document.getElementById('shifts-list').innerHTML=list.map(s=>{
+  const list=shifts.filter(s=>s.studio===studio).sort((a,b)=>b.date.localeCompare(a.date));
+  if(!list.length){document.getElementById('shifts-content').innerHTML='<div class="empty-state">Смен за этот месяц ещё нет</div>';return;}
+  document.getElementById('shifts-content').innerHTML=list.map(s=>{
     const cls=s.studio==='Империал'?'tag-imp':'tag-mec';
     const cash=s.newSales+s.renew+s.restore;
     const isMe=s.admin===currentUser.name;
-    const leads=+s.leads||0,bookings=+s.bookings||0,visits=+s.visits||0;
-
     return`<div class="shift-card">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
         <div>
@@ -698,12 +708,12 @@ function renderShifts(){
             <span class="chip">Касса: ${fmt(cash)} ₽</span>
             ${s.newSales>0?`<span class="chip">Новые: ${fmt(s.newSales)} ₽</span>`:''}
             ${s.renew>0?`<span class="chip">Продления: ${fmt(s.renew)} ₽</span>`:''}
-            ${s.restore>0?`<span class="chip">Восст.: ${fmt(s.restore)} ₽</span>`:''}
+            ${s.restore>0?`<span class="chip">Возврат: ${fmt(s.restore)} ₽</span>`:''}
           </div>
           <div class="chips">
-            ${leads>0?`<span class="chip chip-green">Лиды: ${leads}</span>`:''}
-            ${bookings>0?`<span class="chip chip-green">Записи: ${bookings}${leads>0?' ('+Math.round(bookings/leads*100)+'%)':''}</span>`:''}
-            ${visits>0?`<span class="chip chip-green">Приход: ${visits}${bookings>0?' ('+Math.round(visits/bookings*100)+'%)':''}</span>`:''}
+            ${s.leads>0?`<span class="chip chip-green">Лиды: ${s.leads}</span>`:''}
+            ${s.bookings>0?`<span class="chip chip-green">Записи: ${s.bookings}</span>`:''}
+            ${s.visits>0?`<span class="chip chip-green">Приход: ${s.visits}</span>`:''}
             ${s.massage>0?`<span class="chip chip-green">Массаж: ${s.massage}</span>`:''}
             ${s.reviews>0?`<span class="chip chip-green">Отзывы: ${s.reviews}</span>`:''}
             ${s.calls>0?`<span class="chip chip-green">Звонки: ${s.calls}</span>`:''}
@@ -712,7 +722,7 @@ function renderShifts(){
             ${s.mc>0?`<span class="chip chip-green">МК: ${s.mc}</span>`:''}
           </div>
         </div>
-        ${isMe?`<button class="btn btn-sm" onclick="openEdit(${s.id})">✏️</button>`:''}
+        ${isMe?`<button class="btn btn-sm" data-edit="${s.id}">✏️</button>`:''}
       </div>
     </div>`;
   }).join('');
@@ -720,222 +730,175 @@ function renderShifts(){
 
 function renderProfile(){
   const name=currentUser.name;
-  const myShifts=shifts.filter(s=>s.admin===name);
-  const m=monthKey();
-  const ms=myShifts.filter(s=>s.date.startsWith(m));
-  const revenue=ms.reduce((a,s)=>a+s.newSales+s.renew+s.restore,0);
-  const leads=ms.reduce((a,s)=>a+s.leads,0);
-  const bookings=ms.reduce((a,s)=>a+s.bookings,0);
-  const visits=ms.reduce((a,s)=>a+s.visits,0);
-  const newSales=ms.filter(s=>s.newSales>0).length;
-  const renewals=ms.filter(s=>s.renew>0).length;
-  const massage=ms.reduce((a,s)=>a+s.massage,0);
-  const reviews=ms.reduce((a,s)=>a+s.reviews,0);
+  const myS=shifts.filter(s=>s.admin===name);
+  const revenue=myS.reduce((a,s)=>a+s.newSales+s.renew+s.restore,0);
+  const leads=myS.reduce((a,s)=>a+s.leads,0);
+  const bookings=myS.reduce((a,s)=>a+s.bookings,0);
+  const visits=myS.reduce((a,s)=>a+s.visits,0);
+  const newSales=myS.filter(s=>s.newSales>0).length;
+  const renewals=myS.filter(s=>s.renew>0).length;
+  const massage=myS.reduce((a,s)=>a+s.massage,0);
+  const reviews=myS.reduce((a,s)=>a+s.reviews,0);
   const cv3=visits>0?Math.round(newSales/visits*100):null;
   const studio=getMyStudio();
   const pill=studio==='Империал'?'tag-imp':'tag-mec';
-  // Get plan from loaded data
-  const plan=typeof myPlan!=='undefined'?myPlan:null;
 
-  let fix=0,pNew=0,pRenew=0,pRestore=0,bonus=0,certB=0,pCert=0;
-  ms.forEach(s=>{const sal=calcShift(s);fix+=sal.fix;pNew+=sal.pNew;pRenew+=sal.pRenew;pRestore+=sal.pRestore;bonus+=sal.bonus;certB+=sal.certBonus;pCert+=sal.pCert;});
-  const salTotal=fix+pNew+pRenew+pRestore+bonus+certB+pCert;
+  let fix=0,pNew=0,pRenew=0,pRestore=0,bonus=0;
+  myS.forEach(s=>{const sal=calcShift(s);fix+=sal.fix;pNew+=sal.pNew;pRenew+=sal.pRenew;pRestore+=sal.pRestore;bonus+=sal.bonus;});
+  const salTotal=fix+pNew+pRenew+pRestore+bonus;
   const now=new Date(),day=now.getDate(),dim=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
   const salEst=day>0?Math.round(salTotal/day*dim):0;
 
-  const activeM=marathons.filter(m=>!m.target_profile_id||m.target_profile_id===currentUser.id);
+  // Today plan block
+  const todayShifts=myS.filter(s=>s.date===today());
+  const todayFact=todayShifts.reduce((a,s)=>a+s.newSales+s.renew+s.restore,0);
+  const todayCalls=todayShifts.reduce((a,s)=>a+s.calls,0);
+  const todayTasks=todayShifts.reduce((a,s)=>a+s.tasks,0);
+  const planRev=todayPlan?(+todayPlan.archive_focus||0)+(+todayPlan.tasks_planned||0)+(+todayPlan.calls_planned||0):0;
 
-
-  // Today plan fact vs plan
-  const todayShift = ms.filter(s=>s.date===today());
-  const todayFact = todayShift.reduce((a,s)=>a+s.newSales+s.renew+s.restore,0);
-  const todayCalls = todayShift.reduce((a,s)=>a+s.calls,0);
-  const todayTasks = todayShift.reduce((a,s)=>a+s.tasks,0);
+  // History months
+  const months=[...new Set(allMyShifts.map(s=>s.date.slice(0,7)))].sort((a,b)=>b.localeCompare(a));
 
   document.getElementById('profile-content').innerHTML=`
     <div class="card" style="text-align:center">
       <div class="profile-avatar">${name[0]}</div>
       <div style="font-size:18px;font-weight:700;margin-bottom:6px">${name}</div>
       ${studio?`<span class="tag ${pill}" style="font-size:12px">${studio}</span>`:''}
-      <div style="margin-top:12px">
-        <button class="btn btn-sm btn-danger" onclick="doLogout()">Выйти</button>
-      </div>
+      <div style="margin-top:12px"><button class="btn btn-sm btn-danger" id="logout-btn">Выйти</button></div>
     </div>
 
     ${todayPlan?`
-    <div class="subsection-title">📋 Мой план на сегодня</div>
+    <div class="subsection-title">📋 План на сегодня</div>
     <div class="card" style="border-color:var(--amber)">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-        <span style="font-size:13px;color:var(--text2)">${todayPlan.date}</span>
-        <button class="btn btn-sm" onclick="openDailyPlan()">✏️ Изменить</button>
-      </div>
-      <div class="grid2" style="margin-bottom:10px">
-        <div class="metric" style="background:${todayFact>=(todayPlan.revenue_plan||0)?'var(--green-bg)':'var(--amber-bg)'}">
+      <div class="grid2" style="margin-bottom:8px">
+        <div class="metric" style="background:${todayFact>=(+todayPlan.archive_focus+todayPlan.tasks_planned+todayPlan.calls_planned)?'var(--green-bg)':'var(--amber-bg)'}">
           <div class="metric-label">Выручка план/факт</div>
-          <div class="metric-val" style="font-size:16px">${fmt(todayFact)} / ${fmt(todayPlan.revenue_plan)} ₽</div>
-          <div class="progress-wrap-sm"><div class="progress-fill-sm" style="width:${todayPlan.revenue_plan>0?Math.min(Math.round(todayFact/todayPlan.revenue_plan*100),100):0}%;background:${todayFact>=(todayPlan.revenue_plan||0)?'var(--green)':'var(--amber)'}"></div></div>
+          <div class="metric-val" style="font-size:15px">${fmt(todayFact)} ₽</div>
+          <div style="font-size:11px;color:var(--text3)">план: ${fmt((+todayPlan.archive_focus||0)+(+todayPlan.tasks_planned||0)+(+todayPlan.calls_planned||0))} ₽</div>
         </div>
         <div class="metric">
-          <div class="metric-label">Пробных сегодня</div>
-          <div class="metric-val" style="font-size:16px">${todayPlan.trials_planned||0} <span style="font-size:12px;color:var(--text3)">запл.</span></div>
+          <div class="metric-label">Пробных</div>
+          <div class="metric-val" style="font-size:15px">${todayPlan.trials_planned||0} чел</div>
         </div>
       </div>
-      <div class="grid3">
+      <div class="grid2">
         ${todayPlan.calls_planned?`<div class="metric"><div class="metric-label">Звонки план/факт</div><div class="metric-val" style="font-size:15px">${todayCalls} / ${todayPlan.calls_planned}</div><div class="progress-wrap-sm"><div class="progress-fill-sm" style="width:${Math.min(Math.round(todayCalls/todayPlan.calls_planned*100),100)}%;background:var(--blue)"></div></div></div>`:''}
         ${todayPlan.tasks_planned?`<div class="metric"><div class="metric-label">Задачи план/факт</div><div class="metric-val" style="font-size:15px">${todayTasks} / ${todayPlan.tasks_planned}</div><div class="progress-wrap-sm"><div class="progress-fill-sm" style="width:${Math.min(Math.round(todayTasks/todayPlan.tasks_planned*100),100)}%;background:var(--blue)"></div></div></div>`:''}
-        ${todayPlan.archive_focus?`<div class="metric"><div class="metric-label">Продление (архив)</div><div class="metric-val" style="font-size:15px">${todayPlan.archive_focus} чел</div></div>`:''}
       </div>
-    </div>`:'<div class="card-muted" style="text-align:center;color:var(--text3);font-size:13px;margin-bottom:12px">План на сегодня не поставлен — <button class="btn btn-sm btn-primary" onclick="openDailyPlan()">+ Поставить план</button></div>'}
+    </div>`:'<div class="card-muted" style="text-align:center;font-size:13px;color:var(--text3);margin-bottom:12px">План на сегодня не поставлен</div>'}
 
-    <div class="subsection-title" style="margin-top:4px">📊 Мои показатели — ${monthLabel()}</div>
+    <div class="subsection-title">📊 Мои показатели — ${monthLabel()}</div>
     <div class="grid3" style="margin-bottom:10px">
       <div class="metric"><div class="metric-label">Выручка</div><div class="metric-val" style="font-size:17px">${fmt(revenue)} ₽</div></div>
-      <div class="metric"><div class="metric-label">Смен</div><div class="metric-val" style="font-size:17px">${ms.length}</div></div>
+      <div class="metric"><div class="metric-label">Смен</div><div class="metric-val" style="font-size:17px">${myS.length}</div></div>
       <div class="metric"><div class="metric-label">CV→продажа</div><div class="metric-val" style="font-size:17px">${cv3!==null?cv3+'%':'—'}</div></div>
     </div>
-    <div class="grid4" style="margin-bottom:4px">
+    <div class="grid4" style="margin-bottom:10px">
       <div class="metric"><div class="metric-label">Лиды</div><div class="metric-val" style="font-size:16px">${leads||'—'}</div></div>
       <div class="metric"><div class="metric-label">Записи</div><div class="metric-val" style="font-size:16px">${bookings||'—'}</div></div>
       <div class="metric"><div class="metric-label">Массаж</div><div class="metric-val" style="font-size:16px">${massage||'—'}</div></div>
       <div class="metric"><div class="metric-label">Отзывы</div><div class="metric-val" style="font-size:16px">${reviews||'—'}</div></div>
     </div>
 
-    ${plan?`<div class="subsection-title" style="margin-top:4px">🎯 Мой план — ${monthLabel()}</div>
-    <div class="grid3" style="margin-bottom:4px">
-      ${plan.revenue?`<div class="metric"><div class="metric-label">Выручка</div><div class="metric-val" style="font-size:15px">${fmt(plan.revenue)} ₽</div><div class="progress-wrap-sm"><div class="progress-fill-sm" style="width:${Math.min(Math.round(revenue/plan.revenue*100),100)}%;background:${revenue>=plan.revenue?'var(--green)':'var(--blue)'}"></div></div><div style="font-size:11px;color:var(--text3);margin-top:3px">${Math.round(revenue/plan.revenue*100)}%</div></div>`:''}
-      ${plan.new_clients?`<div class="metric"><div class="metric-label">Новые клиенты</div><div class="metric-val" style="font-size:15px">${newSales} / ${plan.new_clients}</div><div class="progress-wrap-sm"><div class="progress-fill-sm" style="width:${Math.min(Math.round(newSales/plan.new_clients*100),100)}%;background:${newSales>=plan.new_clients?'var(--green)':'var(--blue)'}"></div></div></div>`:''}
-      ${plan.renewals?`<div class="metric"><div class="metric-label">Продления</div><div class="metric-val" style="font-size:15px">${renewals} / ${plan.renewals}</div><div class="progress-wrap-sm"><div class="progress-fill-sm" style="width:${Math.min(Math.round(renewals/plan.renewals*100),100)}%;background:${renewals>=plan.renewals?'var(--green)':'var(--blue)'}"></div></div></div>`:''}
-    </div>
-    <div class="grid3" style="margin-bottom:10px">
-      ${plan.bookings?`<div class="metric"><div class="metric-label">Записи на пробное</div><div class="metric-val" style="font-size:15px">${bookings} / ${plan.bookings}</div><div class="progress-wrap-sm"><div class="progress-fill-sm" style="width:${Math.min(Math.round(bookings/plan.bookings*100),100)}%;background:${bookings>=plan.bookings?'var(--green)':'var(--blue)'}"></div></div></div>`:''}
-      ${plan.calls?`<div class="metric"><div class="metric-label">Звонки</div><div class="metric-val" style="font-size:15px">${ms.reduce((a,s)=>a+s.calls,0)} / ${plan.calls}</div><div class="progress-wrap-sm"><div class="progress-fill-sm" style="width:${Math.min(Math.round(ms.reduce((a,s)=>a+s.calls,0)/plan.calls*100),100)}%;background:${ms.reduce((a,s)=>a+s.calls,0)>=plan.calls?'var(--green)':'var(--blue)'}"></div></div></div>`:''}
-      ${plan.reviews?`<div class="metric"><div class="metric-label">Отзывы</div><div class="metric-val" style="font-size:15px">${reviews} / ${plan.reviews}</div><div class="progress-wrap-sm"><div class="progress-fill-sm" style="width:${Math.min(Math.round(reviews/plan.reviews*100),100)}%;background:${reviews>=plan.reviews?'var(--green)':'var(--blue)'}"></div></div></div>`:''}
-    </div>`:''}
-
-    <div class="subsection-title" style="margin-top:14px">💰 Моя зарплата</div>
+    <div class="subsection-title">💰 Моя зарплата</div>
     <div class="salary-box">
-      <div style="font-size:11px;color:var(--blue-text);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">За ${ms.length} смен этого месяца</div>
+      <div style="font-size:11px;color:var(--blue-text);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">За ${myS.length} смен этого месяца</div>
       <div class="salary-total">${fmt(salTotal)} ₽</div>
       <div style="font-size:13px;color:var(--blue-text);margin-top:6px;font-weight:600">Прогноз на месяц: ${fmt(salEst)} ₽</div>
     </div>
     <div class="card">
-      ${[
-        {label:`Оклад (${ms.length} × 1 500 ₽)`,val:fix},
-        {label:'Новые абонементы (5%)',val:pNew},
-        {label:'Продления (8%)',val:pRenew},
-        {label:'Восстановление (10%)',val:pRestore},
-        {label:'Бонус за кассу',val:bonus},
-        {label:'Сертификаты',val:certB+pCert},
-      ].map(i=>`<div class="history-row"><span style="color:var(--text2)">${i.label}</span><span style="font-weight:600">${fmt(i.val)} ₽</span></div>`).join('')}
+      ${[{l:`Оклад (${myS.length} × 1 500 ₽)`,v:fix},{l:'Новые (5%)',v:pNew},{l:'Продления (8%)',v:pRenew},{l:'Возврат (10%)',v:pRestore},{l:'Бонус за кассу',v:bonus}]
+        .map(i=>`<div class="history-row"><span style="color:var(--text2)">${i.l}</span><span style="font-weight:600">${fmt(i.v)} ₽</span></div>`).join('')}
       <div style="display:flex;justify-content:space-between;padding:10px 0;font-size:15px;font-weight:700;border-top:2px solid var(--border);margin-top:4px"><span>Итого</span><span>${fmt(salTotal)} ₽</span></div>
     </div>
 
-    ${activeM.length?`<div class="subsection-title">🏆 Мои марафоны</div>
-    ${activeM.map(mm=>{
-      const prog=marathonProgress(mm,ms);
-      const color=prog.done?'var(--green)':prog.pct>=50?'var(--amber)':'var(--red)';
+    ${marathons.filter(m=>!m.target_profile_id||m.target_profile_id===currentUser.id).length?`
+    <div class="subsection-title">🏆 Мои марафоны</div>
+    ${marathons.filter(m=>!m.target_profile_id||m.target_profile_id===currentUser.id).map(m=>{
+      const prog=marathonProgress(m,myS);
+      const col=prog.done?'var(--green)':prog.pct>=50?'var(--amber)':'var(--red)';
       return`<div class="marathon-banner" style="margin-bottom:10px">
         <div style="display:flex;justify-content:space-between;gap:12px">
           <div style="flex:1">
-            <div class="marathon-banner-title">🏆 ${mm.title}</div>
-            <div style="font-size:12px;color:var(--text2);margin-bottom:6px">${mm.condition_type?conditionLabel(mm.condition_type,mm.condition_value):mm.description||''}</div>
-            <div class="progress-wrap-sm"><div class="progress-fill-sm" style="width:${prog.pct}%;background:${color}"></div></div>
+            <div class="marathon-banner-title">🏆 ${m.title}</div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:6px">${m.condition_type?conditionLabel(m.condition_type,m.condition_value):''}</div>
+            <div class="progress-wrap-sm"><div class="progress-fill-sm" style="width:${prog.pct}%;background:${col}"></div></div>
             <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:11px;color:var(--amber-text)">
-              <span>${prog.done?'✅ Выполнено!':'Мой прогресс: '+prog.val+' / '+prog.target}</span>
-              <span>${prog.pct}%</span>
+              <span>${prog.done?'✅ Выполнено!':'Прогресс: '+prog.val+' / '+prog.target}</span><span>${prog.pct}%</span>
             </div>
           </div>
-          <div class="marathon-banner-prize">${fmt(mm.prize)} ₽</div>
+          <div class="marathon-banner-prize">${fmt(m.prize)} ₽</div>
         </div>
       </div>`;
     }).join('')}`:''}
 
     <div class="subsection-title" style="display:flex;justify-content:space-between;align-items:center">
       <span>📅 История смен</span>
-      <select id="history-month-filter" style="font-size:12px;padding:4px 8px;width:auto" onchange="filterHistory()">
+      <select id="history-filter" style="font-size:12px;padding:4px 8px;width:auto">
         <option value="all">Все месяцы</option>
+        ${months.map(m=>`<option value="${m}" ${m===monthKey()?'selected':''}>${new Date(m+'-01').toLocaleString('ru-RU',{month:'long',year:'numeric'})}</option>`).join('')}
       </select>
     </div>
-    <div class="card" id="history-list">
-      <div style="color:var(--text3);text-align:center;padding:1rem">Загрузка...</div>
-    </div>`;
-  
-  // Build month filter options
-  const months=[...new Set(allMyShifts.map(s=>s.date.slice(0,7)))].sort((a,b)=>b.localeCompare(a));
-  const sel=document.getElementById('history-month-filter');
-  if(sel){
-    months.forEach(m=>{
-      const opt=document.createElement('option');
-      opt.value=m;
-      opt.textContent=new Date(m+'-01').toLocaleString('ru-RU',{month:'long',year:'numeric'});
-      if(m===monthKey())opt.selected=true;
-      sel.appendChild(opt);
-    });
-  }
-  filterHistory();
+    <div class="card" id="history-list"></div>`;
+
+  // Render history
+  renderHistory();
+
+  // Bind logout
+  const lb=document.getElementById('logout-btn');
+  if(lb)lb.addEventListener('click',doLogout);
+
+  // Bind history filter
+  const hf=document.getElementById('history-filter');
+  if(hf)hf.addEventListener('change',renderHistory);
 }
 
-function filterHistory(){
-  const sel=document.getElementById('history-month-filter');
-  if(!sel)return;
-  const val=sel.value;
+function renderHistory(){
+  const sel=document.getElementById('history-filter');
+  const val=sel?sel.value:'all';
   const filtered=val==='all'?allMyShifts:allMyShifts.filter(s=>s.date.startsWith(val));
   const list=document.getElementById('history-list');
   if(!list)return;
-  if(!filtered.length){list.innerHTML='<div style="color:var(--text3);text-align:center;padding:1rem">Нет смен за этот период</div>';return;}
-  
-  // Group by month
+  if(!filtered.length){list.innerHTML='<div style="color:var(--text3);text-align:center;padding:1rem">Нет смен</div>';return;}
   const byMonth={};
-  filtered.forEach(s=>{
-    const m=s.date.slice(0,7);
-    if(!byMonth[m])byMonth[m]=[];
-    byMonth[m].push(s);
-  });
-  
+  filtered.forEach(s=>{const m=s.date.slice(0,7);if(!byMonth[m])byMonth[m]=[];byMonth[m].push(s);});
   let html='';
   Object.keys(byMonth).sort((a,b)=>b.localeCompare(a)).forEach(m=>{
-    const mShifts=byMonth[m];
-    const mTotal=mShifts.reduce((a,s)=>a+s.newSales+s.renew+s.restore,0);
-    const mLabel=new Date(m+'-01').toLocaleString('ru-RU',{month:'long',year:'numeric'});
-    html+=`<div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;padding:8px 0 4px;border-bottom:1px solid var(--border);margin-bottom:4px">${mLabel} · ${mShifts.length} смен · ${fmt(mTotal)} ₽</div>`;
-    mShifts.forEach(s=>{
+    const ms=byMonth[m];
+    const mTotal=ms.reduce((a,s)=>a+s.newSales+s.renew+s.restore,0);
+    html+=`<div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;padding:8px 0 4px;border-bottom:1px solid var(--border);margin-bottom:4px">${new Date(m+'-01').toLocaleString('ru-RU',{month:'long',year:'numeric'})} · ${ms.length} смен · ${fmt(mTotal)} ₽</div>`;
+    ms.forEach(s=>{
       const cash=s.newSales+s.renew+s.restore;
       const cls=s.studio==='Империал'?'tag-imp':'tag-mec';
-      html+=`<div class="history-row">
-        <span style="color:var(--text3);min-width:80px">${s.date}</span>
-        <span class="tag ${cls}">${s.studio}</span>
-        <span style="font-weight:600">${fmt(cash)} ₽</span>
-        ${s.leads>0?`<span style="font-size:11px;color:var(--text3)">Лиды: ${s.leads}</span>`:''}
-      </div>`;
+      html+=`<div class="history-row"><span style="color:var(--text3)">${s.date}</span><span class="tag ${cls}">${s.studio}</span><span style="font-weight:600">${fmt(cash)} ₽</span></div>`;
     });
-    html+='<div style="height:8px"></div>';
+    html+='<div style="height:6px"></div>';
   });
   list.innerHTML=html;
 }
-function _unused(){
+
+// ===== TABS =====
+function switchTab(t){
+  ['dashboard','shifts','profile'].forEach(id=>{
+    document.getElementById('tab-'+id).classList.toggle('active',id===t);
+    document.getElementById('sec-'+id).classList.toggle('active',id===t);
+  });
 }
 
-function doLogout(){
-  localStorage.removeItem('ls_session');
-  currentUser=null;
-  location.reload();
-}
-
-// ===== SHIFTS CRUD =====
+// ===== SHIFT CRUD =====
 function openAddShift(){
+  document.getElementById('shift-modal-title').textContent='Закрытие смены';
   document.getElementById('f-date').value=today();
-  // Auto-set studio from user's last shift
   const myLast=shifts.filter(s=>s.admin===currentUser.name).sort((a,b)=>b.date.localeCompare(a.date));
-  if(myLast.length)document.getElementById('f-studio').value=myLast[0].studio;
-  ['f-new','f-renew','f-restore','f-leads','f-bookings','f-visits','f-massage','f-reviews','f-calls','f-tasks','f-yoga','f-mc'].forEach(id=>document.getElementById(id).value='0');
-  document.getElementById('add-certs').innerHTML='';
-  document.getElementById('add-error').style.display='none';
-  addCertN=0;
-  document.getElementById('add-modal').style.display='flex';
+  document.getElementById('f-studio').value=myLast.length?myLast[0].studio:'Империал';
+  ['f-leads','f-bookings','f-visits','f-new','f-renew','f-restore','f-massage','f-reviews','f-calls','f-tasks','f-yoga','f-mc'].forEach(id=>document.getElementById(id).value=0);
+  document.getElementById('shift-err').style.display='none';
+  document.getElementById('shift-modal').style.display='flex';
 }
 
 async function saveShift(){
-  const btn=document.getElementById('save-btn');btn.disabled=true;btn.textContent='Сохранение...';
+  const btn=document.getElementById('save-shift-btn');
+  btn.disabled=true;btn.textContent='Сохранение...';
   const {error}=await sb.from('shifts').insert({
     date:document.getElementById('f-date').value,
     studio:document.getElementById('f-studio').value,
@@ -952,15 +915,16 @@ async function saveShift(){
     tasks:+document.getElementById('f-tasks').value||0,
     yoga_bookings:+document.getElementById('f-yoga').value||0,
     masterclass_bookings:+document.getElementById('f-mc').value||0,
-    certs:[]
   });
-  btn.disabled=false;btn.innerHTML='✓ Сохранить';
-  if(error){showErr('add-error','Ошибка: '+error.message);return;}
-  closeModal('add-modal');await loadData();
+  btn.disabled=false;btn.textContent='✓ Сохранить';
+  if(error){const el=document.getElementById('shift-err');el.textContent='Ошибка: '+error.message;el.style.display='block';return;}
+  document.getElementById('shift-modal').style.display='none';
+  await loadData();
 }
 
 function openEdit(id){
-  const s=shifts.find(x=>x.id===id);if(!s||s.admin!==currentUser.name)return;
+  const s=shifts.find(x=>x.id===id);
+  if(!s||s.admin!==currentUser.name)return;
   editingId=id;
   document.getElementById('e-date').value=s.date;
   document.getElementById('e-studio').value=s.studio;
@@ -976,13 +940,13 @@ function openEdit(id){
   document.getElementById('e-tasks').value=s.tasks||0;
   document.getElementById('e-yoga').value=s.yoga||0;
   document.getElementById('e-mc').value=s.mc||0;
-
-  document.getElementById('edit-error').style.display='none';
+  document.getElementById('edit-err').style.display='none';
   document.getElementById('edit-modal').style.display='flex';
 }
 
 async function updateShift(){
-  const btn=document.getElementById('update-btn');btn.disabled=true;btn.textContent='Сохранение...';
+  const btn=document.getElementById('update-shift-btn');
+  btn.disabled=true;btn.textContent='Сохранение...';
   const {error}=await sb.from('shifts').update({
     date:document.getElementById('e-date').value,
     studio:document.getElementById('e-studio').value,
@@ -998,281 +962,145 @@ async function updateShift(){
     tasks:+document.getElementById('e-tasks').value||0,
     yoga_bookings:+document.getElementById('e-yoga').value||0,
     masterclass_bookings:+document.getElementById('e-mc').value||0,
-    certs:[]
   }).eq('id',editingId);
-  btn.disabled=false;btn.innerHTML='✓ Сохранить';
-  if(error){showErr('edit-error','Ошибка: '+error.message);return;}
-  closeModal('edit-modal');await loadData();
-}
-
-async function deleteShift(){
-  if(!confirm('Удалить эту смену?'))return;
-  await sb.from('shifts').delete().eq('id',editingId);
-  closeModal('edit-modal');await loadData();
-}
-
-function addCert(mode){
-  const cont=document.getElementById(mode==='add'?'add-certs':'edit-certs');
-  const n=mode==='add'?addCertN++:editCertN++;
-  const div=document.createElement('div');
-  div.className='cert-block';div.id=`cert-${mode}-${n}`;
-  div.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><span style="font-size:12px;font-weight:600;color:var(--text2)">🎫 Сертификат ${n+1}</span><button class="btn btn-sm btn-danger" onclick="this.closest('.cert-block').remove()">✕</button></div><div class="grid2"><div class="form-row"><label>Кто дал</label><input type="text" data-f="giver" placeholder="Имя клиента"></div><div class="form-row"><label>Кто пришёл</label><input type="text" data-f="visitor" placeholder="Имя"></div></div><div class="grid2"><div class="form-row"><label>Пришёл?</label><select data-f="came" onchange="toggleCame(this,'${mode}-${n}')"><option value="0">Нет</option><option value="1">Да</option></select></div><div class="form-row" id="bought-wrap-${mode}-${n}" style="display:none"><label>Купил?</label><select data-f="bought" onchange="toggleBought(this,'${mode}-${n}')"><option value="0">Нет</option><option value="1">Да</option></select></div></div><div class="form-row" id="amount-wrap-${mode}-${n}" style="display:none"><label>Сумма, ₽</label><input type="number" data-f="amount" value="0" min="0"></div>`;
-  cont.appendChild(div);
-}
-function toggleCame(sel,id){document.getElementById('bought-wrap-'+id).style.display=sel.value==='1'?'block':'none';document.getElementById('amount-wrap-'+id).style.display='none';}
-function toggleBought(sel,id){document.getElementById('amount-wrap-'+id).style.display=sel.value==='1'?'block':'none';}
-function getCerts(contId){
-  return[...document.getElementById(contId).querySelectorAll('.cert-block')].map(b=>({
-    giver:b.querySelector('[data-f="giver"]').value.trim(),
-    visitor:b.querySelector('[data-f="visitor"]').value.trim(),
-    came:b.querySelector('[data-f="came"]').value==='1',
-    bought:b.querySelector('[data-f="bought"]')?.value==='1'||false,
-    amount:+b.querySelector('[data-f="amount"]')?.value||0
-  }));
-}
-
-function closeModal(id){document.getElementById(id).style.display='none';}
-function showErr(id,msg){const el=document.getElementById(id);el.textContent=msg;el.style.display='block';}
-
-function switchTab(t){
-  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['dashboard','shifts','profile'][i]===t));
-  document.querySelectorAll('.section').forEach(el=>el.classList.remove('active'));
-  document.getElementById('tab-'+t).classList.add('active');
-  if(t==='profile')renderProfile();
-}
-
-// ===== DAILY PLAN =====
-let todayPlan = null;
-
-async function openDailyPlan(){
-  const t = today();
-  const studio = getMyStudio() || 'Империал';
-  document.getElementById('dp-date').value = t;
-  document.getElementById('dp-studio').value = studio;
-
-  // Load existing plan for today
-  const {data} = await sb.from('daily_plans').select('*')
-    .eq('profile_id', currentUser.id).eq('date', t).single();
-
-  if(data){
-    document.getElementById('dp-trials').value = data.trials_planned||0;
-    document.getElementById('dp-archive-sum').value = data.archive_focus||0;
-    document.getElementById('dp-tasks').value = data.tasks_planned||0;
-    document.getElementById('dp-calls').value = data.calls_planned||0;
-    document.getElementById('dp-photos').value = data.photos_planned||0;
-  } else {
-    ['dp-trials','dp-archive-sum','dp-new-sum','dp-restore-sum','dp-tasks','dp-calls','dp-photos','dp-reviews-dp'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=0;});
-  }
-
-  updateRecommendation();
-  document.getElementById('daily-plan-modal').style.display='flex';
-}
-
-function updateRecommendation(){
-  const trials = +document.getElementById('dp-trials').value||0;
-  const archive = +document.getElementById('dp-archive').value||0;
-  const name = currentUser.name;
-
-  // Calc personal avg check and conversion from last 30 days
-  const recent = shifts.filter(s=>s.admin===name);
-  const totalVisits = recent.reduce((a,s)=>a+s.visits,0);
-  const totalSales = recent.filter(s=>s.newSales>0).length;
-  const totalRevNew = recent.reduce((a,s)=>a+s.newSales,0);
-  const totalRevRenew = recent.reduce((a,s)=>a+s.renew,0);
-  const totalRevRestore = recent.reduce((a,s)=>a+s.restore,0);
-
-  const cv3 = totalVisits>0 ? totalSales/totalVisits : 0.4; // default 40%
-  const avgCheck = totalSales>0 ? Math.round(totalRevNew/totalSales) : 35000;
-  const avgRenewCheck = recent.filter(s=>s.renew>0).length>0
-    ? Math.round(totalRevRenew/recent.filter(s=>s.renew>0).length) : 20000;
-
-  // Potential from trials
-  const expectedSales = Math.round(trials * cv3);
-  const potentialTrials = expectedSales * avgCheck;
-
-  // Potential from archive
-  const archiveCv = 0.5; // 50% archive conversion
-  const potentialArchive = Math.round(archive * archiveCv * avgRenewCheck);
-
-  const totalPotential = potentialTrials + potentialArchive;
-
-  // Run rate need per day
-  const now = new Date();
-  const daysLeft = new Date(now.getFullYear(),now.getMonth()+1,0).getDate() - now.getDate() + 1;
-  const studio = document.getElementById('dp-studio')?.value || getMyStudio() || 'Империал';
-  const plan = studio==='Империал' ? IMP_PLAN : MEC_PLAN;
-  const factMonth = shifts.filter(s=>s.studio===studio).reduce((a,s)=>a+s.newSales+s.renew+s.restore,0);
-  const needPerDay = daysLeft>0 ? Math.max(0,Math.round((plan-factMonth)/daysLeft)) : 0;
-
-  // Recommended = max of potential and run rate
-  const recommended = Math.max(totalPotential, needPerDay);
-
-  // Auto-fill revenue if empty or 0
-  const revField = document.getElementById('dp-revenue');
-  if(!+revField.value) revField.value = recommended;
-
-  // Show recommendation block
-  const el = document.getElementById('daily-plan-recommendation');
-  if(trials===0&&archive===0){
-    el.innerHTML = `<div class="card-muted" style="font-size:13px;color:var(--text3)">
-      Укажите пробные и архив — система рассчитает потенциал выручки на день
-    </div>`;
-    document.getElementById('dp-revenue-hint').textContent='';
-    return;
-  }
-
-  const cvPct = Math.round(cv3*100);
-  el.innerHTML = `<div style="background:var(--amber-bg);border:1px solid var(--amber);border-radius:var(--radius);padding:1rem;font-size:13px">
-    <div style="font-weight:700;color:var(--amber-text);margin-bottom:8px">💡 Потенциал на сегодня</div>
-    ${trials>0?`<div style="margin-bottom:4px">Пробных: <b>${trials}</b> × конверсия <b>${cvPct}%</b> → ~<b>${expectedSales}</b> продаж × <b>${fmt(avgCheck)} ₽</b> = <b>${fmt(potentialTrials)} ₽</b></div>`:''}
-    ${archive>0?`<div style="margin-bottom:4px">Продление (архив): <b>${archive}</b> чел × 50% → <b>${fmt(potentialArchive)} ₽</b></div>`:''}
-    <div style="border-top:1px solid var(--amber);margin-top:8px;padding-top:8px;display:flex;justify-content:space-between">
-      <span>Нужно по рейту:</span><span style="font-weight:600">${fmt(needPerDay)} ₽</span>
-    </div>
-    <div style="display:flex;justify-content:space-between;margin-top:4px">
-      <span style="color:var(--amber-text);font-weight:700">Рекомендуемый план:</span>
-      <span style="font-weight:800;color:var(--amber-text);font-size:16px">${fmt(recommended)} ₽</span>
-    </div>
-  </div>`;
-
-  document.getElementById('dp-revenue-hint').textContent =
-    trials>0||archive>0?`💡 Потенциал: ${fmt(totalPotential)} ₽ · Нужно по рейту: ${fmt(needPerDay)} ₽`:'';
-}
-
-async function saveDailyPlan(){
-  const btn = document.getElementById('dp-save-btn');
-  btn.disabled=true; btn.textContent='Сохранение...';
-
-  const date = document.getElementById('dp-date').value;
-  const studio = document.getElementById('dp-studio').value;
-  const row = {
-    date, studio, admin: currentUser.name, profile_id: currentUser.id,
-    trials_planned: +document.getElementById('dp-trials').value||0,
-    archive_focus: +document.getElementById('dp-archive-sum').value||0,
-    tasks_planned: +document.getElementById('dp-tasks').value||0,
-    calls_planned: +document.getElementById('dp-calls').value||0,
-    photos_planned: +document.getElementById('dp-photos').value||0,
-    revenue_plan: (+document.getElementById('dp-archive-sum').value||0)+(+document.getElementById('dp-new-sum').value||0)+(+document.getElementById('dp-restore-sum').value||0),
-    revenue_recommended: (+document.getElementById('dp-archive-sum').value||0)+(+document.getElementById('dp-new-sum').value||0)+(+document.getElementById('dp-restore-sum').value||0),
-  };
-
-  await sb.from('daily_plans').delete().eq('profile_id',currentUser.id).eq('date',date);
-  const {error} = await sb.from('daily_plans').insert(row);
-
-  btn.disabled=false; btn.textContent='💾 Сохранить план';
-  if(error){showErr('dp-error','Ошибка: '+error.message);return;}
-
-  todayPlan = row;
-  closeModal('daily-plan-modal');
+  btn.disabled=false;btn.textContent='✓ Сохранить';
+  if(error){const el=document.getElementById('edit-err');el.textContent='Ошибка: '+error.message;el.style.display='block';return;}
+  document.getElementById('edit-modal').style.display='none';
   await loadData();
 }
 
-async function loadTodayPlan(){
-  if(!currentUser)return;
-  const {data} = await sb.from('daily_plans').select('*')
-    .eq('profile_id',currentUser.id).eq('date',today()).single();
-  todayPlan = data||null;
+async function deleteShift(){
+  if(!confirm('Удалить смену?'))return;
+  await sb.from('shifts').delete().eq('id',editingId);
+  document.getElementById('edit-modal').style.display='none';
+  await loadData();
+}
+
+// ===== DAILY PLAN =====
+async function openDailyPlan(){
+  document.getElementById('p-date').value=today();
+  document.getElementById('p-studio').value=getMyStudio();
+  ['p-trials','p-archive','p-new-sum','p-restore-sum','p-tasks','p-calls','p-photos','p-reviews'].forEach(id=>document.getElementById(id).value=0);
+
+  if(todayPlan){
+    document.getElementById('p-trials').value=todayPlan.trials_planned||0;
+    document.getElementById('p-archive').value=todayPlan.archive_focus||0;
+    document.getElementById('p-tasks').value=todayPlan.tasks_planned||0;
+    document.getElementById('p-calls').value=todayPlan.calls_planned||0;
+    document.getElementById('p-photos').value=todayPlan.photos_planned||0;
+  }
+
+  // Show recommendation
+  const myS=shifts.filter(s=>s.admin===currentUser.name);
+  const totalVisits=myS.reduce((a,s)=>a+s.visits,0);
+  const totalSales=myS.filter(s=>s.newSales>0).length;
+  const totalRevNew=myS.reduce((a,s)=>a+s.newSales,0);
+  const cv3=totalVisits>0?totalSales/totalVisits:0.4;
+  const avgCheck=totalSales>0?Math.round(totalRevNew/totalSales):35000;
+  const studio=getMyStudio();
+  const plan=studio==='Империал'?IMP_PLAN:MEC_PLAN;
+  const factMonth=shifts.filter(s=>s.studio===studio).reduce((a,s)=>a+s.newSales+s.renew+s.restore,0);
+  const now=new Date();
+  const dLeft=new Date(now.getFullYear(),now.getMonth()+1,0).getDate()-now.getDate()+1;
+  const needDay=dLeft>0?Math.max(0,Math.round((plan-factMonth)/dLeft)):0;
+
+  document.getElementById('plan-recommendation').innerHTML=`
+    <div style="background:var(--blue-bg);border:1px solid #bfdbfe;border-radius:var(--radius);padding:.875rem;margin-bottom:12px;font-size:13px">
+      <div style="font-weight:700;color:var(--blue-text);margin-bottom:6px">💡 Ориентиры на сегодня</div>
+      <div style="color:var(--text2)">Твоя конверсия: <b>${Math.round(cv3*100)}%</b> · Средний чек: <b>${fmt(avgCheck)} ₽</b></div>
+      <div style="color:var(--text2);margin-top:4px">Нужно по рейту: <b>${fmt(needDay)} ₽/день</b></div>
+    </div>`;
+
+  document.getElementById('plan-err').style.display='none';
+  document.getElementById('plan-modal').style.display='flex';
+}
+
+async function saveDailyPlan(){
+  const btn=document.getElementById('save-plan-btn');
+  btn.disabled=true;btn.textContent='Сохранение...';
+  const date=document.getElementById('p-date').value;
+  const archiveSum=+document.getElementById('p-archive').value||0;
+  const newSum=+document.getElementById('p-new-sum').value||0;
+  const restoreSum=+document.getElementById('p-restore-sum').value||0;
+  const row={
+    date,studio:document.getElementById('p-studio').value,
+    admin:currentUser.name,profile_id:currentUser.id,
+    trials_planned:+document.getElementById('p-trials').value||0,
+    archive_focus:archiveSum,
+    tasks_planned:+document.getElementById('p-tasks').value||0,
+    calls_planned:+document.getElementById('p-calls').value||0,
+    photos_planned:+document.getElementById('p-photos').value||0,
+    revenue_plan:archiveSum+newSum+restoreSum,
+    revenue_recommended:archiveSum+newSum+restoreSum,
+  };
+  await sb.from('daily_plans').delete().eq('profile_id',currentUser.id).eq('date',date);
+  const {error}=await sb.from('daily_plans').insert(row);
+  btn.disabled=false;btn.textContent='💾 Сохранить план';
+  if(error){const el=document.getElementById('plan-err');el.textContent='Ошибка: '+error.message;el.style.display='block';return;}
+  document.getElementById('plan-modal').style.display='none';
+  await loadData();
 }
 
 // ===== INTERIM REPORT =====
 function openInterimReport(){
-  const el = document.getElementById('interim-content');
-  const name = currentUser.name;
-
+  const el=document.getElementById('interim-content');
   if(!todayPlan){
-    el.innerHTML = `<div class="card-muted" style="text-align:center;color:var(--text3);padding:1.5rem">
+    el.innerHTML=`<div class="card-muted" style="text-align:center;padding:1.5rem">
       <div style="font-size:24px;margin-bottom:8px">📋</div>
-      План на сегодня не поставлен.<br>
-      <button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="closeModal('interim-modal');openDailyPlan()">+ Поставить план на день</button>
+      <div style="color:var(--text3);margin-bottom:12px">План на сегодня не поставлен</div>
+      <button class="btn btn-primary btn-sm" id="go-to-plan-btn">+ Поставить план на день</button>
     </div>`;
     document.getElementById('interim-modal').style.display='flex';
+    const gpb=document.getElementById('go-to-plan-btn');
+    if(gpb)gpb.addEventListener('click',()=>{document.getElementById('interim-modal').style.display='none';openDailyPlan();});
     return;
   }
+  const myS=shifts.filter(s=>s.admin===currentUser.name&&s.date===today());
+  const factRev=myS.reduce((a,s)=>a+s.newSales+s.renew+s.restore,0);
+  const factCalls=myS.reduce((a,s)=>a+s.calls,0);
+  const factTasks=myS.reduce((a,s)=>a+s.tasks,0);
+  const planRev=(+todayPlan.archive_focus||0)+(+todayPlan.revenue_plan||0);
+  const planCalls=+todayPlan.calls_planned||0;
+  const planTasks=+todayPlan.tasks_planned||0;
+  const revPct=planRev>0?Math.min(Math.round(factRev/planRev*100),100):0;
+  const col=revPct>=100?'var(--green-text)':revPct>=50?'var(--amber-text)':'var(--red-text)';
+  const barCol=revPct>=100?'var(--green)':revPct>=50?'var(--amber)':'var(--red)';
 
-  const t = today();
-  const todayShifts = shifts.filter(s=>s.admin===name&&s.date===t);
-  const factRevenue = todayShifts.reduce((a,s)=>a+s.newSales+s.renew+s.restore,0);
-  const factCalls = todayShifts.reduce((a,s)=>a+s.calls,0);
-  const factTasks = todayShifts.reduce((a,s)=>a+s.tasks,0);
-  const factVisits = todayShifts.reduce((a,s)=>a+s.visits,0);
-  const factSales = todayShifts.filter(s=>s.newSales>0).length;
-
-  const planRev = todayPlan.revenue_plan||0;
-  const planCalls = todayPlan.calls_planned||0;
-  const planTasks = todayPlan.tasks_planned||0;
-  const planTrials = todayPlan.trials_planned||0;
-  const planArchive = todayPlan.archive_focus||0;
-
-  const revPct = planRev>0?Math.min(Math.round(factRevenue/planRev*100),100):0;
-  const callsPct = planCalls>0?Math.min(Math.round(factCalls/planCalls*100),100):0;
-  const tasksPct = planTasks>0?Math.min(Math.round(factTasks/planTasks*100),100):0;
-
-  const now = new Date();
-  const timeStr = now.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
-
-  function rowHtml(label, fact, plan, pct, unit=''){
-    const color = pct>=100?'var(--green)':pct>=50?'var(--amber)':'var(--red)';
-    return `<div style="padding:10px 0;border-bottom:1px solid var(--border)">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-        <span style="font-size:13px;color:var(--text2)">${label}</span>
-        <span style="font-size:13px;font-weight:700">${unit==='₽'?fmt(fact):fact} ${unit} <span style="color:var(--text3);font-weight:400">/ ${unit==='₽'?fmt(plan):plan} ${unit}</span></span>
-      </div>
-      ${plan>0?`<div class="progress-wrap-sm"><div class="progress-fill-sm" style="width:${pct}%;background:${color}"></div></div>
-      <div style="text-align:right;font-size:11px;color:${color};margin-top:3px;font-weight:600">${pct}%</div>`:''}
-    </div>`;
-  }
-
-  el.innerHTML = `
-    <div style="text-align:center;margin-bottom:14px">
-      <div style="font-size:13px;color:var(--text3)">Обновлено: ${timeStr}</div>
-      <div style="font-size:28px;font-weight:800;color:${revPct>=100?'var(--green-text)':revPct>=50?'var(--amber-text)':'var(--red-text)'}">${fmt(factRevenue)} ₽</div>
+  el.innerHTML=`
+    <div style="text-align:center;margin-bottom:16px">
+      <div style="font-size:28px;font-weight:800;color:${col}">${fmt(factRev)} ₽</div>
       <div style="font-size:13px;color:var(--text3)">из ${fmt(planRev)} ₽ плана · ${revPct}%</div>
-      <div class="progress-wrap" style="margin-top:8px"><div class="progress-fill" style="width:${revPct}%;background:${revPct>=100?'var(--green)':revPct>=50?'var(--amber)':'var(--red)'}"></div></div>
+      <div class="progress-wrap" style="margin-top:8px"><div class="progress-fill" style="width:${revPct}%;background:${barCol}"></div></div>
     </div>
-
-    ${rowHtml('☎️ Звонки', factCalls, planCalls, callsPct)}
-    ${rowHtml('✅ Задачи в АМО', factTasks, planTasks, tasksPct)}
-    <div style="padding:10px 0;border-bottom:1px solid var(--border)">
-      <div style="display:flex;justify-content:space-between">
-        <span style="font-size:13px;color:var(--text2)">🧪 Пробных (план)</span>
-        <span style="font-size:13px;font-weight:700">${planTrials} чел</span>
-      </div>
-    </div>
-    <div style="padding:10px 0;border-bottom:1px solid var(--border)">
-      <div style="display:flex;justify-content:space-between">
-        <span style="font-size:13px;color:var(--text2)">📁 Продление (архив)</span>
-        <span style="font-size:13px;font-weight:700">${planArchive} чел</span>
-      </div>
-    </div>
-    <div style="padding:10px 0">
-      <div style="display:flex;justify-content:space-between">
-        <span style="font-size:13px;color:var(--text2)">💰 Продаж совершено</span>
-        <span style="font-size:13px;font-weight:700">${factSales} шт</span>
-      </div>
-    </div>
-
-    ${factRevenue===0&&factCalls===0&&factTasks===0?`<div class="card-muted" style="text-align:center;color:var(--text3);font-size:13px;margin-top:10px">
-      Данные появятся после внесения смены. Внести смену можно кнопкой «+ Смену».
-    </div>`:''}`;
+    ${planCalls?`<div class="history-row"><span style="color:var(--text2)">☎️ Звонки</span><span style="font-weight:600">${factCalls} / ${planCalls}</span></div>`:''}
+    ${planTasks?`<div class="history-row"><span style="color:var(--text2)">✅ Задачи в АМО</span><span style="font-weight:600">${factTasks} / ${planTasks}</span></div>`:''}
+    <div class="history-row"><span style="color:var(--text2)">🧪 Пробных по плану</span><span style="font-weight:600">${todayPlan.trials_planned||0} чел</span></div>
+    <div style="margin-top:12px"><button class="btn btn-block" id="close-interim-btn">Закрыть</button></div>`;
 
   document.getElementById('interim-modal').style.display='flex';
+  const cib=document.getElementById('close-interim-btn');
+  if(cib)cib.addEventListener('click',()=>document.getElementById('interim-modal').style.display='none');
 }
 
-// ===== INIT =====
-// Init
-document.addEventListener('DOMContentLoaded', function(){
-  buildPinPad('login-pad','login');
-  buildPinPad('reg-pad','reg');
-  buildPinPad('reg-pad2','reg2');
-  document.getElementById('auth-tab-login').addEventListener('click',()=>switchAuthTab('login'));
-  document.getElementById('auth-tab-register').addEventListener('click',()=>switchAuthTab('register'));
-  document.getElementById('login-submit-btn').addEventListener('click',doLogin);
-  document.getElementById('reg-submit-btn').addEventListener('click',doRegister);
+// ===== EVENT LISTENERS =====
+document.addEventListener('DOMContentLoaded',()=>{
+  // Auth pads
+  buildPad('login-pad','login');
+  buildPad('reg-pad','reg');
+  buildPad('reg-pad2','reg2');
+
+  // Auth tabs
+  document.getElementById('tab-login-btn').addEventListener('click',()=>showAuthTab('login'));
+  document.getElementById('tab-reg-btn').addEventListener('click',()=>showAuthTab('reg'));
+
+  // Auth actions
+  document.getElementById('do-login-btn').addEventListener('click',doLogin);
+  document.getElementById('do-reg-btn').addEventListener('click',doRegister);
   document.getElementById('reg-next-btn').addEventListener('click',()=>{
-    const first=document.getElementById('reg-first').value.trim();
-    const last=document.getElementById('reg-last').value.trim();
-    if(!first||!last){showAuthErr('reg','Введите имя и фамилию');return;}
-    if(regPin.length<4){showAuthErr('reg','Введите 4 цифры пин-кода');return;}
+    const f=document.getElementById('reg-first').value.trim();
+    const l=document.getElementById('reg-last').value.trim();
+    if(!f||!l){showAuthErr('reg-err','Введите имя и фамилию');return;}
+    if(regPin.length<4){showAuthErr('reg-err','Введите 4 цифры');return;}
     document.getElementById('reg-step1').style.display='none';
     document.getElementById('reg-step2').style.display='block';
     regPin2='';updateDots('reg2');
@@ -1282,8 +1110,45 @@ document.addEventListener('DOMContentLoaded', function(){
     document.getElementById('reg-step1').style.display='block';
     regPin2='';
   });
+
+  // Main tabs
+  document.getElementById('tab-dashboard').addEventListener('click',()=>switchTab('dashboard'));
+  document.getElementById('tab-shifts').addEventListener('click',()=>switchTab('shifts'));
+  document.getElementById('tab-profile').addEventListener('click',()=>switchTab('profile'));
+
+  // Topbar buttons
+  document.getElementById('btn-plan').addEventListener('click',openDailyPlan);
+  document.getElementById('btn-interim').addEventListener('click',openInterimReport);
+  document.getElementById('btn-shift').addEventListener('click',openAddShift);
+
+  // Shift modal
+  document.getElementById('close-shift-modal').addEventListener('click',()=>document.getElementById('shift-modal').style.display='none');
+  document.getElementById('cancel-shift-btn').addEventListener('click',()=>document.getElementById('shift-modal').style.display='none');
+  document.getElementById('save-shift-btn').addEventListener('click',saveShift);
+
+  // Edit modal
+  document.getElementById('close-edit-modal').addEventListener('click',()=>document.getElementById('edit-modal').style.display='none');
+  document.getElementById('cancel-edit-btn').addEventListener('click',()=>document.getElementById('edit-modal').style.display='none');
+  document.getElementById('update-shift-btn').addEventListener('click',updateShift);
+  document.getElementById('delete-shift-btn').addEventListener('click',deleteShift);
+
+  // Plan modal
+  document.getElementById('close-plan-modal').addEventListener('click',()=>document.getElementById('plan-modal').style.display='none');
+  document.getElementById('cancel-plan-btn').addEventListener('click',()=>document.getElementById('plan-modal').style.display='none');
+  document.getElementById('save-plan-btn').addEventListener('click',saveDailyPlan);
+
+  // Interim modal
+  document.getElementById('close-interim-modal').addEventListener('click',()=>document.getElementById('interim-modal').style.display='none');
+
+  // Edit buttons delegation
+  document.getElementById('shifts-content').addEventListener('click',e=>{
+    const btn=e.target.closest('[data-edit]');
+    if(btn)openEdit(+btn.dataset.edit);
+  });
+
+  // Check session
+  checkSession();
 });
-checkSession();
 </script>
 </body>
 </html>
