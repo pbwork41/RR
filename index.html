@@ -407,7 +407,7 @@ let loginPin='', regPin='', regPin2='';
 
 // ===== UTILS =====
 const fmt = n => Math.round(n||0).toLocaleString('ru-RU');
-const today = () => new Date().toISOString().slice(0,10);
+const today = () => { const d=new Date(); return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10); };
 const monthKey = () => today().slice(0,7);
 const monthLabel = () => new Date().toLocaleString('ru-RU',{month:'long',year:'numeric'});
 const simpleHash = str => { let h=0; for(let i=0;i<str.length;i++){h=Math.imul(31,h)+str.charCodeAt(i)|0;} return Math.abs(h).toString(36); };
@@ -587,7 +587,7 @@ async function loadData(){
   const m=monthKey();
   const [r1,r2,r3,r4,r5]=await Promise.all([
     sb.from('shifts').select('*').gte('date',m+'-01').lte('date',m+'-31').order('date',{ascending:false}),
-    sb.from('marathons').select('*').eq('active',true).lte('date_start',today()).gte('date_end',today()),
+    sb.from('marathons').select('*').eq('active',true).gte('date_end',today()),
     currentUser?sb.from('shifts').select('*').eq('admin',currentUser.name).order('date',{ascending:false}):Promise.resolve({data:[]}),
     currentUser?sb.from('daily_plans').select('*').eq('profile_id',currentUser.id).eq('date',today()).single():Promise.resolve({data:null}),
     sb.from('plans').select('*').eq('month',m)
@@ -619,7 +619,7 @@ function getMyStudio(){
 }
 
 function renderBanners(){
-  const visible=marathons.filter(m=>!m.target_profile_id||m.target_profile_id===currentUser.id);
+  const t=today();const visible=marathons.filter(m=>m.date_start<=t&&(!m.target_profile_id||m.target_profile_id===currentUser.id));
   if(!visible.length){document.getElementById('marathon-banners').innerHTML='';return;}
   const myS=shifts.filter(s=>s.admin===currentUser.name);
   document.getElementById('marathon-banners').innerHTML=visible.map(m=>{
@@ -812,9 +812,9 @@ function renderProfile(){
       <div style="display:flex;justify-content:space-between;padding:10px 0;font-size:15px;font-weight:700;border-top:2px solid var(--border);margin-top:4px"><span>Итого</span><span>${fmt(salTotal)} ₽</span></div>
     </div>
 
-    ${marathons.filter(m=>!m.target_profile_id||m.target_profile_id===currentUser.id).length?`
+    ${marathons.filter(m=>m.date_start<=today()&&(!m.target_profile_id||m.target_profile_id===currentUser.id)).length?`
     <div class="subsection-title">🏆 Мои марафоны</div>
-    ${marathons.filter(m=>!m.target_profile_id||m.target_profile_id===currentUser.id).map(m=>{
+    ${marathons.filter(m=>m.date_start<=today()&&(!m.target_profile_id||m.target_profile_id===currentUser.id)).map(m=>{
       const prog=marathonProgress(m,myS);
       const col=prog.done?'var(--green)':prog.pct>=50?'var(--amber)':'var(--red)';
       return`<div class="marathon-banner" style="margin-bottom:10px">
