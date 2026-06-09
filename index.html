@@ -189,9 +189,9 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue)}
       <span style="font-size:11px;opacity:.8" id="sync-text">загрузка...</span>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
-      <button style="padding:8px 4px;font-size:12px;font-weight:500;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:6px;cursor:pointer;font-family:inherit;text-align:center" onclick="openDailyPlan()">+ План на день</button>
-      <button style="padding:8px 4px;font-size:12px;font-weight:500;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:6px;cursor:pointer;font-family:inherit;text-align:center" onclick="openInterimReport()">+ Пром. отчёт</button>
-      <button style="padding:8px 4px;font-size:12px;font-weight:500;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:6px;cursor:pointer;font-family:inherit;text-align:center" onclick="openAddShift()">+ Закрытие смены</button>
+      <button id="btn-daily-plan" style="padding:8px 4px;font-size:12px;font-weight:500;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:6px;cursor:pointer;font-family:inherit;text-align:center">+ План на день</button>
+      <button id="btn-interim" style="padding:8px 4px;font-size:12px;font-weight:500;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:6px;cursor:pointer;font-family:inherit;text-align:center">+ Пром. отчёт</button>
+      <button id="btn-add-shift" style="padding:8px 4px;font-size:12px;font-weight:500;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:6px;cursor:pointer;font-family:inherit;text-align:center">+ Закрытие смены</button>
     </div>
   </div>
 
@@ -487,6 +487,10 @@ function enterApp(){
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('main-app').style.display='block';
   document.getElementById('month-label').textContent=monthLabel();
+  // Attach topbar button listeners after app is shown
+  document.getElementById('btn-daily-plan').addEventListener('click', openDailyPlan);
+  document.getElementById('btn-interim').addEventListener('click', openInterimReport);
+  document.getElementById('btn-add-shift').addEventListener('click', openAddShift);
   loadData();
 }
 
