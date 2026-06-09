@@ -223,7 +223,7 @@ textarea{resize:vertical;min-height:70px}
       <option value="visits">Доходимость, чел</option>
       <option value="massage">Записей на массаж, шт</option>
       <option value="reviews">Отзывов, шт</option>
-      <option value="restore">Возврат клиентов, шт</option>
+      <option value="restore">Возврат клиентов, ₽</option>
       <option value="conv_cv3">Конверсия приход→продажа, %</option>
     </select>
   </div>
@@ -388,23 +388,24 @@ function delta(cur,prev){
 }
 
 const CONDITION_LABELS={
-  revenue:'Выручка',new_sales:'Новых продаж',renewals:'Продлений',
+  revenue:'Выручка',new_sales:'Новых продаж',renewals:'Продлений',restore:'Возврат клиентов',
   bookings:'Записей на пробное',visits:'Доходимость',
   massage:'Записей на массаж',reviews:'Отзывов',conv_cv3:'CV приход→продажа'
 };
 const CONDITION_UNITS={
-  revenue:' ₽',new_sales:' шт',renewals:' шт',bookings:' шт',
+  revenue:' ₽',new_sales:' шт',renewals:' шт',restore:' ₽',bookings:' шт',
   visits:' чел',massage:' шт',reviews:' шт',conv_cv3:'%'
 };
 
 function conditionLabel(type,val){
-  return`${CONDITION_LABELS[type]||type} ≥ ${type==='revenue'?fmt(val):val}${CONDITION_UNITS[type]||''}`;
+  const moneyTypes=['revenue','restore'];
+  return`${CONDITION_LABELS[type]||type} ≥ ${moneyTypes.includes(type)?fmt(val):val}${CONDITION_UNITS[type]||''}`;
 }
 
 function updateConditionLabel(){
   const type=document.getElementById('m-condition-type').value;
   document.getElementById('m-condition-label').textContent='Порог (≥), '+
-    (type==='revenue'?'₽':type==='conv_cv3'?'%':'шт/чел');
+    (type==='revenue'||type==='restore'?'₽':type==='conv_cv3'?'%':'шт/чел');
 }
 
 function marathonProgress(m,ss){
@@ -417,6 +418,7 @@ function marathonProgress(m,ss){
   else if(type==='bookings') val=msShifts.reduce((a,s)=>a+s.bookings,0);
   else if(type==='visits') val=msShifts.reduce((a,s)=>a+s.visits,0);
   else if(type==='massage') val=msShifts.reduce((a,s)=>a+s.massage,0);
+  else if(type==='restore') val=msShifts.reduce((a,s)=>a+(+s.restore||0),0);
   else if(type==='reviews') val=msShifts.reduce((a,s)=>a+s.reviews,0);
   else if(type==='conv_cv3'){
     const v=msShifts.reduce((a,s)=>a+s.visits,0);
@@ -633,8 +635,9 @@ function renderMarathons(){
         const ss=shifts.filter(s=>s.admin===admin);
         const prog=marathonProgress(m,ss);
         const barColor=prog.done?'var(--green)':prog.pct>=50?'var(--amber)':'var(--red)';
-        const valStr=m.condition_type==='revenue'?fmt(prog.val)+' ₽':String(prog.val);
-        const targetStr=m.condition_type==='revenue'?fmt(prog.target)+' ₽':String(prog.target);
+        const isMoneyType=['revenue','restore'].includes(m.condition_type);
+        const valStr=isMoneyType?fmt(prog.val)+' ₽':String(prog.val);
+        const targetStr=isMoneyType?fmt(prog.target)+' ₽':String(prog.target);
         html+=`<div class="admin-progress-row">
           <div class="admin-progress-name">${prog.done?'✅ ':''}<b>${admin}</b></div>
           <div class="admin-progress-bar"><div class="progress-wrap-sm"><div class="progress-fill-sm" style="width:${prog.pct}%;background:${barColor}"></div></div></div>
