@@ -236,7 +236,7 @@ textarea{resize:vertical;min-height:70px}
   <div id="marathon-msg" style="display:none" class="alert alert-green">✓ Марафон создан</div>
   <div style="display:flex;gap:8px;justify-content:flex-end">
     <button class="btn" onclick="closeModal('marathon-modal')">Отмена</button>
-    <button class="btn btn-primary" onclick="saveMarathon()">🏆 Запустить</button>
+    <button class="btn btn-primary" id="marathon-save-btn">🏆 Запустить</button>
   </div>
 </div>
 </div>
@@ -294,7 +294,7 @@ const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 let shifts=[],shiftsLast=[],marathons=[],plans={};
 
 function fmt(n){return Math.round(n||0).toLocaleString('ru-RU')}
-function today(){return new Date().toISOString().slice(0,10)}
+function today(){const d=new Date();return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);}
 function monthKey(){return today().slice(0,7)}
 function prevMonthKey(){const d=new Date();d.setDate(1);d.setMonth(d.getMonth()-1);return d.toISOString().slice(0,7);}
 function monthLabel(){return new Date().toLocaleString('ru-RU',{month:'long',year:'numeric'})}
@@ -787,7 +787,7 @@ async function openMarathonModalWithStaff(){
   document.getElementById('marathon-msg').style.display='none';
   // Reset modal title and save button
   document.querySelector('#marathon-modal .modal-title').textContent='🏆 Новый марафон';
-  const saveBtn=document.querySelector('#marathon-modal .btn-primary');
+  const saveBtn=document.getElementById('marathon-save-btn');
   if(saveBtn){saveBtn.textContent='🏆 Запустить';saveBtn.onclick=saveMarathon;}
   document.getElementById('marathon-modal').style.display='flex';
 }
@@ -808,9 +808,8 @@ async function editMarathon(id){
   if(m.target_profile_id)document.getElementById('m-target').value=m.target_profile_id;
   updateConditionLabel();
   // Change save button to update
-  const saveBtn=document.querySelector('#marathon-modal .btn-primary');
-  saveBtn.textContent='💾 Сохранить изменения';
-  saveBtn.onclick=()=>updateMarathon(id);
+  const saveBtn=document.getElementById('marathon-save-btn');
+  if(saveBtn){saveBtn.textContent='💾 Сохранить изменения';saveBtn.onclick=()=>updateMarathon(id);}
   document.querySelector('#marathon-modal .modal-title').textContent='✏️ Редактировать марафон';
 }
 
@@ -831,7 +830,7 @@ async function updateMarathon(id){
   if(error){alert('Ошибка: '+error.message);return;}
   closeModal('marathon-modal');
   // Reset save button
-  const saveBtn=document.querySelector('#marathon-modal .btn-primary');
+  const saveBtn=document.getElementById('marathon-save-btn');
   if(saveBtn){saveBtn.textContent='🏆 Запустить';saveBtn.onclick=saveMarathon;}
   await loadData();
 }
