@@ -44,7 +44,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;ba
 .progress-fill{height:100%;border-radius:4px;transition:width .4s ease}
 .progress-wrap-sm{height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-top:4px}
 .progress-fill-sm{height:100%;border-radius:3px}
-label{display:block;font-size:12px;color:var(--text2);margin-bottom:4px;font-weight:500}
+label{display:block;font-size:11px;color:var(--text2);margin-bottom:4px;font-weight:500;line-height:1.3}
 input,select,textarea{width:100%;padding:8px 12px;font-size:16px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);font-family:inherit;transition:border .15s}
 input:focus,select:focus,textarea:focus{outline:none;border-color:var(--purple)}
 textarea{resize:vertical;min-height:70px}
@@ -115,7 +115,7 @@ textarea{resize:vertical;min-height:70px}
 <div class="app">
   <div class="topbar">
     <div>
-      <div class="topbar-title">👑 Управленческая панель <span id="pending-badge" style="display:none;background:var(--amber);color:#fff;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;margin-left:8px"></span></div>
+      <div class="topbar-title">👑 Панель царей <span id="pending-badge" style="display:none;background:var(--amber);color:#fff;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;margin-left:8px"></span></div>
       <div class="topbar-sub" id="month-label"></div>
     </div>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
@@ -250,11 +250,11 @@ textarea{resize:vertical;min-height:70px}
   <div class="divider"></div>
   <div class="grid2">
     <div class="form-row"><label>Выручка, ₽</label><input type="number" id="splan-revenue" placeholder="500000"></div>
-    <div class="form-row"><label>Новые клиенты, шт</label><input type="number" id="splan-new" placeholder="10"></div>
+    <div class="form-row"><label>Новые, шт</label><input type="number" id="splan-new" placeholder="10"></div>
   </div>
   <div class="grid2">
     <div class="form-row"><label>Продления, шт</label><input type="number" id="splan-renewals" placeholder="5"></div>
-    <div class="form-row"><label>Записей на пробное, шт</label><input type="number" id="splan-bookings" placeholder="30"></div>
+    <div class="form-row"><label>Пробных, шт</label><input type="number" id="splan-bookings" placeholder="30"></div>
   </div>
   <div class="grid2">
     <div class="form-row"><label>Звонков, шт</label><input type="number" id="splan-calls" placeholder="20"></div>
@@ -427,7 +427,7 @@ function renderAll(){renderOverview();renderMoM();renderStudios();renderAdmins()
 
 function renderOverview(){
   const studios=['Империал','Мечта'];
-  const active=marathons.filter(m=>m.active&&m.date_end>=today());
+  const active=marathons.filter(m=>m.active&&m.date_start<=today()&&m.date_end>=today());
   let html='';
   if(active.length){
     html+=`<div style="margin-bottom:12px">${active.map(m=>{
@@ -583,7 +583,7 @@ function renderAdmins(){
 
 function renderMarathons(){
   const todayStr=today();
-  const active=marathons.filter(m=>m.active&&m.date_end>=todayStr);
+  const active=marathons.filter(m=>m.active&&m.date_start<=todayStr&&m.date_end>=todayStr);
   const ended=marathons.filter(m=>!m.active||m.date_end<todayStr);
   const admins=[...new Set(shifts.map(s=>s.admin))].filter(Boolean).sort();
 
@@ -628,6 +628,7 @@ function renderMarathons(){
     }
 
     html+=`<div style="display:flex;gap:6px">
+      <button class="btn btn-sm" onclick="editMarathon(${m.id})">✏️ Изменить</button>
       <button class="btn btn-sm btn-danger" onclick="stopMarathon(${m.id})">⏹ Завершить</button>
     </div></div>`;
   });
@@ -718,7 +719,9 @@ async function savePlan(){
       cv2:+document.getElementById(pfx+'-cv2').value||0,
       cv3:+document.getElementById(pfx+'-cv3').value||0,
     };
-    await sb.from('plans').upsert(row,{onConflict:'month,studio'});
+    // Delete existing then insert fresh to guarantee update
+    await sb.from('plans').delete().eq('month',m).eq('studio',st);
+    await sb.from('plans').insert(row);
     plans[m+'_'+st]=row;
   }
   
@@ -741,7 +744,6 @@ function openMarathonModal(){
 }
 
 async function openMarathonModalWithStaff(){
-  // Load active staff into selector
   const {data:staff}=await sb.from('profiles').select('id,name').eq('active',true).order('name');
   const sel=document.getElementById('m-target');
   sel.innerHTML='<option value="">Для всех сотрудников</option>';
@@ -759,7 +761,55 @@ async function openMarathonModalWithStaff(){
   document.getElementById('m-condition-value').value='';
   updateConditionLabel();
   document.getElementById('marathon-msg').style.display='none';
+  // Reset modal title and save button
+  document.querySelector('#marathon-modal .modal-title').textContent='🏆 Новый марафон';
+  const saveBtn=document.querySelector('#marathon-modal .btn-primary');
+  if(saveBtn){saveBtn.textContent='🏆 Запустить';saveBtn.onclick=saveMarathon;}
   document.getElementById('marathon-modal').style.display='flex';
+}
+
+async function editMarathon(id){
+  const m=marathons.find(x=>x.id===id);
+  if(!m)return;
+  // Load staff into selector first
+  await openMarathonModalWithStaff();
+  // Fill fields
+  document.getElementById('m-title').value=m.title||'';
+  document.getElementById('m-desc').value=m.description||'';
+  document.getElementById('m-prize').value=m.prize||'';
+  document.getElementById('m-start').value=m.date_start||'';
+  document.getElementById('m-end').value=m.date_end||'';
+  document.getElementById('m-condition-type').value=m.condition_type||'revenue';
+  document.getElementById('m-condition-value').value=m.condition_value||'';
+  if(m.target_profile_id)document.getElementById('m-target').value=m.target_profile_id;
+  updateConditionLabel();
+  // Change save button to update
+  const saveBtn=document.querySelector('#marathon-modal .btn-primary');
+  saveBtn.textContent='💾 Сохранить изменения';
+  saveBtn.onclick=()=>updateMarathon(id);
+  document.querySelector('#marathon-modal .modal-title').textContent='✏️ Редактировать марафон';
+}
+
+async function updateMarathon(id){
+  const title=document.getElementById('m-title').value.trim();
+  if(!title){alert('Введите название');return;}
+  const targetVal=document.getElementById('m-target').value;
+  const {error}=await sb.from('marathons').update({
+    title,
+    description:document.getElementById('m-desc').value.trim(),
+    prize:+document.getElementById('m-prize').value||0,
+    date_start:document.getElementById('m-start').value,
+    date_end:document.getElementById('m-end').value,
+    condition_type:document.getElementById('m-condition-type').value,
+    condition_value:+document.getElementById('m-condition-value').value||0,
+    target_profile_id:targetVal?+targetVal:null
+  }).eq('id',id);
+  if(error){alert('Ошибка: '+error.message);return;}
+  closeModal('marathon-modal');
+  // Reset save button
+  const saveBtn=document.querySelector('#marathon-modal .btn-primary');
+  if(saveBtn){saveBtn.textContent='🏆 Запустить';saveBtn.onclick=saveMarathon;}
+  await loadData();
 }
 
 async function saveMarathon(){

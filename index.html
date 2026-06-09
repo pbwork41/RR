@@ -76,10 +76,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;ba
 .chips{display:flex;gap:6px;flex-wrap:wrap}
 
 /* FORM */
-label{display:block;font-size:12px;color:var(--text2);margin-bottom:4px;font-weight:500}
+label{display:block;font-size:11px;color:var(--text2);margin-bottom:4px;font-weight:500;line-height:1.3}
 input,select,textarea{width:100%;padding:8px 12px;font-size:16px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);font-family:inherit;transition:border .15s}
 input:focus,select:focus{outline:none;border-color:var(--blue)}
-.form-row{margin-bottom:10px}
+.form-row{margin-bottom:8px}
 .hint{font-size:11px;color:var(--text3);margin-top:4px}
 
 /* BUTTONS */
@@ -269,8 +269,8 @@ input:focus,select:focus{outline:none;border-color:var(--blue)}
     <div class="form-row"><label>Продления, ₽</label><input type="number" id="f-renew" value="0" min="0"></div>
   </div>
   <div class="grid2">
-    <div class="form-row"><label>Возврат клиентов, ₽</label><input type="number" id="f-restore" value="0" min="0"></div>
-    <div class="form-row"><label>Массаж, записей</label><input type="number" id="f-massage" value="0" min="0"></div>
+    <div class="form-row"><label>Возврат, ₽</label><input type="number" id="f-restore" value="0" min="0"></div>
+    <div class="form-row"><label>Массаж (записей)</label><input type="number" id="f-massage" value="0" min="0"></div>
   </div>
   <div class="form-row"><label>Отзывов</label><input type="number" id="f-reviews" value="0" min="0"></div>
   <div class="divider"></div>
@@ -280,8 +280,8 @@ input:focus,select:focus{outline:none;border-color:var(--blue)}
     <div class="form-row"><label>Задач в АМО</label><input type="number" id="f-tasks" value="0" min="0"></div>
   </div>
   <div class="grid2">
-    <div class="form-row"><label>Йога, записей</label><input type="number" id="f-yoga" value="0" min="0"></div>
-    <div class="form-row"><label>Мастер-класс, записей</label><input type="number" id="f-mc" value="0" min="0"></div>
+    <div class="form-row"><label>Йога (записей)</label><input type="number" id="f-yoga" value="0" min="0"></div>
+    <div class="form-row"><label>МК (записей)</label><input type="number" id="f-mc" value="0" min="0"></div>
   </div>
   <div id="shift-err" class="alert alert-red" style="display:none"></div>
   <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:1rem">
@@ -318,8 +318,8 @@ input:focus,select:focus{outline:none;border-color:var(--blue)}
     <div class="form-row"><label>Продления, ₽</label><input type="number" id="e-renew" value="0" min="0"></div>
   </div>
   <div class="grid2">
-    <div class="form-row"><label>Возврат клиентов, ₽</label><input type="number" id="e-restore" value="0" min="0"></div>
-    <div class="form-row"><label>Массаж, записей</label><input type="number" id="e-massage" value="0" min="0"></div>
+    <div class="form-row"><label>Возврат, ₽</label><input type="number" id="e-restore" value="0" min="0"></div>
+    <div class="form-row"><label>Массаж (записей)</label><input type="number" id="e-massage" value="0" min="0"></div>
   </div>
   <div class="form-row"><label>Отзывов</label><input type="number" id="e-reviews" value="0" min="0"></div>
   <div class="divider"></div>
@@ -329,8 +329,8 @@ input:focus,select:focus{outline:none;border-color:var(--blue)}
     <div class="form-row"><label>Задач в АМО</label><input type="number" id="e-tasks" value="0" min="0"></div>
   </div>
   <div class="grid2">
-    <div class="form-row"><label>Йога, записей</label><input type="number" id="e-yoga" value="0" min="0"></div>
-    <div class="form-row"><label>Мастер-класс, записей</label><input type="number" id="e-mc" value="0" min="0"></div>
+    <div class="form-row"><label>Йога (записей)</label><input type="number" id="e-yoga" value="0" min="0"></div>
+    <div class="form-row"><label>МК (записей)</label><input type="number" id="e-mc" value="0" min="0"></div>
   </div>
   <div id="edit-err" class="alert alert-red" style="display:none"></div>
   <div style="display:flex;justify-content:space-between;margin-top:1rem">
@@ -360,22 +360,22 @@ input:focus,select:focus{outline:none;border-color:var(--blue)}
   <div class="divider"></div>
   <div class="subsection-title">Входящий поток</div>
   <div class="grid2">
-    <div class="form-row"><label>Записано пробных, чел</label><input type="number" id="p-trials" value="0" min="0"></div>
-    <div class="form-row"><label>Продажи по архиву, ₽</label><input type="number" id="p-archive" value="0" min="0"></div>
+    <div class="form-row"><label>Пробных записано</label><input type="number" id="p-trials" value="0" min="0"></div>
+    <div class="form-row"><label>По архиву, ₽</label><input type="number" id="p-archive" value="0" min="0"></div>
   </div>
   <div class="grid2">
-    <div class="form-row"><label>Продажи новых абонементов, ₽</label><input type="number" id="p-new-sum" value="0" min="0"></div>
-    <div class="form-row"><label>Продажи по возврату, ₽</label><input type="number" id="p-restore-sum" value="0" min="0"></div>
+    <div class="form-row"><label>Новые абонементы, ₽</label><input type="number" id="p-new-sum" value="0" min="0"></div>
+    <div class="form-row"><label>По возврату, ₽</label><input type="number" id="p-restore-sum" value="0" min="0"></div>
   </div>
   <div class="divider"></div>
   <div class="subsection-title">Активность</div>
   <div class="grid2">
-    <div class="form-row"><label>Сделано задач по АМО</label><input type="number" id="p-tasks" value="0" min="0"></div>
-    <div class="form-row"><label>Сделано звонков</label><input type="number" id="p-calls" value="0" min="0"></div>
+    <div class="form-row"><label>Задач по АМО</label><input type="number" id="p-tasks" value="0" min="0"></div>
+    <div class="form-row"><label>Звонков</label><input type="number" id="p-calls" value="0" min="0"></div>
   </div>
   <div class="grid2">
-    <div class="form-row"><label>Сделано фото</label><input type="number" id="p-photos" value="0" min="0"></div>
-    <div class="form-row"><label>Собрано отзывов</label><input type="number" id="p-reviews" value="0" min="0"></div>
+    <div class="form-row"><label>Фото</label><input type="number" id="p-photos" value="0" min="0"></div>
+    <div class="form-row"><label>Отзывов</label><input type="number" id="p-reviews" value="0" min="0"></div>
   </div>
   <div id="plan-err" class="alert alert-red" style="display:none"></div>
   <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:1rem">
