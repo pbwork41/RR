@@ -220,13 +220,11 @@ input:focus,select:focus{outline:none;border-color:var(--blue)}
       <span style="font-size:11px;opacity:.8" id="sync-text">загрузка...</span>
     </div>
     <div class="topbar-btns" style="grid-template-columns:1fr 1fr">
-      <button class="topbar-btn" id="btn-plan">+ План на день</button>
-      <button class="topbar-btn" id="btn-interim">+ Пром. отчёт</button>
+      <button class="topbar-btn" id="btn-plan">🚀 План на день</button>
+      <button class="topbar-btn" id="btn-interim">✅ Пром. отчёт</button>
     </div>
-    <div class="topbar-btns" style="margin-top:6px">
-      <button class="topbar-btn" id="btn-open-shift">🌅 Открыть смену</button>
-      <button class="topbar-btn" id="btn-quick-sale">💰 Продажа</button>
-      <button class="topbar-btn" id="btn-shift">✅ Закрыть смену</button>
+    <div class="topbar-btns" style="margin-top:6px;grid-template-columns:1fr">
+      <button class="topbar-btn" id="btn-shift">Закрыть смену</button>
     </div>
   </div>
 
@@ -246,33 +244,6 @@ input:focus,select:focus{outline:none;border-color:var(--blue)}
 
 <!-- MODALS -->
 
-<!-- OPEN SHIFT MODAL -->
-<div id="open-shift-modal" style="display:none" class="modal-bg">
-<div class="modal">
-  <div class="modal-header">
-    <div class="modal-title">🌅 Открытие смены</div>
-    <button class="btn btn-sm" id="close-open-shift-modal">✕</button>
-  </div>
-  <div class="grid2">
-    <div class="form-row"><label>Дата</label><input type="date" id="os-date"></div>
-    <div class="form-row"><label>Студия</label>
-      <select id="os-studio"><option>Империал</option><option>Мечта</option></select>
-    </div>
-  </div>
-  <div class="divider"></div>
-  <div class="subsection-title">Записано на сегодня</div>
-  <div class="grid2">
-    <div class="form-row"><label>Записей на пробное</label><input type="number" id="os-bookings" value="0" min="0"></div>
-    <div class="form-row"><label>Записано лидов</label><input type="number" id="os-leads-booked" value="0" min="0"></div>
-  </div>
-  <div id="os-error" class="alert alert-red" style="display:none"></div>
-  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:1rem">
-    <button class="btn" id="cancel-open-shift-btn">Отмена</button>
-    <button class="btn btn-primary" id="save-open-shift-btn">✓ Открыть смену</button>
-  </div>
-</div>
-</div>
-
 <!-- QUICK SALE MODAL -->
 <div id="quick-sale-modal" style="display:none" class="modal-bg">
 <div class="modal">
@@ -281,7 +252,7 @@ input:focus,select:focus{outline:none;border-color:var(--blue)}
     <button class="btn btn-sm" id="close-quick-sale-modal">✕</button>
   </div>
   <div class="card-muted" style="margin-bottom:12px;font-size:13px;color:var(--text2)">
-    Для записи продажи в день когда нет смены или до закрытия смены
+    Для записи продажи до закрытия смены. Учитывается только за вами — другой администратор её не увидит как свою.
   </div>
   <div class="grid2">
     <div class="form-row"><label>Дата</label><input type="date" id="qs-date"></div>
@@ -291,12 +262,8 @@ input:focus,select:focus{outline:none;border-color:var(--blue)}
   </div>
   <div class="divider"></div>
   <div class="grid2">
-    <div class="form-row"><label>Новые абонементы, ₽</label><input type="number" id="qs-new" value="0" min="0"></div>
-    <div class="form-row"><label>Продления, ₽</label><input type="number" id="qs-renew" value="0" min="0"></div>
-  </div>
-  <div class="grid2">
-    <div class="form-row"><label>Возвращение клиентов, ₽</label><input type="number" id="qs-restore" value="0" min="0"></div>
-    <div class="form-row"><label>Пришло на пробное</label><input type="number" id="qs-visits" value="0" min="0"></div>
+    <div class="form-row"><label>Новый абонемент, ₽</label><input type="number" id="qs-new" value="0" min="0"></div>
+    <div class="form-row"><label>Архив, ₽</label><input type="number" id="qs-renew" value="0" min="0"></div>
   </div>
   <div id="qs-error" class="alert alert-red" style="display:none"></div>
   <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:1rem">
@@ -327,6 +294,7 @@ input:focus,select:focus{outline:none;border-color:var(--blue)}
   </div>
   <div class="divider"></div>
   <div class="subsection-title">Продажи</div>
+  <div id="f-quick-sales-note" class="card-muted" style="display:none;font-size:13px;color:var(--blue-text);margin-bottom:10px"></div>
   <div class="grid2">
     <div class="form-row"><label>Новые абонементы, ₽</label><input type="number" id="f-new" value="0" min="0"></div>
     <div class="form-row"><label>Продления, ₽</label><input type="number" id="f-renew" value="0" min="0"></div>
@@ -623,7 +591,7 @@ async function doLogin(){
   }
   const myS=await sb.from('shifts').select('studio,date').eq('admin',fullName).order('date',{ascending:false}).limit(1);
   const studio=myS.data&&myS.data[0]?myS.data[0].studio:'';
-  currentUser={name:fullName,id:data.id,studio};
+  currentUser={name:fullName,id:data.id,studio,telegramUsername:data.telegram_username||null};
   localStorage.setItem('ls_session',JSON.stringify({name:fullName,id:data.id}));
   enterApp();
 }
@@ -653,7 +621,7 @@ async function checkSession(){
     if(data&&data.active){
       const myS=await sb.from('shifts').select('studio,date').eq('admin',data.name).order('date',{ascending:false}).limit(1);
       const studio=myS.data&&myS.data[0]?myS.data[0].studio:'';
-      currentUser={name:data.name,id:data.id,studio};
+      currentUser={name:data.name,id:data.id,studio,telegramUsername:data.telegram_username||null};
       enterApp();
     } else { localStorage.removeItem('ls_session'); }
   }catch(e){localStorage.removeItem('ls_session');}
@@ -857,7 +825,13 @@ function renderProfile(){
       <div class="profile-avatar">${name[0]}</div>
       <div style="font-size:18px;font-weight:700;margin-bottom:6px">${name}</div>
       ${studio?`<span class="tag ${pill}" style="font-size:12px">${studio}</span>`:''}
-      <div style="margin-top:12px"><button class="btn btn-sm btn-danger" id="logout-btn">Выйти</button></div>
+      <div style="margin-top:10px;font-size:13px;color:var(--text2)">
+        ${currentUser.telegramUsername?`✈️ Telegram: <b>@${currentUser.telegramUsername}</b>`:`<span style="color:var(--amber-text)">✈️ Telegram не привязан — напишите боту LSReportBot</span>`}
+      </div>
+      <div style="margin-top:12px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+        <button class="btn btn-sm" id="btn-quick-sale">💰 Промежуточная продажа</button>
+        <button class="btn btn-sm btn-danger" id="logout-btn">Выйти</button>
+      </div>
     </div>
 
     ${todayPlan?`
@@ -942,6 +916,10 @@ function renderProfile(){
   const lb=document.getElementById('logout-btn');
   if(lb)lb.addEventListener('click',doLogout);
 
+  // Bind quick sale
+  const qsb=document.getElementById('btn-quick-sale');
+  if(qsb)qsb.addEventListener('click',openQuickSale);
+
   // Bind history filter
   const hf=document.getElementById('history-filter');
   if(hf)hf.addEventListener('change',renderHistory);
@@ -1017,9 +995,12 @@ function checkMissPlan(){
   block.style.display=fact<todayPlan.revenue_plan?'block':'none';
 }
 
-function openAddShift(){
+let pendingQuickSales=[];
+
+async function openAddShift(){
   document.getElementById('shift-modal-title').textContent='Закрытие смены';
-  document.getElementById('f-date').value=today();
+  const dateVal=today();
+  document.getElementById('f-date').value=dateVal;
   const myLast=shifts.filter(s=>s.admin===currentUser.name).sort((a,b)=>b.date.localeCompare(a.date));
   document.getElementById('f-studio').value=myLast.length?myLast[0].studio:'Империал';
   ['f-leads','f-leads-booked','f-bookings','f-visits','f-new','f-renew','f-restore','f-massage','f-reviews','f-calls','f-tasks','f-yoga','f-mc'].forEach(id=>document.getElementById(id).value=0);
@@ -1032,12 +1013,28 @@ function openAddShift(){
   checkMissPlan();
   document.getElementById('shift-err').style.display='none';
   document.getElementById('shift-modal').style.display='flex';
+
+  // Pull in this admin's own unattached quick sales for today and pre-fill, with a visible note
+  const qsBlock=document.getElementById('f-quick-sales-note');
+  const {data:qs}=await sb.from('quick_sales').select('*').eq('admin',currentUser.name).eq('date',dateVal).is('shift_id',null);
+  pendingQuickSales=qs||[];
+  if(pendingQuickSales.length){
+    const sumNew=pendingQuickSales.reduce((a,s)=>a+(+s.new_sales||0),0);
+    const sumArchive=pendingQuickSales.reduce((a,s)=>a+(+s.renew||0),0);
+    document.getElementById('f-new').value=sumNew;
+    document.getElementById('f-restore').value=sumArchive;
+    qsBlock.style.display='block';
+    qsBlock.innerHTML=`📋 Учтена ваша промежуточная продажа за сегодня (от <b>${currentUser.name}</b>): ${pendingQuickSales.length} шт. на сумму <b>${(sumNew+sumArchive).toLocaleString('ru-RU')} ₽</b> — подставлена в поля ниже, можно дополнить фактом за смену.`;
+    checkMissPlan();
+  } else {
+    qsBlock.style.display='none';
+  }
 }
 
 async function saveShift(){
   const btn=document.getElementById('save-shift-btn');
   btn.disabled=true;btn.textContent='Сохранение...';
-  const {error}=await sb.from('shifts').insert({
+  const {data:inserted,error}=await sb.from('shifts').insert({
     date:document.getElementById('f-date').value,
     studio:document.getElementById('f-studio').value,
     admin:currentUser.name,
@@ -1058,9 +1055,13 @@ async function saveShift(){
     miss_comment:buildMissComment(),
     self_weakspot:document.getElementById('f-self-weakspot').value||null,
     self_tomorrow:document.getElementById('f-self-tomorrow').value.trim()||null,
-  });
+  }).select().single();
   btn.disabled=false;btn.textContent='✓ Сохранить';
   if(error){const el=document.getElementById('shift-err');el.textContent='Ошибка: '+error.message;el.style.display='block';return;}
+  if(pendingQuickSales.length&&inserted){
+    await sb.from('quick_sales').update({shift_id:inserted.id}).in('id',pendingQuickSales.map(s=>s.id));
+    pendingQuickSales=[];
+  }
   document.getElementById('shift-modal').style.display='none';
   await loadData();
 }
@@ -1190,7 +1191,7 @@ async function saveDailyPlan(){
 }
 
 // ===== INTERIM REPORT =====
-function openInterimReport(){
+async function openInterimReport(){
   const el=document.getElementById('interim-content');
   if(!todayPlan){
     el.innerHTML=`<div class="card-muted" style="text-align:center;padding:1.5rem">
@@ -1203,16 +1204,30 @@ function openInterimReport(){
     if(gpb)gpb.addEventListener('click',()=>{document.getElementById('interim-modal').style.display='none';openDailyPlan();});
     return;
   }
-  const myS=shifts.filter(s=>s.admin===currentUser.name&&s.date===today());
-  const factRev=myS.reduce((a,s)=>a+s.newSales+s.renew+s.restore,0);
+  const dateVal=today();
+  const myS=shifts.filter(s=>s.admin===currentUser.name&&s.date===dateVal);
+  let factRev=myS.reduce((a,s)=>a+s.newSales+s.renew+s.restore,0);
   const factCalls=myS.reduce((a,s)=>a+s.calls,0);
   const factTasks=myS.reduce((a,s)=>a+s.tasks,0);
+
+  // Include this admin's own not-yet-attached quick sales for today
+  const {data:qs}=await sb.from('quick_sales').select('new_sales,renew').eq('admin',currentUser.name).eq('date',dateVal).is('shift_id',null);
+  const qsSum=(qs||[]).reduce((a,s)=>a+(+s.new_sales||0)+(+s.renew||0),0);
+  factRev+=qsSum;
+
   const planRev=(+todayPlan.archive_focus||0)+(+todayPlan.revenue_plan||0);
   const planCalls=+todayPlan.calls_planned||0;
   const planTasks=+todayPlan.tasks_planned||0;
   const revPct=planRev>0?Math.min(Math.round(factRev/planRev*100),100):0;
   const col=revPct>=100?'var(--green-text)':revPct>=50?'var(--amber-text)':'var(--red-text)';
   const barCol=revPct>=100?'var(--green)':revPct>=50?'var(--amber)':'var(--red)';
+
+  let focusMsg='';
+  if(revPct<50){
+    focusMsg=`<div class="card-muted" style="background:var(--red-bg);color:var(--red-text);margin-top:14px;font-size:13px">⚠ Сильное отставание от плана дня — стоит сделать упор на звонки по архиву и закрытие записанных пробных во второй половине дня.</div>`;
+  } else if(revPct<90){
+    focusMsg=`<div class="card-muted" style="background:var(--amber-bg);color:var(--amber-text);margin-top:14px;font-size:13px">⚡ До плана дня ещё есть запас — сфокусируйтесь на дожиме записанных клиентов до конца смены.</div>`;
+  }
 
   el.innerHTML=`
     <div style="text-align:center;margin-bottom:16px">
@@ -1223,6 +1238,7 @@ function openInterimReport(){
     ${planCalls?`<div class="history-row"><span style="color:var(--text2)">☎️ Звонки</span><span style="font-weight:600">${factCalls} / ${planCalls}</span></div>`:''}
     ${planTasks?`<div class="history-row"><span style="color:var(--text2)">✅ Задачи в АМО</span><span style="font-weight:600">${factTasks} / ${planTasks}</span></div>`:''}
     <div class="history-row"><span style="color:var(--text2)">🧪 Пробных по плану</span><span style="font-weight:600">${todayPlan.trials_planned||0} чел</span></div>
+    ${focusMsg}
     <div style="margin-top:12px"><button class="btn btn-block" id="close-interim-btn">Закрыть</button></div>`;
 
   document.getElementById('interim-modal').style.display='flex';
@@ -1231,50 +1247,12 @@ function openInterimReport(){
 }
 
 // ===== OPEN SHIFT =====
-function openOpenShift(){
-  document.getElementById('os-date').value=today();
-  const myLast=shifts.filter(s=>s.admin===currentUser.name).sort((a,b)=>b.date.localeCompare(a.date));
-  document.getElementById('os-studio').value=myLast.length?myLast[0].studio:'Империал';
-  ['os-bookings','os-leads-booked'].forEach(id=>document.getElementById(id).value=0);
-  document.getElementById('os-error').style.display='none';
-  document.getElementById('open-shift-modal').style.display='flex';
-}
-
-async function saveOpenShift(){
-  const btn=document.getElementById('save-open-shift-btn');
-  btn.disabled=true;btn.textContent='Сохранение...';
-  const date=document.getElementById('os-date').value;
-  const studio=document.getElementById('os-studio').value;
-  const bookings=+document.getElementById('os-bookings').value||0;
-  const leadsBooked=+document.getElementById('os-leads-booked').value||0;
-
-  // Check if shift already exists for today
-  const existing=shifts.find(s=>s.admin===currentUser.name&&s.date===date);
-  if(existing){
-    // Update existing shift's booking count
-    await sb.from('shifts').update({bookings,leads_booked:leadsBooked,shift_opened:true}).eq('id',existing.id);
-  } else {
-    // Create new shift record for opening
-    await sb.from('shifts').insert({
-      date,studio,admin:currentUser.name,
-      bookings,leads_booked:leadsBooked,
-      shift_opened:true,
-      new_sales:0,renew:0,restore:0,leads:0,visits:0,
-      massage_bookings:0,reviews:0,calls:0,tasks:0,
-      yoga_bookings:0,masterclass_bookings:0
-    });
-  }
-  btn.disabled=false;btn.textContent='✓ Открыть смену';
-  document.getElementById('open-shift-modal').style.display='none';
-  await loadData();
-}
-
 // ===== QUICK SALE =====
 function openQuickSale(){
   document.getElementById('qs-date').value=today();
   const myLast=shifts.filter(s=>s.admin===currentUser.name).sort((a,b)=>b.date.localeCompare(a.date));
   document.getElementById('qs-studio').value=myLast.length?myLast[0].studio:'Империал';
-  ['qs-new','qs-renew','qs-restore','qs-visits'].forEach(id=>document.getElementById(id).value=0);
+  ['qs-new','qs-renew'].forEach(id=>document.getElementById(id).value=0);
   document.getElementById('qs-error').style.display='none';
   document.getElementById('quick-sale-modal').style.display='flex';
 }
@@ -1286,112 +1264,111 @@ async function saveQuickSale(){
   const studio=document.getElementById('qs-studio').value;
   const newSales=+document.getElementById('qs-new').value||0;
   const renew=+document.getElementById('qs-renew').value||0;
-  const restore=+document.getElementById('qs-restore').value||0;
-  const visits=+document.getElementById('qs-visits').value||0;
 
-  // Check if shift exists for this date
-  const existing=shifts.find(s=>s.admin===currentUser.name&&s.date===date);
-  if(existing){
-    // Add to existing shift
-    await sb.from('shifts').update({
-      new_sales:existing.newSales+newSales,
-      renew:existing.renew+renew,
-      restore:existing.restore+restore,
-      visits:existing.visits+visits,
-    }).eq('id',existing.id);
-  } else {
-    // Create new shift with just the sale
-    await sb.from('shifts').insert({
-      date,studio,admin:currentUser.name,
-      new_sales:newSales,renew,restore,visits,
-      bookings:0,leads:0,leads_booked:0,
-      massage_bookings:0,reviews:0,calls:0,tasks:0,
-      yoga_bookings:0,masterclass_bookings:0
-    });
+  if(newSales<=0&&renew<=0){
+    const el=document.getElementById('qs-error');
+    el.textContent='Укажите сумму хотя бы по одному полю';el.style.display='block';
+    btn.disabled=false;btn.textContent='💾 Сохранить';
+    return;
   }
+
+  const {error}=await sb.from('quick_sales').insert({
+    date,studio,admin:currentUser.name,
+    new_sales:newSales,renew,
+  });
+
   btn.disabled=false;btn.textContent='💾 Сохранить';
+  if(error){const el=document.getElementById('qs-error');el.textContent='Ошибка: '+error.message;el.style.display='block';return;}
   document.getElementById('quick-sale-modal').style.display='none';
   await loadData();
+  openInterimReport();
 }
 
 // ===== EVENT LISTENERS =====
 document.addEventListener('DOMContentLoaded',()=>{
-  // Auth pads
-  buildPad('login-pad','login');
-  buildPad('reg-pad','reg');
-  buildPad('reg-pad2','reg2');
+  function runSafe(label,fn){
+    try{fn();}catch(e){console.error('Init group failed: '+label,e);}
+  }
 
-  // Auth tabs
-  document.getElementById('tab-login-btn').addEventListener('click',()=>showAuthTab('login'));
-  document.getElementById('tab-reg-btn').addEventListener('click',()=>showAuthTab('reg'));
-
-  // Auth actions
-  document.getElementById('do-login-btn').addEventListener('click',doLogin);
-  document.getElementById('do-reg-btn').addEventListener('click',doRegister);
-  document.getElementById('reg-next-btn').addEventListener('click',()=>{
-    const f=document.getElementById('reg-first').value.trim();
-    const l=document.getElementById('reg-last').value.trim();
-    if(!f||!l){showAuthErr('reg-err','Введите имя и фамилию');return;}
-    if(regPin.length<4){showAuthErr('reg-err','Введите 4 цифры');return;}
-    document.getElementById('reg-step1').style.display='none';
-    document.getElementById('reg-step2').style.display='block';
-    regPin2='';updateDots('reg2');
-  });
-  document.getElementById('reg-back-btn').addEventListener('click',()=>{
-    document.getElementById('reg-step2').style.display='none';
-    document.getElementById('reg-step1').style.display='block';
-    regPin2='';
+  runSafe('auth pads',()=>{
+    buildPad('login-pad','login');
+    buildPad('reg-pad','reg');
+    buildPad('reg-pad2','reg2');
   });
 
-  // Main tabs
-  document.getElementById('tab-dashboard').addEventListener('click',()=>switchTab('dashboard'));
-  document.getElementById('tab-shifts').addEventListener('click',()=>switchTab('shifts'));
-  document.getElementById('tab-profile').addEventListener('click',()=>switchTab('profile'));
-
-  // Topbar buttons
-  document.getElementById('btn-plan').addEventListener('click',openDailyPlan);
-  document.getElementById('btn-interim').addEventListener('click',openInterimReport);
-  document.getElementById('btn-shift').addEventListener('click',openAddShift);
-
-  // Shift modal
-  document.getElementById('close-shift-modal').addEventListener('click',()=>document.getElementById('shift-modal').style.display='none');
-  document.getElementById('cancel-shift-btn').addEventListener('click',()=>document.getElementById('shift-modal').style.display='none');
-  document.getElementById('save-shift-btn').addEventListener('click',saveShift);
-  ['f-new','f-renew','f-restore'].forEach(id=>document.getElementById(id).addEventListener('input',checkMissPlan));
-
-  // Edit modal
-  document.getElementById('close-edit-modal').addEventListener('click',()=>document.getElementById('edit-modal').style.display='none');
-  document.getElementById('cancel-edit-btn').addEventListener('click',()=>document.getElementById('edit-modal').style.display='none');
-  document.getElementById('update-shift-btn').addEventListener('click',updateShift);
-  document.getElementById('delete-shift-btn').addEventListener('click',deleteShift);
-
-  // Plan modal
-  document.getElementById('close-plan-modal').addEventListener('click',()=>document.getElementById('plan-modal').style.display='none');
-  document.getElementById('cancel-plan-btn').addEventListener('click',()=>document.getElementById('plan-modal').style.display='none');
-  document.getElementById('save-plan-btn').addEventListener('click',saveDailyPlan);
-
-  // Interim modal
-  document.getElementById('close-interim-modal').addEventListener('click',()=>document.getElementById('interim-modal').style.display='none');
-
-  // Edit buttons delegation
-  document.getElementById('shifts-content').addEventListener('click',e=>{
-    const btn=e.target.closest('[data-edit]');
-    if(btn)openEdit(+btn.dataset.edit);
+  runSafe('auth tabs',()=>{
+    document.getElementById('tab-login-btn').addEventListener('click',()=>showAuthTab('login'));
+    document.getElementById('tab-reg-btn').addEventListener('click',()=>showAuthTab('reg'));
   });
 
-  // Open shift modal
-  document.getElementById('btn-open-shift').addEventListener('click',openOpenShift);
-  document.getElementById('close-open-shift-modal').addEventListener('click',()=>document.getElementById('open-shift-modal').style.display='none');
-  document.getElementById('cancel-open-shift-btn').addEventListener('click',()=>document.getElementById('open-shift-modal').style.display='none');
-  document.getElementById('save-open-shift-btn').addEventListener('click',saveOpenShift);
+  runSafe('auth actions',()=>{
+    document.getElementById('do-login-btn').addEventListener('click',doLogin);
+    document.getElementById('do-reg-btn').addEventListener('click',doRegister);
+    document.getElementById('reg-next-btn').addEventListener('click',()=>{
+      const f=document.getElementById('reg-first').value.trim();
+      const l=document.getElementById('reg-last').value.trim();
+      if(!f||!l){showAuthErr('reg-err','Введите имя и фамилию');return;}
+      if(regPin.length<4){showAuthErr('reg-err','Введите 4 цифры');return;}
+      document.getElementById('reg-step1').style.display='none';
+      document.getElementById('reg-step2').style.display='block';
+      regPin2='';updateDots('reg2');
+    });
+    document.getElementById('reg-back-btn').addEventListener('click',()=>{
+      document.getElementById('reg-step2').style.display='none';
+      document.getElementById('reg-step1').style.display='block';
+      regPin2='';
+    });
+  });
 
-  // Quick sale modal
-  document.getElementById('btn-quick-sale').addEventListener('click',openQuickSale);
-  document.getElementById('close-quick-sale-modal').addEventListener('click',()=>document.getElementById('quick-sale-modal').style.display='none');
-  document.getElementById('cancel-quick-sale-btn').addEventListener('click',()=>document.getElementById('quick-sale-modal').style.display='none');
-  document.getElementById('save-quick-sale-btn').addEventListener('click',saveQuickSale);
+  runSafe('main tabs',()=>{
+    document.getElementById('tab-dashboard').addEventListener('click',()=>switchTab('dashboard'));
+    document.getElementById('tab-shifts').addEventListener('click',()=>switchTab('shifts'));
+    document.getElementById('tab-profile').addEventListener('click',()=>switchTab('profile'));
+  });
 
-  // Check session
+  runSafe('topbar buttons',()=>{
+    document.getElementById('btn-plan').addEventListener('click',openDailyPlan);
+    document.getElementById('btn-interim').addEventListener('click',openInterimReport);
+    document.getElementById('btn-shift').addEventListener('click',openAddShift);
+  });
+
+  runSafe('shift modal',()=>{
+    document.getElementById('close-shift-modal').addEventListener('click',()=>document.getElementById('shift-modal').style.display='none');
+    document.getElementById('cancel-shift-btn').addEventListener('click',()=>document.getElementById('shift-modal').style.display='none');
+    document.getElementById('save-shift-btn').addEventListener('click',saveShift);
+    ['f-new','f-renew','f-restore'].forEach(id=>document.getElementById(id).addEventListener('input',checkMissPlan));
+  });
+
+  runSafe('edit modal',()=>{
+    document.getElementById('close-edit-modal').addEventListener('click',()=>document.getElementById('edit-modal').style.display='none');
+    document.getElementById('cancel-edit-btn').addEventListener('click',()=>document.getElementById('edit-modal').style.display='none');
+    document.getElementById('update-shift-btn').addEventListener('click',updateShift);
+    document.getElementById('delete-shift-btn').addEventListener('click',deleteShift);
+  });
+
+  runSafe('plan modal',()=>{
+    document.getElementById('close-plan-modal').addEventListener('click',()=>document.getElementById('plan-modal').style.display='none');
+    document.getElementById('cancel-plan-btn').addEventListener('click',()=>document.getElementById('plan-modal').style.display='none');
+    document.getElementById('save-plan-btn').addEventListener('click',saveDailyPlan);
+  });
+
+  runSafe('interim modal',()=>{
+    document.getElementById('close-interim-modal').addEventListener('click',()=>document.getElementById('interim-modal').style.display='none');
+  });
+
+  runSafe('edit buttons delegation',()=>{
+    document.getElementById('shifts-content').addEventListener('click',e=>{
+      const btn=e.target.closest('[data-edit]');
+      if(btn)openEdit(+btn.dataset.edit);
+    });
+  });
+
+  runSafe('quick sale modal',()=>{
+    document.getElementById('close-quick-sale-modal').addEventListener('click',()=>document.getElementById('quick-sale-modal').style.display='none');
+    document.getElementById('cancel-quick-sale-btn').addEventListener('click',()=>document.getElementById('quick-sale-modal').style.display='none');
+    document.getElementById('save-quick-sale-btn').addEventListener('click',saveQuickSale);
+  });
+
   checkSession();
 });
 </script>
