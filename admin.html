@@ -18,13 +18,23 @@
   --radius:10px;--radius-sm:6px;--shadow:0 1px 3px rgba(0,0,0,.08);
 }
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:var(--bg3);color:var(--text);font-size:15px;min-height:100vh;overflow-x:hidden}
-.app{max-width:960px;margin:0 auto;padding:1rem}
+.app{max-width:1180px;margin:0 auto;padding:1rem}
 .topbar{background:var(--purple);color:#fff;padding:14px 20px;border-radius:var(--radius);margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
 .topbar-title{font-size:17px;font-weight:600}
 .topbar-sub{font-size:12px;opacity:.8;margin-top:2px}
-.tabs{display:flex;gap:4px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:4px;margin-bottom:1rem;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}
-.tab{flex:1;padding:8px 6px;font-size:12px;font-weight:500;cursor:pointer;border:none;background:none;color:var(--text2);border-radius:var(--radius-sm);transition:all .15s;font-family:inherit;white-space:nowrap;text-align:center}.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -4px;padding:0 4px}
+.layout{display:grid;grid-template-columns:200px 1fr;gap:1rem;align-items:start}
+.tabs{display:flex;flex-direction:column;gap:4px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:8px;position:sticky;top:1rem}
+.tab{width:100%;padding:11px 12px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:none;color:var(--text2);border-radius:var(--radius-sm);transition:all .15s;font-family:inherit;white-space:nowrap;text-align:left;display:flex;align-items:center;gap:8px}
 .tab.active{background:var(--purple);color:#fff}
+.tab:hover:not(.active){background:var(--bg2)}
+.content-col{min-width:0}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -4px;padding:0 4px}
+@media(max-width:860px){
+  .layout{display:block}
+  .tabs{flex-direction:row;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;position:static;margin-bottom:1rem;padding:4px}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{width:auto;flex:1;padding:8px 6px;font-size:12px;text-align:center;justify-content:center}
+}
 .section{display:none}.section.active{display:block}
 .card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;margin-bottom:1rem;box-shadow:var(--shadow)}
 .card-muted{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;margin-bottom:1rem}
@@ -77,10 +87,13 @@ textarea{resize:vertical;min-height:70px}
 .pin-input{text-align:center;font-size:28px;letter-spacing:10px;font-weight:700}
 .funnel-stage{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:2px}
 .funnel-label{flex:1;font-size:13px;color:var(--text2)}
-.funnel-arrow{text-align:center;color:var(--text3);font-size:13px;padding:2px 0}
-.cv-good{color:var(--green-text);font-weight:600}
-.cv-mid{color:var(--amber-text);font-weight:600}
-.cv-bad{color:var(--red-text);font-weight:600}
+.funnel-connector{display:flex;align-items:center;gap:8px;padding:4px 12px}
+.funnel-connector-line{width:2px;height:18px;background:var(--border2);flex-shrink:0;margin-left:9px}
+.funnel-cv-pill{display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 10px;border-radius:20px}
+.cv-good{background:var(--green-bg);color:var(--green-text)}
+.cv-mid{background:var(--amber-bg);color:var(--amber-text)}
+.cv-bad{background:var(--red-bg);color:var(--red-text)}
+.cv-neu{background:var(--bg2);color:var(--text2)}
 /* Marathon */
 .marathon-card{border:2px solid var(--amber);border-radius:var(--radius);padding:1rem;margin-bottom:12px;background:var(--amber-bg)}
 .marathon-card.inactive{border-color:var(--border);background:var(--bg2);opacity:.7}
@@ -124,18 +137,20 @@ textarea{resize:vertical;min-height:70px}
     </div>
   </div>
 
+  <div class="layout">
   <div class="tabs">
-    <button class="tab active" onclick="switchTab('overview')">📊 Сводка</button>
-    <button class="tab" onclick="switchTab('mom')">📈 Динамика</button>
-    <button class="tab" onclick="switchTab('studios')">🏢 Студии</button>
-    <button class="tab" onclick="switchTab('admins')">👤 Администраторы</button>
-    <button class="tab" onclick="switchTab('marathons')">🏆 Марафоны</button>
-    <button class="tab" onclick="switchTab('reports')">📋 Отчёты</button>
-    <button class="tab" onclick="switchTab('staff')">👥 Сотрудники</button>
-    <button class="tab" onclick="switchTab('plans')">🎯 Планы</button>
-    <button class="tab" onclick="switchTab('salary')">💰 Зарплаты</button>
-    <button class="tab" onclick="switchTab('motivation')">🎯 Мотивация</button>
+    <button class="tab active" onclick="switchTab('overview')">📊 <span>Сводка</span></button>
+    <button class="tab" onclick="switchTab('mom')">📈 <span>Динамика</span></button>
+    <button class="tab" onclick="switchTab('studios')">🏢 <span>Студии</span></button>
+    <button class="tab" onclick="switchTab('admins')">👤 <span>Администраторы</span></button>
+    <button class="tab" onclick="switchTab('marathons')">🏆 <span>Марафоны</span></button>
+    <button class="tab" onclick="switchTab('reports')">📋 <span>Отчёты</span></button>
+    <button class="tab" onclick="switchTab('salary')">💰 <span>Зарплаты</span></button>
+    <button class="tab" onclick="switchTab('plans')">🎯 <span>Планы</span></button>
+    <button class="tab" onclick="switchTab('motivation')">🎯 <span>Мотивация</span></button>
+    <button class="tab" onclick="switchTab('staff')">👥 <span>Сотрудники</span></button>
   </div>
+  <div class="content-col">
 
   <div id="tab-overview" class="section active"><div id="overview-content"></div></div>
   <div id="tab-mom" class="section"><div id="mom-content"></div></div>
@@ -147,7 +162,8 @@ textarea{resize:vertical;min-height:70px}
   <div id="tab-plans" class="section"><div id="plans-content"></div></div>
   <div id="tab-salary" class="section"><div id="salary-content"></div></div>
   <div id="tab-motivation" class="section"><div id="motivation-content"></div></div>
-</div>
+  </div>
+  </div>
 </div>
 
 <!-- PLAN MODAL -->
@@ -331,8 +347,11 @@ async function loadData(){
   const parse=r=>({
     id:r.id,date:r.date,studio:r.studio,admin:r.admin,
     newSales:+r.new_sales||0,renew:+r.renew||0,restore:+r.restore||0,
-    certs:r.certs||[],leads:+r.leads||0,bookings:+r.bookings||0,visits:+r.visits||0,
-    massage:+r.massage_bookings||0,reviews:+r.reviews||0
+    certs:r.certs||[],leads:+r.leads||0,leadsBooked:+r.leads_booked||0,bookings:+r.bookings||0,visits:+r.visits||0,
+    massage:+r.massage_bookings||0,reviews:+r.reviews||0,
+    calls:+r.calls||0,tasks:+r.tasks||0,yoga:+r.yoga_bookings||0,mc:+r.masterclass_bookings||0,
+    missReason:r.miss_reason||null,missComment:r.miss_comment||null,
+    selfWeakspot:r.self_weakspot||null,selfTomorrow:r.self_tomorrow||null
   });
   shifts=(cur||[]).map(parse);
   shiftsLast=(prev||[]).map(parse);
@@ -368,7 +387,8 @@ function getStats(ss){
   const cv1=leads>0?Math.round(bookings/leads*100):null;
   const cv2=bookings>0?Math.round(visits/bookings*100):null;
   const cv3=visits>0?Math.round(newSalesCount/visits*100):null;
-  return{revenue,leads,bookings,visits,newSalesCount,renewals,massage,reviews,calls,tasks,yoga,mc,rr,cv1,cv2,cv3,n:ss.length};
+  const uniqueDays=new Set(ss.map(s=>s.date)).size;
+  return{revenue,leads,bookings,visits,newSalesCount,renewals,massage,reviews,calls,tasks,yoga,mc,rr,cv1,cv2,cv3,n:ss.length,uniqueDays};
 }
 
 function getPlan(st){return plans[monthKey()+'_'+st]||{};}
@@ -431,16 +451,50 @@ function marathonProgress(m,ss){
   return{val,target,pct,done:val>=target};
 }
 
+function weakestFunnelStage(fact,plan){
+  const stages=[
+    {label:'Лид → запись',cv:fact.cv1,cvPlan:plan.cv1||0},
+    {label:'Запись → приход',cv:fact.cv2,cvPlan:plan.cv2||0},
+    {label:'Приход → продажа',cv:fact.cv3,cvPlan:plan.cv3||0},
+  ].filter(s=>s.cv!==null&&s.cvPlan>0);
+  if(!stages.length)return null;
+  let worst=null,worstGap=-Infinity;
+  stages.forEach(s=>{
+    const gap=s.cvPlan-s.cv;
+    if(gap>worstGap){worstGap=gap;worst=s;}
+  });
+  if(worstGap<=0)return null;
+  return{...worst,gap:worstGap};
+}
+
 function funnelHtml(fact,plan){
   const stages=[
     {label:'Лиды',fact:fact.leads,plan:plan.leads||0},
-    {label:'Записи',fact:fact.bookings,plan:plan.bookings||0,cv:fact.cv1,cvPlan:plan.cv1||0},
-    {label:'Доходимость',fact:fact.visits,plan:plan.visits||0,cv:fact.cv2,cvPlan:plan.cv2||0},
-    {label:'Новые продажи',fact:fact.newSalesCount,plan:plan.new_clients||0,cv:fact.cv3,cvPlan:plan.cv3||0},
+    {label:'Записи',fact:fact.bookings,plan:plan.bookings||0,cv:fact.cv1,cvPlan:plan.cv1||0,cvLabel:'Лид → запись'},
+    {label:'Доходимость',fact:fact.visits,plan:plan.visits||0,cv:fact.cv2,cvPlan:plan.cv2||0,cvLabel:'Запись → приход'},
+    {label:'Новые продажи',fact:fact.newSalesCount,plan:plan.new_clients||0,cv:fact.cv3,cvPlan:plan.cv3||0,cvLabel:'Приход → продажа'},
   ];
-  return`<div>${stages.map((s,i)=>`
-    ${i>0?`<div class="funnel-arrow">↓ ${s.cv!==null?`<span class="${s.cv>=(s.cvPlan||0)?'cv-good':s.cv>=(s.cvPlan||0)*0.85?'cv-mid':'cv-bad'}">${s.cv}%${s.cvPlan?' (план '+s.cvPlan+'%)':''}</span>`:'нет данных'}</div>`:''}
-    <div class="funnel-stage"><span class="funnel-label">${s.label}</span><span style="font-weight:700">${s.fact}</span>${s.plan?`<span style="font-size:11px;color:var(--text3);margin-left:8px">план ${s.plan}</span>`:''}</div>`).join('')}</div>`;
+  return`<div>${stages.map((s,i)=>{
+    let connector='';
+    if(i>0){
+      if(s.cv===null){
+        connector=`<div class="funnel-connector"><span class="funnel-connector-line"></span><span style="font-size:11px;color:var(--text3)">нет данных</span></div>`;
+      } else {
+        const hasPlan=!!s.cvPlan;
+        const status=!hasPlan?'cv-neu':s.cv>=s.cvPlan?'cv-good':s.cv>=s.cvPlan*0.85?'cv-mid':'cv-bad';
+        const icon=!hasPlan?'':s.cv>=s.cvPlan?'✓':s.cv>=s.cvPlan*0.85?'~':'!';
+        connector=`<div class="funnel-connector">
+          <span class="funnel-connector-line"></span>
+          <span class="funnel-cv-pill cv-${status}">
+            <span style="font-size:10px;text-transform:uppercase;letter-spacing:.02em;opacity:.85">${s.cvLabel}</span>
+            <span style="font-weight:700">${icon?icon+' ':''}${s.cv}%</span>
+            ${hasPlan?`<span style="opacity:.75">план ${s.cvPlan}%</span>`:''}
+          </span>
+        </div>`;
+      }
+    }
+    return`${connector}<div class="funnel-stage"><span class="funnel-label">${s.label}</span><span style="font-weight:700">${s.fact}</span>${s.plan?`<span style="font-size:11px;color:var(--text3);margin-left:8px">план ${s.plan}</span>`:''}</div>`;
+  }).join('')}</div>`;
 }
 
 function renderAll(){renderOverview();renderMoM();renderStudios();renderAdmins();renderMarathons();renderPlans();}
@@ -471,22 +525,70 @@ function renderOverview(){
     }).join('')}</div>`;
   }
 
+  const yesterday=(()=>{const d=new Date(today());d.setDate(d.getDate()-1);return d.toISOString().slice(0,10);})();
+  const missedStudios=studios.filter(st=>!shifts.some(s=>s.studio===st&&s.date===yesterday));
+  if(missedStudios.length){
+    html+=`<div class="card" style="border:1px solid var(--red);background:var(--red-bg);display:flex;align-items:center;gap:10px;margin-bottom:12px">
+      <span style="font-size:18px">⚠</span>
+      <div style="font-size:13px;color:var(--red-text)">Нет данных за ${yesterday}: ${missedStudios.join(', ')}. Если это был рабочий день — смена не закрыта.</div>
+    </div>`;
+  }
+
   html+=`<div class="grid2" style="margin-bottom:12px">
     <div class="metric"><div class="metric-label">Факт (обе студии)</div><div class="metric-val">${fmt(shifts.reduce((a,s)=>a+s.newSales+s.renew+s.restore,0))} ₽</div></div>
     <div class="metric"><div class="metric-label">Ран рейт (обе студии)</div><div class="metric-val">${fmt(calcRR(shifts.reduce((a,s)=>a+s.newSales+s.renew+s.restore,0)))} ₽</div><div class="metric-sub">прогноз на конец месяца</div></div>
   </div>`;
 
-  studios.forEach(st=>{
+  // Pre-compute stats for both studios once, reused for banner / strip / cards / sorting / funnel
+  const studioData=studios.map(st=>{
     const fact=getStats(shifts.filter(s=>s.studio===st));
     const plan=getPlan(st);
     const rrPct=plan.revenue>0?Math.round(fact.rr/plan.revenue*100):null;
     const factPct=plan.revenue>0?Math.round(fact.revenue/plan.revenue*100):null;
+    return{st,fact,plan,rrPct,factPct};
+  });
+
+  // 3. No-plan banner with direct CTA, shown once if any studio lacks a plan
+  const missingPlan=studioData.filter(d=>!d.plan.revenue);
+  if(missingPlan.length){
+    html+=`<div class="card" style="border:1px solid var(--amber);background:var(--amber-bg);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+      <div style="font-size:13px;color:var(--amber-text)">⚠ План не задан: ${missingPlan.map(d=>d.st).join(', ')}. Без плана нельзя оценить отставание и ран рейт в %.</div>
+      <button class="btn btn-sm" onclick="switchTab('plans')" style="background:var(--amber);color:#fff;border:none;white-space:nowrap">Задать план</button>
+    </div>`;
+  }
+
+  // 1. Compact side-by-side comparison strip
+  html+=`<div class="grid2" style="margin-bottom:12px">${studioData.map(d=>{
+    const pill=d.st==='Империал'?'pill-imp':'pill-mec';
+    const col=d.rrPct===null?'var(--text3)':d.rrPct>=100?'var(--green-text)':d.rrPct>=85?'var(--amber-text)':'var(--red-text)';
+    return`<div class="metric" style="cursor:default">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span class="${pill}" style="font-size:11px">${d.st}</span>
+        <span style="font-size:12px;font-weight:700;color:${col}">${d.rrPct!==null?d.rrPct+'% плана':'—'}</span>
+      </div>
+      <div style="font-size:18px;font-weight:700">${fmt(d.fact.revenue)} ₽</div>
+      <div style="font-size:11px;color:var(--text3)">ран рейт ${fmt(d.fact.rr)} ₽</div>
+    </div>`;
+  }).join('')}</div>`;
+
+  // 5. Sort studio cards by worst plan attainment first (most urgent on top)
+  const sortedStudios=[...studioData].sort((a,b)=>{
+    const av=a.rrPct===null?-1:a.rrPct;
+    const bv=b.rrPct===null?-1:b.rrPct;
+    return av-bv;
+  });
+
+  sortedStudios.forEach(({st,fact,plan,rrPct,factPct})=>{
     const fill=Math.min(factPct||0,100);
     const color=rrPct>=100?'var(--green)':rrPct>=85?'var(--amber)':'var(--red)';
     const pill=st==='Империал'?'pill-imp':'pill-mec';
     const nowD=new Date();
-    const daysLeftD=new Date(nowD.getFullYear(),nowD.getMonth()+1,0).getDate()-nowD.getDate();
+    const dim=new Date(nowD.getFullYear(),nowD.getMonth()+1,0).getDate();
+    const daysPassed=nowD.getDate();
+    const daysLeftD=dim-daysPassed;
     const needPerDayD=plan.revenue&&daysLeftD>0?Math.max(0,Math.round((plan.revenue-fact.revenue)/daysLeftD)):0;
+    // 2. Flag the gap between calendar days passed and actually-worked days
+    const workedGap=daysPassed-fact.uniqueDays;
     html+=`<div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
         <span class="${pill}" style="font-size:13px">${st}</span>
@@ -501,12 +603,28 @@ function renderOverview(){
       ${plan.revenue?`<div class="metric" style="margin-bottom:12px;background:${needPerDayD===0?'var(--green-bg)':'var(--bg2)'};border-color:${needPerDayD===0?'#86efac':'var(--border)'}">
         <div class="metric-label">Нужно продавать в день</div>
         <div class="metric-val" style="font-size:16px;color:${needPerDayD===0?'var(--green-text)':'var(--text)'}">${needPerDayD===0?'✓ План выполнен':fmt(needPerDayD)+' ₽'}</div>
-        <div class="metric-sub">${daysLeftD} дней осталось</div>
+        <div class="metric-sub">${daysLeftD} дней осталось${workedGap>0?` · ⚠ закрыто смен за ${fact.uniqueDays} из ${daysPassed} прошедших дней`:''}</div>
       </div>`:''}
       ${plan.revenue?`<div class="progress-wrap"><div class="progress-fill" style="width:${fill}%;background:${color}"></div></div>
       <div style="display:flex;justify-content:space-between;margin-top:5px;font-size:11px;color:var(--text3)"><span>Факт: ${factPct}%</span><span>План: ${fmt(plan.revenue)} ₽</span></div>`:''}
-      ${fact.leads>0?`<div class="divider"></div><div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Воронка</div>${funnelHtml(fact,plan)}`:''}
     </div>`;
+  });
+
+  html+=`<div class="section-title" style="margin-top:16px;margin-bottom:8px">Воронка продаж</div>`;
+  sortedStudios.forEach(({st,fact,plan})=>{
+    const pill=st==='Империал'?'pill-imp':'pill-mec';
+    if(fact.leads>0){
+      const weak=weakestFunnelStage(fact,plan);
+      html+=`<div class="card">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span class="${pill}" style="font-size:12px">${st}</span></div>
+        ${weak?`<div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--red-text);background:var(--red-bg);border-radius:var(--radius-sm);padding:6px 10px;margin-bottom:10px">
+          <span>⚠</span><span>Слабое звено: <b>${weak.label}</b> — ${weak.cv}% при плане ${weak.cvPlan}%</span>
+        </div>`:''}
+        ${funnelHtml(fact,plan)}
+      </div>`;
+    } else {
+      html+=`<div class="card" style="color:var(--text3);font-size:13px"><span class="${pill}" style="font-size:12px;margin-right:8px">${st}</span>нет данных по лидам за месяц</div>`;
+    }
   });
   document.getElementById('overview-content').innerHTML=html;
 }
@@ -533,7 +651,13 @@ function renderMoM(){
       {label:'CV приход→продажа',cur:cur.cv3!==null?cur.cv3+'%':'—',prev:prev.cv3!==null?prev.cv3+'%':'—',d:cur.cv3&&prev.cv3?delta(cur.cv3,prev.cv3):''},
     ];
     html+=`<div class="card">
-      <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px"><span class="${pill}">${st}</span><span style="font-size:12px;color:var(--text3)">${monthLabel()} vs ${prevMonthLabel()}</span></div>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px"><span class="${pill}">${st}</span></div>
+      <div style="display:flex;justify-content:flex-end;align-items:center;gap:4px;padding-bottom:6px;border-bottom:1px solid var(--border);margin-bottom:2px">
+        <span style="font-size:12px;color:var(--text2);flex:1;min-width:100px"></span>
+        <span style="font-size:11px;font-weight:700;color:var(--purple-text);text-transform:capitalize">${monthLabel()}</span>
+        <span style="font-size:11px;color:var(--text3);min-width:70px;text-align:right;text-transform:capitalize">${prevMonthLabel()}</span>
+        <span style="min-width:50px;text-align:right;font-size:11px;color:var(--text3)">Δ</span>
+      </div>
       ${rows.map(r=>`<div style="padding:8px 0;border-bottom:1px solid var(--border)">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:4px;flex-wrap:wrap">
           <span style="font-size:12px;color:var(--text2);flex:1;min-width:100px">${r.label}</span>
@@ -590,18 +714,35 @@ async function renderAdmins(){
   const shiftNames = [...new Set(shifts.map(s=>s.admin))].filter(Boolean);
   const admins = [...new Set([...shiftNames, ...profileNames])].sort();
   if(!admins.length){document.getElementById('admins-content').innerHTML='<div style="color:var(--text3);padding:2rem;text-align:center">Нет данных</div>';return;}
-  let html='<div class="card"><div class="section-title">Рейтинг администраторов</div>';
-  html+='<div class="table-wrap" style="min-width:0"><table class="kpi-table" style="min-width:700px"><thead><tr><th>Администратор</th><th>Студия</th><th>Смен</th><th>Выручка</th><th>Звонки</th><th>Задачи</th><th>Йога</th><th>МК</th><th>CV→продажа</th></tr></thead><tbody>';
-  admins.map(admin=>{
+  const computed=admins.map(admin=>{
     const ss=shifts.filter(s=>s.admin===admin);
     const st=getStats(ss);
     return{admin,studio:ss[0]?.studio||'—',...st};
-  }).sort((a,b)=>b.revenue-a.revenue).forEach((d,i)=>{
+  });
+  let html='<div class="card"><div class="section-title">Рейтинг по выручке</div>';
+  html+='<div class="table-wrap" style="min-width:0"><table class="kpi-table" style="min-width:700px"><thead><tr><th>Администратор</th><th>Студия</th><th>Смен</th><th>Выручка</th><th>Звонки</th><th>Задачи</th><th>Йога</th><th>МК</th><th>CV→продажа</th></tr></thead><tbody>';
+  [...computed].sort((a,b)=>b.revenue-a.revenue).forEach((d,i)=>{
     const pill=d.studio==='Империал'?'pill-imp':'pill-mec';
     const cvCls=d.cv3===null?'delta-neu':d.cv3>=55?'delta-pos':d.cv3>=40?'':'delta-neg';
     html+=`<tr><td><b>${i+1}. ${d.admin}</b></td><td><span class="${pill}">${d.studio}</span></td><td>${d.n}</td><td><b>${fmt(d.revenue)} ₽</b></td><td>${d.calls||'—'}</td><td>${d.tasks||'—'}</td><td>${d.yoga||'—'}</td><td>${d.mc||'—'}</td><td class="${cvCls}">${d.cv3!==null?d.cv3+'%':'—'}</td></tr>`;
   });
-  html+='</tbody></table></div>';
+  html+='</tbody></table></div></div>';
+
+  const withCv=computed.filter(d=>d.cv3!==null);
+  html+='<div class="card"><div class="section-title">Рейтинг по конверсии приход→продажа</div>';
+  html+='<div style="font-size:12px;color:var(--text3);margin-bottom:10px">Кто эффективнее закрывает приходящих клиентов, независимо от объёма трафика</div>';
+  if(!withCv.length){
+    html+='<div style="color:var(--text3);font-size:13px">Нет данных по приходу за месяц</div>';
+  } else {
+    html+='<div class="table-wrap" style="min-width:0"><table class="kpi-table" style="min-width:560px"><thead><tr><th>Администратор</th><th>Студия</th><th>Приход</th><th>Продажи</th><th>CV→продажа</th></tr></thead><tbody>';
+    [...withCv].sort((a,b)=>b.cv3-a.cv3).forEach((d,i)=>{
+      const pill=d.studio==='Империал'?'pill-imp':'pill-mec';
+      const cvCls=d.cv3>=55?'delta-pos':d.cv3>=40?'':'delta-neg';
+      html+=`<tr><td><b>${i+1}. ${d.admin}</b></td><td><span class="${pill}">${d.studio}</span></td><td>${d.visits}</td><td>${d.newSalesCount}</td><td class="${cvCls}"><b>${d.cv3}%</b></td></tr>`;
+    });
+    html+='</tbody></table></div>';
+  }
+  html+='</div>';
   document.getElementById('admins-content').innerHTML=html;
 }
 
@@ -967,6 +1108,61 @@ function renderReports(){
         </tbody>
       </table>
       </div>
+    </div>`;
+  }
+
+  // Причины невыполнения плана
+  const withReason=shifts.filter(s=>s.missReason);
+  if(withReason.length){
+    const counts={};
+    withReason.forEach(s=>{counts[s.missReason]=(counts[s.missReason]||0)+1;});
+    const maxCount=Math.max(...Object.values(counts));
+    const sortedReasons=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+    const withComment=shifts.filter(s=>s.missComment).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,8);
+    html+=`<div class="card">
+      <div class="section-title">Причины невыполнения плана — ${monthLabel()}</div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:${withComment.length?'16px':'0'}">
+        ${sortedReasons.map(([reason,count])=>`
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:13px;color:var(--text2);width:160px;flex-shrink:0">${reason}</span>
+            <div style="flex:1;background:var(--bg2);border-radius:6px;height:10px;overflow:hidden"><div style="width:${Math.round(count/maxCount*100)}%;height:100%;background:var(--red)"></div></div>
+            <span style="font-size:13px;font-weight:600;width:24px;text-align:right">${count}</span>
+          </div>`).join('')}
+      </div>
+      ${withComment.length?`<div style="border-top:1px solid var(--border);padding-top:12px">
+        <div style="font-size:12px;color:var(--text3);margin-bottom:6px">Последние комментарии</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          ${withComment.map(s=>`<div style="font-size:13px"><span style="color:var(--text3)">${s.date}, ${s.studio} (${s.admin}) —</span> «${s.missComment}»</div>`).join('')}
+        </div>
+      </div>`:''}
+    </div>`;
+  }
+
+  // Самоанализ
+  const withWeakspot=shifts.filter(s=>s.selfWeakspot);
+  if(withWeakspot.length){
+    const wsCounts={};
+    withWeakspot.forEach(s=>{wsCounts[s.selfWeakspot]=(wsCounts[s.selfWeakspot]||0)+1;});
+    const wsMax=Math.max(...Object.values(wsCounts));
+    const sortedWs=Object.entries(wsCounts).sort((a,b)=>b[1]-a[1]);
+    const withTomorrow=shifts.filter(s=>s.selfTomorrow).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,8);
+    html+=`<div class="card">
+      <div class="section-title">Самоанализ команды — ${monthLabel()}</div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:10px">Где администраторы сами видят свою главную просадку</div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:${withTomorrow.length?'16px':'0'}">
+        ${sortedWs.map(([spot,count])=>`
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:13px;color:var(--text2);width:160px;flex-shrink:0">${spot}</span>
+            <div style="flex:1;background:var(--bg2);border-radius:6px;height:10px;overflow:hidden"><div style="width:${Math.round(count/wsMax*100)}%;height:100%;background:var(--blue)"></div></div>
+            <span style="font-size:13px;font-weight:600;width:24px;text-align:right">${count}</span>
+          </div>`).join('')}
+      </div>
+      ${withTomorrow.length?`<div style="border-top:1px solid var(--border);padding-top:12px">
+        <div style="font-size:12px;color:var(--text3);margin-bottom:6px">Что обещали сделать по-другому</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          ${withTomorrow.map(s=>`<div style="font-size:13px"><span style="color:var(--text3)">${s.date}, ${s.studio} (${s.admin}) —</span> «${s.selfTomorrow}»</div>`).join('')}
+        </div>
+      </div>`:''}
     </div>`;
   }
 
@@ -1367,7 +1563,7 @@ async function updateMotivation(id){
 }
 
 function switchTab(t){
-  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['overview','mom','studios','admins','marathons','reports','staff','plans','salary','motivation'][i]===t));
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['overview','mom','studios','admins','marathons','reports','salary','plans','motivation','staff'][i]===t));
   document.querySelectorAll('.section').forEach(el=>el.classList.remove('active'));
   document.getElementById('tab-'+t).classList.add('active');
   if(t==='reports')renderReports();

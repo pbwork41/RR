@@ -336,6 +336,32 @@ input:focus,select:focus{outline:none;border-color:var(--blue)}
     <div class="form-row"><label>Массаж (записей)</label><input type="number" id="f-massage" value="0" min="0"></div>
   </div>
   <div class="form-row"><label>Отзывов</label><input type="number" id="f-reviews" value="0" min="0"></div>
+  <div id="f-miss-block" style="display:none">
+    <div class="divider"></div>
+    <div class="subsection-title" style="display:flex;align-items:center;gap:6px;color:var(--amber-text)">⚠ План не выполнен — укажите причину</div>
+    <div id="f-miss-tags" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px"></div>
+    <div id="f-miss-trainer-detail-wrap" class="form-row" style="display:none">
+      <label>Что именно с тренером?</label>
+      <input type="text" id="f-miss-trainer-detail" placeholder="Например: опоздал, не было настроения, плохо провёл пробное">
+    </div>
+    <div class="form-row"><textarea id="f-miss-comment" placeholder="Комментарий — что именно произошло (необязательно)" style="width:100%;min-height:60px;resize:vertical"></textarea></div>
+    <div class="divider" style="margin:14px 0"></div>
+    <div class="subsection-title" style="display:flex;align-items:center;gap:6px;color:var(--blue-text)">💡 Самоанализ</div>
+    <div class="form-row">
+      <label>Где была главная просадка</label>
+      <select id="f-self-weakspot">
+        <option value="">— выберите —</option>
+        <option value="Звонки по архиву">Звонки по архиву</option>
+        <option value="Доведение до записи">Доведение до записи</option>
+        <option value="Закрытие на пробном">Закрытие на пробном</option>
+        <option value="Отработка возражений">Отработка возражений</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label>Что сделаю завтра по-другому</label>
+      <input type="text" id="f-self-tomorrow" placeholder="Один конкретный шаг">
+    </div>
+  </div>
   <div class="divider"></div>
   <div class="subsection-title">Активность</div>
   <div class="grid2">
@@ -464,6 +490,8 @@ const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZ
 const sb = supabase.createClient(SB_URL, SB_KEY);
 
 let shifts=[], marathons=[], allMyShifts=[], currentUser=null, editingId=null, todayPlan=null;
+let selectedMissReason=null;
+const MISS_REASONS=['Не было новых клиентов','Отмена записей','Недоработка тренера','Нет дозвона по архиву','Другое'];
 let IMP_PLAN=1800000, MEC_PLAN=1200000;
 let loginPin='', regPin='', regPin2='';
 
@@ -497,7 +525,9 @@ function parseShift(r){
     newSales:+r.new_sales||0,renew:+r.renew||0,restore:+r.restore||0,
     leads:+r.leads||0,leadsBooked:+r.leads_booked||0,bookings:+r.bookings||0,visits:+r.visits||0,
     massage:+r.massage_bookings||0,reviews:+r.reviews||0,
-    calls:+r.calls||0,tasks:+r.tasks||0,yoga:+r.yoga_bookings||0,mc:+r.masterclass_bookings||0};
+    calls:+r.calls||0,tasks:+r.tasks||0,yoga:+r.yoga_bookings||0,mc:+r.masterclass_bookings||0,
+    missReason:r.miss_reason||null,missComment:r.miss_comment||null,createdAt:r.created_at||null,
+    selfWeakspot:r.self_weakspot||null,selfTomorrow:r.self_tomorrow||null};
 }
 
 function conditionLabel(type,val){
@@ -950,12 +980,56 @@ function switchTab(t){
 }
 
 // ===== SHIFT CRUD =====
+function renderMissTags(){
+  const wrap=document.getElementById('f-miss-tags');
+  wrap.innerHTML=MISS_REASONS.map(r=>{
+    const active=selectedMissReason===r;
+    return `<span class="miss-tag${active?' miss-tag-active':''}" data-reason="${r}" style="cursor:pointer;font-size:13px;padding:6px 12px;border-radius:8px;${active?'background:var(--blue-bg);color:var(--blue-text);border:2px solid var(--blue)':'background:var(--bg2);color:var(--text2);border:2px solid transparent'}">${r}</span>`;
+  }).join('');
+  wrap.querySelectorAll('.miss-tag').forEach(el=>{
+    el.addEventListener('click',()=>{
+      selectedMissReason=selectedMissReason===el.dataset.reason?null:el.dataset.reason;
+      renderMissTags();
+    });
+  });
+  const detailWrap=document.getElementById('f-miss-trainer-detail-wrap');
+  detailWrap.style.display=selectedMissReason==='Недоработка тренера'?'block':'none';
+  const commentEl=document.getElementById('f-miss-comment');
+  commentEl.placeholder=selectedMissReason==='Другое'
+    ?'Опишите причину'
+    :'Комментарий — что именно произошло (необязательно)';
+}
+
+function buildMissComment(){
+  const general=document.getElementById('f-miss-comment').value.trim();
+  if(selectedMissReason==='Недоработка тренера'){
+    const detail=document.getElementById('f-miss-trainer-detail').value.trim();
+    const parts=[detail,general].filter(Boolean);
+    return parts.length?parts.join(' — '):null;
+  }
+  return general||null;
+}
+
+function checkMissPlan(){
+  const block=document.getElementById('f-miss-block');
+  if(!todayPlan||!todayPlan.revenue_plan){block.style.display='none';return;}
+  const fact=(+document.getElementById('f-new').value||0)+(+document.getElementById('f-renew').value||0)+(+document.getElementById('f-restore').value||0);
+  block.style.display=fact<todayPlan.revenue_plan?'block':'none';
+}
+
 function openAddShift(){
   document.getElementById('shift-modal-title').textContent='Закрытие смены';
   document.getElementById('f-date').value=today();
   const myLast=shifts.filter(s=>s.admin===currentUser.name).sort((a,b)=>b.date.localeCompare(a.date));
   document.getElementById('f-studio').value=myLast.length?myLast[0].studio:'Империал';
   ['f-leads','f-leads-booked','f-bookings','f-visits','f-new','f-renew','f-restore','f-massage','f-reviews','f-calls','f-tasks','f-yoga','f-mc'].forEach(id=>document.getElementById(id).value=0);
+  document.getElementById('f-miss-comment').value='';
+  document.getElementById('f-miss-trainer-detail').value='';
+  document.getElementById('f-self-weakspot').value='';
+  document.getElementById('f-self-tomorrow').value='';
+  selectedMissReason=null;
+  renderMissTags();
+  checkMissPlan();
   document.getElementById('shift-err').style.display='none';
   document.getElementById('shift-modal').style.display='flex';
 }
@@ -980,6 +1054,10 @@ async function saveShift(){
     tasks:+document.getElementById('f-tasks').value||0,
     yoga_bookings:+document.getElementById('f-yoga').value||0,
     masterclass_bookings:+document.getElementById('f-mc').value||0,
+    miss_reason:selectedMissReason,
+    miss_comment:buildMissComment(),
+    self_weakspot:document.getElementById('f-self-weakspot').value||null,
+    self_tomorrow:document.getElementById('f-self-tomorrow').value.trim()||null,
   });
   btn.disabled=false;btn.textContent='✓ Сохранить';
   if(error){const el=document.getElementById('shift-err');el.textContent='Ошибка: '+error.message;el.style.display='block';return;}
@@ -1279,6 +1357,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('close-shift-modal').addEventListener('click',()=>document.getElementById('shift-modal').style.display='none');
   document.getElementById('cancel-shift-btn').addEventListener('click',()=>document.getElementById('shift-modal').style.display='none');
   document.getElementById('save-shift-btn').addEventListener('click',saveShift);
+  ['f-new','f-renew','f-restore'].forEach(id=>document.getElementById(id).addEventListener('input',checkMissPlan));
 
   // Edit modal
   document.getElementById('close-edit-modal').addEventListener('click',()=>document.getElementById('edit-modal').style.display='none');
