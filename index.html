@@ -1003,7 +1003,7 @@ async function openAddShift(){
   document.getElementById('f-date').value=dateVal;
   const myLast=shifts.filter(s=>s.admin===currentUser.name).sort((a,b)=>b.date.localeCompare(a.date));
   document.getElementById('f-studio').value=myLast.length?myLast[0].studio:'Империал';
-  ['f-leads','f-leads-booked','f-bookings','f-visits','f-new','f-renew','f-restore','f-massage','f-reviews','f-calls','f-tasks','f-yoga','f-mc'].forEach(id=>document.getElementById(id).value=0);
+  ['f-bookings','f-visits','f-new','f-renew','f-restore','f-massage','f-reviews','f-calls','f-tasks','f-yoga','f-mc'].forEach(id=>document.getElementById(id).value=0);
   document.getElementById('f-miss-comment').value='';
   document.getElementById('f-miss-trainer-detail').value='';
   document.getElementById('f-self-weakspot').value='';
@@ -1041,8 +1041,8 @@ async function saveShift(){
     new_sales:+document.getElementById('f-new').value||0,
     renew:+document.getElementById('f-renew').value||0,
     restore:+document.getElementById('f-restore').value||0,
-    leads:+document.getElementById('f-leads').value||0,
-    leads_booked:+document.getElementById('f-leads-booked').value||0,
+    leads:0,
+    leads_booked:0,
     bookings:+document.getElementById('f-bookings').value||0,
     visits:+document.getElementById('f-visits').value||0,
     massage_bookings:+document.getElementById('f-massage').value||0,
