@@ -219,10 +219,14 @@ input:focus,select:focus{outline:none;border-color:var(--blue)}
       </div>
       <span style="font-size:11px;opacity:.8" id="sync-text">загрузка...</span>
     </div>
-    <div class="topbar-btns">
+    <div class="topbar-btns" style="grid-template-columns:1fr 1fr">
       <button class="topbar-btn" id="btn-plan">+ План на день</button>
       <button class="topbar-btn" id="btn-interim">+ Пром. отчёт</button>
-      <button class="topbar-btn" id="btn-shift">+ Закрытие смены</button>
+    </div>
+    <div class="topbar-btns" style="margin-top:6px">
+      <button class="topbar-btn" id="btn-open-shift">🌅 Открыть смену</button>
+      <button class="topbar-btn" id="btn-quick-sale">💰 Продажа</button>
+      <button class="topbar-btn" id="btn-shift">✅ Закрыть смену</button>
     </div>
   </div>
 
@@ -242,6 +246,66 @@ input:focus,select:focus{outline:none;border-color:var(--blue)}
 
 <!-- MODALS -->
 
+<!-- OPEN SHIFT MODAL -->
+<div id="open-shift-modal" style="display:none" class="modal-bg">
+<div class="modal">
+  <div class="modal-header">
+    <div class="modal-title">🌅 Открытие смены</div>
+    <button class="btn btn-sm" id="close-open-shift-modal">✕</button>
+  </div>
+  <div class="grid2">
+    <div class="form-row"><label>Дата</label><input type="date" id="os-date"></div>
+    <div class="form-row"><label>Студия</label>
+      <select id="os-studio"><option>Империал</option><option>Мечта</option></select>
+    </div>
+  </div>
+  <div class="divider"></div>
+  <div class="subsection-title">Записано на сегодня</div>
+  <div class="grid2">
+    <div class="form-row"><label>Записей на пробное</label><input type="number" id="os-bookings" value="0" min="0"></div>
+    <div class="form-row"><label>Записано лидов</label><input type="number" id="os-leads-booked" value="0" min="0"></div>
+  </div>
+  <div id="os-error" class="alert alert-red" style="display:none"></div>
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:1rem">
+    <button class="btn" id="cancel-open-shift-btn">Отмена</button>
+    <button class="btn btn-primary" id="save-open-shift-btn">✓ Открыть смену</button>
+  </div>
+</div>
+</div>
+
+<!-- QUICK SALE MODAL -->
+<div id="quick-sale-modal" style="display:none" class="modal-bg">
+<div class="modal">
+  <div class="modal-header">
+    <div class="modal-title">💰 Промежуточная продажа</div>
+    <button class="btn btn-sm" id="close-quick-sale-modal">✕</button>
+  </div>
+  <div class="card-muted" style="margin-bottom:12px;font-size:13px;color:var(--text2)">
+    Для записи продажи в день когда нет смены или до закрытия смены
+  </div>
+  <div class="grid2">
+    <div class="form-row"><label>Дата</label><input type="date" id="qs-date"></div>
+    <div class="form-row"><label>Студия</label>
+      <select id="qs-studio"><option>Империал</option><option>Мечта</option></select>
+    </div>
+  </div>
+  <div class="divider"></div>
+  <div class="grid2">
+    <div class="form-row"><label>Новые абонементы, ₽</label><input type="number" id="qs-new" value="0" min="0"></div>
+    <div class="form-row"><label>Продления, ₽</label><input type="number" id="qs-renew" value="0" min="0"></div>
+  </div>
+  <div class="grid2">
+    <div class="form-row"><label>Возвращение клиентов, ₽</label><input type="number" id="qs-restore" value="0" min="0"></div>
+    <div class="form-row"><label>Пришло на пробное</label><input type="number" id="qs-visits" value="0" min="0"></div>
+  </div>
+  <div id="qs-error" class="alert alert-red" style="display:none"></div>
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:1rem">
+    <button class="btn" id="cancel-quick-sale-btn">Отмена</button>
+    <button class="btn btn-primary" id="save-quick-sale-btn">💾 Сохранить</button>
+  </div>
+</div>
+</div>
+
 <!-- SHIFT MODAL -->
 <div id="shift-modal" style="display:none" class="modal-bg">
 <div class="modal">
@@ -257,10 +321,9 @@ input:focus,select:focus{outline:none;border-color:var(--blue)}
   </div>
   <div class="divider"></div>
   <div class="subsection-title">Воронка</div>
-  <div class="grid3">
-    <div class="form-row"><label>Лидов</label><input type="number" id="f-leads" value="0" min="0"></div>
-    <div class="form-row"><label>Записей</label><input type="number" id="f-bookings" value="0" min="0"></div>
-    <div class="form-row"><label>Пришло</label><input type="number" id="f-visits" value="0" min="0"></div>
+  <div class="grid2">
+    <div class="form-row"><label>Записей на пробное</label><input type="number" id="f-bookings" value="0" min="0"></div>
+    <div class="form-row"><label>Сколько пришло?</label><input type="number" id="f-visits" value="0" min="0"></div>
   </div>
   <div class="divider"></div>
   <div class="subsection-title">Продажи</div>
@@ -306,10 +369,9 @@ input:focus,select:focus{outline:none;border-color:var(--blue)}
   </div>
   <div class="divider"></div>
   <div class="subsection-title">Воронка</div>
-  <div class="grid3">
-    <div class="form-row"><label>Лидов</label><input type="number" id="e-leads" value="0" min="0"></div>
-    <div class="form-row"><label>Записей</label><input type="number" id="e-bookings" value="0" min="0"></div>
-    <div class="form-row"><label>Пришло</label><input type="number" id="e-visits" value="0" min="0"></div>
+  <div class="grid2">
+    <div class="form-row"><label>Записей на пробное</label><input type="number" id="e-bookings" value="0" min="0"></div>
+    <div class="form-row"><label>Сколько пришло?</label><input type="number" id="e-visits" value="0" min="0"></div>
   </div>
   <div class="divider"></div>
   <div class="subsection-title">Продажи</div>
@@ -414,7 +476,7 @@ const simpleHash = str => { let h=0; for(let i=0;i<str.length;i++){h=Math.imul(3
 const badge = p => p>=100?'<span class="badge badge-green">✓ В плане</span>':p>=85?'<span class="badge badge-amber">⚠ Ускориться</span>':'<span class="badge badge-red">✗ Отстаём</span>';
 
 function calcRR(fact){
-  const now=new Date(),d=now.getDate(),dim=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
+  const now=new Date(),ln=new Date(now.getTime()-now.getTimezoneOffset()*60000),d=ln.getUTCDate(),dim=new Date(ln.getUTCFullYear(),ln.getUTCMonth()+1,0).getDate();
   return d>0?Math.round(fact/d*dim):0;
 }
 
@@ -433,7 +495,7 @@ function calcShift(s){
 function parseShift(r){
   return{id:r.id,date:r.date,studio:r.studio,admin:r.admin,
     newSales:+r.new_sales||0,renew:+r.renew||0,restore:+r.restore||0,
-    leads:+r.leads||0,bookings:+r.bookings||0,visits:+r.visits||0,
+    leads:+r.leads||0,leadsBooked:+r.leads_booked||0,bookings:+r.bookings||0,visits:+r.visits||0,
     massage:+r.massage_bookings||0,reviews:+r.reviews||0,
     calls:+r.calls||0,tasks:+r.tasks||0,yoga:+r.yoga_bookings||0,mc:+r.masterclass_bookings||0};
 }
@@ -893,7 +955,7 @@ function openAddShift(){
   document.getElementById('f-date').value=today();
   const myLast=shifts.filter(s=>s.admin===currentUser.name).sort((a,b)=>b.date.localeCompare(a.date));
   document.getElementById('f-studio').value=myLast.length?myLast[0].studio:'Империал';
-  ['f-leads','f-bookings','f-visits','f-new','f-renew','f-restore','f-massage','f-reviews','f-calls','f-tasks','f-yoga','f-mc'].forEach(id=>document.getElementById(id).value=0);
+  ['f-leads','f-leads-booked','f-bookings','f-visits','f-new','f-renew','f-restore','f-massage','f-reviews','f-calls','f-tasks','f-yoga','f-mc'].forEach(id=>document.getElementById(id).value=0);
   document.getElementById('shift-err').style.display='none';
   document.getElementById('shift-modal').style.display='flex';
 }
@@ -909,6 +971,7 @@ async function saveShift(){
     renew:+document.getElementById('f-renew').value||0,
     restore:+document.getElementById('f-restore').value||0,
     leads:+document.getElementById('f-leads').value||0,
+    leads_booked:+document.getElementById('f-leads-booked').value||0,
     bookings:+document.getElementById('f-bookings').value||0,
     visits:+document.getElementById('f-visits').value||0,
     massage_bookings:+document.getElementById('f-massage').value||0,
@@ -934,6 +997,7 @@ function openEdit(id){
   document.getElementById('e-renew').value=s.renew||0;
   document.getElementById('e-restore').value=s.restore||0;
   document.getElementById('e-leads').value=s.leads||0;
+  document.getElementById('e-leads-booked').value=s.leadsBooked||0;
   document.getElementById('e-bookings').value=s.bookings||0;
   document.getElementById('e-visits').value=s.visits||0;
   document.getElementById('e-massage').value=s.massage||0;
@@ -956,6 +1020,7 @@ async function updateShift(){
     renew:+document.getElementById('e-renew').value||0,
     restore:+document.getElementById('e-restore').value||0,
     leads:+document.getElementById('e-leads').value||0,
+    leads_booked:+document.getElementById('e-leads-booked').value||0,
     bookings:+document.getElementById('e-bookings').value||0,
     visits:+document.getElementById('e-visits').value||0,
     massage_bookings:+document.getElementById('e-massage').value||0,
@@ -1087,6 +1152,90 @@ function openInterimReport(){
   if(cib)cib.addEventListener('click',()=>document.getElementById('interim-modal').style.display='none');
 }
 
+// ===== OPEN SHIFT =====
+function openOpenShift(){
+  document.getElementById('os-date').value=today();
+  const myLast=shifts.filter(s=>s.admin===currentUser.name).sort((a,b)=>b.date.localeCompare(a.date));
+  document.getElementById('os-studio').value=myLast.length?myLast[0].studio:'Империал';
+  ['os-bookings','os-leads-booked'].forEach(id=>document.getElementById(id).value=0);
+  document.getElementById('os-error').style.display='none';
+  document.getElementById('open-shift-modal').style.display='flex';
+}
+
+async function saveOpenShift(){
+  const btn=document.getElementById('save-open-shift-btn');
+  btn.disabled=true;btn.textContent='Сохранение...';
+  const date=document.getElementById('os-date').value;
+  const studio=document.getElementById('os-studio').value;
+  const bookings=+document.getElementById('os-bookings').value||0;
+  const leadsBooked=+document.getElementById('os-leads-booked').value||0;
+
+  // Check if shift already exists for today
+  const existing=shifts.find(s=>s.admin===currentUser.name&&s.date===date);
+  if(existing){
+    // Update existing shift's booking count
+    await sb.from('shifts').update({bookings,leads_booked:leadsBooked,shift_opened:true}).eq('id',existing.id);
+  } else {
+    // Create new shift record for opening
+    await sb.from('shifts').insert({
+      date,studio,admin:currentUser.name,
+      bookings,leads_booked:leadsBooked,
+      shift_opened:true,
+      new_sales:0,renew:0,restore:0,leads:0,visits:0,
+      massage_bookings:0,reviews:0,calls:0,tasks:0,
+      yoga_bookings:0,masterclass_bookings:0
+    });
+  }
+  btn.disabled=false;btn.textContent='✓ Открыть смену';
+  document.getElementById('open-shift-modal').style.display='none';
+  await loadData();
+}
+
+// ===== QUICK SALE =====
+function openQuickSale(){
+  document.getElementById('qs-date').value=today();
+  const myLast=shifts.filter(s=>s.admin===currentUser.name).sort((a,b)=>b.date.localeCompare(a.date));
+  document.getElementById('qs-studio').value=myLast.length?myLast[0].studio:'Империал';
+  ['qs-new','qs-renew','qs-restore','qs-visits'].forEach(id=>document.getElementById(id).value=0);
+  document.getElementById('qs-error').style.display='none';
+  document.getElementById('quick-sale-modal').style.display='flex';
+}
+
+async function saveQuickSale(){
+  const btn=document.getElementById('save-quick-sale-btn');
+  btn.disabled=true;btn.textContent='Сохранение...';
+  const date=document.getElementById('qs-date').value;
+  const studio=document.getElementById('qs-studio').value;
+  const newSales=+document.getElementById('qs-new').value||0;
+  const renew=+document.getElementById('qs-renew').value||0;
+  const restore=+document.getElementById('qs-restore').value||0;
+  const visits=+document.getElementById('qs-visits').value||0;
+
+  // Check if shift exists for this date
+  const existing=shifts.find(s=>s.admin===currentUser.name&&s.date===date);
+  if(existing){
+    // Add to existing shift
+    await sb.from('shifts').update({
+      new_sales:existing.newSales+newSales,
+      renew:existing.renew+renew,
+      restore:existing.restore+restore,
+      visits:existing.visits+visits,
+    }).eq('id',existing.id);
+  } else {
+    // Create new shift with just the sale
+    await sb.from('shifts').insert({
+      date,studio,admin:currentUser.name,
+      new_sales:newSales,renew,restore,visits,
+      bookings:0,leads:0,leads_booked:0,
+      massage_bookings:0,reviews:0,calls:0,tasks:0,
+      yoga_bookings:0,masterclass_bookings:0
+    });
+  }
+  btn.disabled=false;btn.textContent='💾 Сохранить';
+  document.getElementById('quick-sale-modal').style.display='none';
+  await loadData();
+}
+
 // ===== EVENT LISTENERS =====
 document.addEventListener('DOMContentLoaded',()=>{
   // Auth pads
@@ -1150,6 +1299,18 @@ document.addEventListener('DOMContentLoaded',()=>{
     const btn=e.target.closest('[data-edit]');
     if(btn)openEdit(+btn.dataset.edit);
   });
+
+  // Open shift modal
+  document.getElementById('btn-open-shift').addEventListener('click',openOpenShift);
+  document.getElementById('close-open-shift-modal').addEventListener('click',()=>document.getElementById('open-shift-modal').style.display='none');
+  document.getElementById('cancel-open-shift-btn').addEventListener('click',()=>document.getElementById('open-shift-modal').style.display='none');
+  document.getElementById('save-open-shift-btn').addEventListener('click',saveOpenShift);
+
+  // Quick sale modal
+  document.getElementById('btn-quick-sale').addEventListener('click',openQuickSale);
+  document.getElementById('close-quick-sale-modal').addEventListener('click',()=>document.getElementById('quick-sale-modal').style.display='none');
+  document.getElementById('cancel-quick-sale-btn').addEventListener('click',()=>document.getElementById('quick-sale-modal').style.display='none');
+  document.getElementById('save-quick-sale-btn').addEventListener('click',saveQuickSale);
 
   // Check session
   checkSession();
