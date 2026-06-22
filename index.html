@@ -460,6 +460,7 @@ const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZ
 const sb = supabase.createClient(SB_URL, SB_KEY);
 
 let shifts=[], marathons=[], allMyShifts=[], currentUser=null, editingId=null, todayPlan=null;
+let myQuickSales=[];
 let selectedMissReason=null;
 const MISS_REASONS=['Не было новых клиентов','Отмена записей','Недоработка тренера','Нет дозвона по архиву','Другое'];
 let IMP_PLAN=1800000, MEC_PLAN=1200000;
@@ -647,17 +648,19 @@ function doLogout(){
 async function loadData(){
   document.getElementById('sync-text').textContent='загрузка...';
   const m=monthKey();
-  const [r1,r2,r3,r4,r5]=await Promise.all([
+  const [r1,r2,r3,r4,r5,r6]=await Promise.all([
     sb.from('shifts').select('*').gte('date',m+'-01').lte('date',m+'-31').order('date',{ascending:false}),
     sb.from('marathons').select('*').eq('active',true).gte('date_end',today()),
     currentUser?sb.from('shifts').select('*').eq('admin',currentUser.name).order('date',{ascending:false}):Promise.resolve({data:[]}),
     currentUser?sb.from('daily_plans').select('*').eq('profile_id',currentUser.id).eq('date',today()).single():Promise.resolve({data:null}),
-    sb.from('plans').select('*').eq('month',m)
+    sb.from('plans').select('*').eq('month',m),
+    currentUser?sb.from('quick_sales').select('*').eq('admin',currentUser.name).gte('date',m+'-01').lte('date',m+'-31').order('date',{ascending:false}):Promise.resolve({data:[]}),
   ]);
   shifts=(r1.data||[]).map(parseShift);
   marathons=r2.data||[];
   allMyShifts=(r3.data||[]).map(parseShift);
   todayPlan=r4.data||null;
+  myQuickSales=r6.data||[];
   (r5.data||[]).forEach(p=>{
     if(p.studio==='Империал'&&p.revenue)IMP_PLAN=p.revenue;
     if(p.studio==='Мечта'&&p.revenue)MEC_PLAN=p.revenue;
@@ -795,7 +798,9 @@ function renderShifts(){
 function renderProfile(){
   const name=currentUser.name;
   const myS=shifts.filter(s=>s.admin===name);
-  const revenue=myS.reduce((a,s)=>a+s.newSales+s.renew+s.restore,0);
+  // Include unattached quick_sales in revenue totals
+  const qsRevenue=myQuickSales.filter(s=>!s.shift_id).reduce((a,s)=>a+(+s.new_sales||0)+(+s.renew||0),0);
+  const revenue=myS.reduce((a,s)=>a+s.newSales+s.renew+s.restore,0)+qsRevenue;
   const leads=myS.reduce((a,s)=>a+s.leads,0);
   const bookings=myS.reduce((a,s)=>a+s.bookings,0);
   const visits=myS.reduce((a,s)=>a+s.visits,0);
@@ -809,6 +814,8 @@ function renderProfile(){
 
   let fix=0,pNew=0,pRenew=0,pRestore=0,bonus=0;
   myS.forEach(s=>{const sal=calcShift(s);fix+=sal.fix;pNew+=sal.pNew;pRenew+=sal.pRenew;pRestore+=sal.pRestore;bonus+=sal.bonus;});
+  // Quick sales also earn % commission
+  myQuickSales.filter(s=>!s.shift_id).forEach(s=>{pNew+=Math.round((+s.new_sales||0)*0.05);pRenew+=Math.round((+s.renew||0)*0.08);});
   const salTotal=fix+pNew+pRenew+pRestore+bonus;
   const now=new Date(),day=now.getDate(),dim=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
   const salEst=day>0?Math.round(salTotal/day*dim):0;
