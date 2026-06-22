@@ -303,7 +303,6 @@ input:focus,select:focus{outline:none;border-color:var(--blue)}
     <div class="form-row"><label>Возврат, ₽</label><input type="number" id="f-restore" value="0" min="0"></div>
     <div class="form-row"><label>Массаж (записей)</label><input type="number" id="f-massage" value="0" min="0"></div>
   </div>
-  <div class="form-row"><label>Отзывов</label><input type="number" id="f-reviews" value="0" min="0"></div>
   <div id="f-miss-block" style="display:none">
     <div class="divider"></div>
     <div class="subsection-title" style="display:flex;align-items:center;gap:6px;color:var(--amber-text)">⚠ План не выполнен — укажите причину</div>
@@ -335,6 +334,9 @@ input:focus,select:focus{outline:none;border-color:var(--blue)}
   <div class="grid2">
     <div class="form-row"><label>Звонков</label><input type="number" id="f-calls" value="0" min="0"></div>
     <div class="form-row"><label>Задач в АМО</label><input type="number" id="f-tasks" value="0" min="0"></div>
+  </div>
+  <div class="grid2">
+    <div class="form-row"><label>Отзывов</label><input type="number" id="f-reviews" value="0" min="0"></div>
   </div>
   <div class="grid2">
     <div class="form-row"><label>Йога (записей)</label><input type="number" id="f-yoga" value="0" min="0"></div>
@@ -689,6 +691,7 @@ function renderBanners(){
       <div style="display:flex;justify-content:space-between;gap:12px">
         <div style="flex:1">
           <div class="marathon-banner-title">🏆 ${m.title}</div>
+          <div style="font-size:11px;color:var(--amber-text);opacity:.85;margin-bottom:4px">📅 ${m.date_start} — ${m.date_end}</div>
           ${m.description?`<div style="font-size:12px;color:var(--text2);margin-bottom:4px">${m.description}</div>`:''}
           ${m.condition_type?`<div style="font-size:12px;color:var(--amber-text);font-weight:500;margin-bottom:6px">🎯 ${conditionLabel(m.condition_type,m.condition_value)}</div>`:''}
           <div class="progress-wrap-sm"><div class="progress-fill-sm" style="width:${prog.pct}%;background:${col}"></div></div>
@@ -825,9 +828,7 @@ function renderProfile(){
       <div class="profile-avatar">${name[0]}</div>
       <div style="font-size:18px;font-weight:700;margin-bottom:6px">${name}</div>
       ${studio?`<span class="tag ${pill}" style="font-size:12px">${studio}</span>`:''}
-      <div style="margin-top:10px;font-size:13px;color:var(--text2)">
-        ${currentUser.telegramUsername?`✈️ Telegram: <b>@${currentUser.telegramUsername}</b>`:`<span style="color:var(--amber-text)">✈️ Telegram не привязан — напишите боту LSReportBot</span>`}
-      </div>
+      ${currentUser.telegramUsername?`<div style="margin-top:10px;font-size:13px;color:var(--text2)">✈️ Telegram: <b>@${currentUser.telegramUsername}</b></div>`:''}
       <div style="margin-top:12px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
         <button class="btn btn-sm" id="btn-quick-sale">💰 Промежуточная продажа</button>
         <button class="btn btn-sm btn-danger" id="logout-btn">Выйти</button>
@@ -888,6 +889,7 @@ function renderProfile(){
         <div style="display:flex;justify-content:space-between;gap:12px">
           <div style="flex:1">
             <div class="marathon-banner-title">🏆 ${m.title}</div>
+            <div style="font-size:11px;color:var(--amber-text);opacity:.85;margin-bottom:4px">📅 ${m.date_start} — ${m.date_end}</div>
             ${m.description?`<div style="font-size:12px;color:var(--text2);margin-bottom:4px">${m.description}</div>`:''}
             ${m.condition_type?`<div style="font-size:12px;color:var(--amber-text);font-weight:500;margin-bottom:6px">🎯 ${conditionLabel(m.condition_type,m.condition_value)}</div>`:''}
             <div class="progress-wrap-sm"><div class="progress-fill-sm" style="width:${prog.pct}%;background:${col}"></div></div>
@@ -1281,7 +1283,6 @@ async function saveQuickSale(){
   if(error){const el=document.getElementById('qs-error');el.textContent='Ошибка: '+error.message;el.style.display='block';return;}
   document.getElementById('quick-sale-modal').style.display='none';
   await loadData();
-  openInterimReport();
 }
 
 // ===== EVENT LISTENERS =====
