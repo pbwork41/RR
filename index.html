@@ -654,7 +654,7 @@ async function loadData(){
     currentUser?sb.from('shifts').select('*').eq('admin',currentUser.name).order('date',{ascending:false}):Promise.resolve({data:[]}),
     currentUser?sb.from('daily_plans').select('*').eq('profile_id',currentUser.id).eq('date',today()).single():Promise.resolve({data:null}),
     sb.from('plans').select('*').eq('month',m),
-    currentUser?sb.from('quick_sales').select('*').eq('admin',currentUser.name).gte('date',m+'-01').lte('date',m+'-31').order('date',{ascending:false}):Promise.resolve({data:[]}),
+    currentUser?sb.from('quick_sales').select('*').eq('admin',currentUser.name).gte('date',m+'-01').lte('date',m+'-'+new Date(new Date().getFullYear(),new Date().getMonth()+1,0).getDate()).order('date',{ascending:false}):Promise.resolve({data:[]}),
   ]);
   shifts=(r1.data||[]).map(parseShift);
   marathons=r2.data||[];
