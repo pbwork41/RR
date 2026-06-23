@@ -503,6 +503,8 @@ function renderOverview(){
   const studios=['Империал','Мечта'];
   const active=marathons.filter(m=>m.active&&m.date_start<=today()&&m.date_end>=today());
   let html='';
+
+  // Marathon banners (compact)
   if(active.length){
     html+=`<div style="margin-bottom:12px">${active.map(m=>{
       const prog=marathonProgress(m,shifts);
@@ -525,21 +527,16 @@ function renderOverview(){
     }).join('')}</div>`;
   }
 
+  // Missed shift alert
   const yesterday=(()=>{const d=new Date(today());d.setDate(d.getDate()-1);return d.toISOString().slice(0,10);})();
   const missedStudios=studios.filter(st=>!shifts.some(s=>s.studio===st&&s.date===yesterday));
   if(missedStudios.length){
-    html+=`<div class="card" style="border:1px solid var(--red);background:var(--red-bg);display:flex;align-items:center;gap:10px;margin-bottom:12px">
-      <span style="font-size:18px">⚠</span>
-      <div style="font-size:13px;color:var(--red-text)">Нет данных за ${yesterday}: ${missedStudios.join(', ')}. Если это был рабочий день — смена не закрыта.</div>
+    html+=`<div style="background:var(--red-bg);border:1px solid var(--red);border-radius:var(--radius-sm);padding:10px 14px;display:flex;align-items:center;gap:10px;margin-bottom:12px;font-size:13px;color:var(--red-text)">
+      <span>⚠</span><span>Нет данных за ${yesterday}: ${missedStudios.join(', ')}. Если это был рабочий день — смена не закрыта.</span>
     </div>`;
   }
 
-  html+=`<div class="grid2" style="margin-bottom:12px">
-    <div class="metric"><div class="metric-label">Факт (обе студии)</div><div class="metric-val">${fmt(shifts.reduce((a,s)=>a+s.newSales+s.renew+s.restore,0))} ₽</div></div>
-    <div class="metric"><div class="metric-label">Ран рейт (обе студии)</div><div class="metric-val">${fmt(calcRR(shifts.reduce((a,s)=>a+s.newSales+s.renew+s.restore,0)))} ₽</div><div class="metric-sub">прогноз на конец месяца</div></div>
-  </div>`;
-
-  // Pre-compute stats for both studios once, reused for banner / strip / cards / sorting / funnel
+  // Pre-compute
   const studioData=studios.map(st=>{
     const fact=getStats(shifts.filter(s=>s.studio===st));
     const plan=getPlan(st);
@@ -547,85 +544,78 @@ function renderOverview(){
     const factPct=plan.revenue>0?Math.round(fact.revenue/plan.revenue*100):null;
     return{st,fact,plan,rrPct,factPct};
   });
+  const sortedStudios=[...studioData].sort((a,b)=>(a.rrPct===null?-1:a.rrPct)-(b.rrPct===null?-1:b.rrPct));
+  const totalFact=shifts.reduce((a,s)=>a+s.newSales+s.renew+s.restore,0);
+  const totalRR=calcRR(totalFact);
 
-  // 3. No-plan banner with direct CTA, shown once if any studio lacks a plan
+  // Missing plan banner
   const missingPlan=studioData.filter(d=>!d.plan.revenue);
   if(missingPlan.length){
-    html+=`<div class="card" style="border:1px solid var(--amber);background:var(--amber-bg);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px">
-      <div style="font-size:13px;color:var(--amber-text)">⚠ План не задан: ${missingPlan.map(d=>d.st).join(', ')}. Без плана нельзя оценить отставание и ран рейт в %.</div>
-      <button class="btn btn-sm" onclick="switchTab('plans')" style="background:var(--amber);color:#fff;border:none;white-space:nowrap">Задать план</button>
+    html+=`<div style="background:var(--amber-bg);border:1px solid var(--amber);border-radius:var(--radius-sm);padding:10px 14px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px;font-size:13px;color:var(--amber-text)">
+      <span>⚠ План не задан: ${missingPlan.map(d=>d.st).join(', ')}</span>
+      <button class="btn btn-sm" onclick="switchTab('plans')" style="background:var(--amber);color:#fff;border:none">Задать план</button>
     </div>`;
   }
 
-  // 1. Compact side-by-side comparison strip
-  html+=`<div class="grid2" style="margin-bottom:12px">${studioData.map(d=>{
-    const pill=d.st==='Империал'?'pill-imp':'pill-mec';
-    const col=d.rrPct===null?'var(--text3)':d.rrPct>=100?'var(--green-text)':d.rrPct>=85?'var(--amber-text)':'var(--red-text)';
-    return`<div class="metric" style="cursor:default">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-        <span class="${pill}" style="font-size:11px">${d.st}</span>
-        <span style="font-size:12px;font-weight:700;color:${col}">${d.rrPct!==null?d.rrPct+'% плана':'—'}</span>
-      </div>
-      <div style="font-size:18px;font-weight:700">${fmt(d.fact.revenue)} ₽</div>
-      <div style="font-size:11px;color:var(--text3)">ран рейт ${fmt(d.fact.rr)} ₽</div>
-    </div>`;
-  }).join('')}</div>`;
+  // === MAIN OVERVIEW CARD (Variant A) ===
+  html+=`<div class="card" style="padding:0;overflow:hidden">
 
-  // 5. Sort studio cards by worst plan attainment first (most urgent on top)
-  const sortedStudios=[...studioData].sort((a,b)=>{
-    const av=a.rrPct===null?-1:a.rrPct;
-    const bv=b.rrPct===null?-1:b.rrPct;
-    return av-bv;
-  });
-
-  sortedStudios.forEach(({st,fact,plan,rrPct,factPct})=>{
-    const fill=Math.min(factPct||0,100);
-    const color=rrPct>=100?'var(--green)':rrPct>=85?'var(--amber)':'var(--red)';
-    const pill=st==='Империал'?'pill-imp':'pill-mec';
-    const nowD=new Date();
-    const dim=new Date(nowD.getFullYear(),nowD.getMonth()+1,0).getDate();
-    const daysPassed=nowD.getDate();
-    const daysLeftD=dim-daysPassed;
-    const needPerDayD=plan.revenue&&daysLeftD>0?Math.max(0,Math.round((plan.revenue-fact.revenue)/daysLeftD)):0;
-    // 2. Flag the gap between calendar days passed and actually-worked days
-    const workedGap=daysPassed-fact.uniqueDays;
-    html+=`<div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-        <span class="${pill}" style="font-size:13px">${st}</span>
-        ${plan.revenue?badge(rrPct):'<span class="badge" style="background:var(--bg2);color:var(--text3)">План не задан</span>'}
+    <!-- Итоговые цифры -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0">
+      <div style="padding:14px 16px;border-right:1px solid var(--border)">
+        <div class="metric-label">Факт (обе студии)</div>
+        <div style="font-size:22px;font-weight:700;margin-top:4px">${fmt(totalFact)} ₽</div>
       </div>
-      <div class="grid4" style="margin-bottom:12px">
-        <div class="metric"><div class="metric-label">Факт</div><div class="metric-val" style="font-size:15px">${fmt(fact.revenue)} ₽</div></div>
-        <div class="metric"><div class="metric-label">Ран рейт</div><div class="metric-val" style="font-size:15px;color:${color||'inherit'}">${fmt(fact.rr)} ₽</div><div class="metric-sub">прогноз</div></div>
-        <div class="metric"><div class="metric-label">% плана (RR)</div><div class="metric-val" style="font-size:15px">${rrPct!==null?rrPct+'%':'—'}</div></div>
-        <div class="metric"><div class="metric-label">Смен</div><div class="metric-val" style="font-size:15px">${fact.n}</div></div>
+      <div style="padding:14px 16px">
+        <div class="metric-label">Ран рейт</div>
+        <div style="font-size:22px;font-weight:700;margin-top:4px;color:var(--red-text)">${fmt(totalRR)} ₽</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">прогноз на конец месяца</div>
       </div>
-      ${plan.revenue?`<div class="metric" style="margin-bottom:12px;background:${needPerDayD===0?'var(--green-bg)':'var(--bg2)'};border-color:${needPerDayD===0?'#86efac':'var(--border)'}">
-        <div class="metric-label">Нужно продавать в день</div>
-        <div class="metric-val" style="font-size:16px;color:${needPerDayD===0?'var(--green-text)':'var(--text)'}">${needPerDayD===0?'✓ План выполнен':fmt(needPerDayD)+' ₽'}</div>
-        <div class="metric-sub">${daysLeftD} дней осталось${workedGap>0?` · ⚠ закрыто смен за ${fact.uniqueDays} из ${daysPassed} прошедших дней`:''}</div>
-      </div>`:''}
-      ${plan.revenue?`<div class="progress-wrap"><div class="progress-fill" style="width:${fill}%;background:${color}"></div></div>
-      <div style="display:flex;justify-content:space-between;margin-top:5px;font-size:11px;color:var(--text3)"><span>Факт: ${factPct}%</span><span>План: ${fmt(plan.revenue)} ₽</span></div>`:''}
-    </div>`;
-  });
+    </div>
 
-  html+=`<div class="section-title" style="margin-top:16px;margin-bottom:8px">Воронка продаж</div>`;
-  sortedStudios.forEach(({st,fact,plan})=>{
-    const pill=st==='Империал'?'pill-imp':'pill-mec';
-    if(fact.leads>0){
-      const weak=weakestFunnelStage(fact,plan);
-      html+=`<div class="card">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span class="${pill}" style="font-size:12px">${st}</span></div>
-        ${weak?`<div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--red-text);background:var(--red-bg);border-radius:var(--radius-sm);padding:6px 10px;margin-bottom:10px">
-          <span>⚠</span><span>Слабое звено: <b>${weak.label}</b> — ${weak.cv}% при плане ${weak.cvPlan}%</span>
-        </div>`:''}
-        ${funnelHtml(fact,plan)}
-      </div>`;
-    } else {
-      html+=`<div class="card" style="color:var(--text3);font-size:13px"><span class="${pill}" style="font-size:12px;margin-right:8px">${st}</span>нет данных по лидам за месяц</div>`;
-    }
-  });
+    <!-- По студиям -->
+    <div style="border-top:1px solid var(--border);padding:14px 16px">
+      <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">По студиям</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        ${sortedStudios.map(({st,fact,plan,rrPct,factPct})=>{
+          const pill=st==='Империал'?'pill-imp':'pill-mec';
+          const col=rrPct===null?'var(--text3)':rrPct>=100?'var(--green-text)':rrPct>=85?'var(--amber-text)':'var(--red-text)';
+          const barCol=rrPct===null?'var(--border2)':rrPct>=100?'var(--green)':rrPct>=85?'var(--amber)':'var(--red)';
+          const nowD=new Date();
+          const daysLeft=new Date(nowD.getFullYear(),nowD.getMonth()+1,0).getDate()-nowD.getDate();
+          const needDay=plan.revenue&&daysLeft>0?Math.max(0,Math.round((plan.revenue-fact.revenue)/daysLeft)):0;
+          return`<div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <span class="${pill}" style="font-size:11px">${st}</span>
+              <span style="font-size:12px;font-weight:700;color:${col}">${rrPct!==null?rrPct+'%':'—'}</span>
+            </div>
+            <div style="font-size:17px;font-weight:700;margin-bottom:2px">${fmt(fact.revenue)} ₽</div>
+            <div style="font-size:11px;color:var(--text3);margin-bottom:8px">${fact.n} смен${needDay>0?' · нужно '+fmt(needDay)+' ₽/день':needDay===0&&plan.revenue?' · ✓ план':''}</div>
+            <div class="progress-wrap" style="margin:0"><div class="progress-fill" style="width:${Math.min(factPct||0,100)}%;background:${barCol}"></div></div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+
+    <!-- Воронка -->
+    <div style="border-top:1px solid var(--border);padding:14px 16px">
+      <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Воронка продаж</div>
+      ${sortedStudios.map(({st,fact,plan})=>{
+        const pill=st==='Империал'?'pill-imp':'pill-mec';
+        if(!(fact.leads>0||fact.bookings>0||fact.visits>0)) return`<div style="font-size:13px;color:var(--text3);margin-bottom:8px"><span class="${pill}" style="font-size:11px;margin-right:6px">${st}</span>нет данных</div>`;
+        const weak=weakestFunnelStage(fact,plan);
+        return`<div style="margin-bottom:12px">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+            <span class="${pill}" style="font-size:11px">${st}</span>
+            ${weak?`<span style="font-size:11px;color:var(--red-text)">· узкое горлышко: ${weak.label} (${weak.cv}%)</span>`:''}
+          </div>
+          ${funnelHtml(fact,plan)}
+        </div>`;
+      }).join('')}
+    </div>
+
+  </div>`;
+
   document.getElementById('overview-content').innerHTML=html;
 }
 
