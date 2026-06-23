@@ -8,6 +8,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
+html,body{overflow-x:hidden;max-width:100%}
 :root{
   --bg:#fff;--bg2:#f8f9fa;--bg3:#f1f3f5;
   --text:#1a1a2e;--text2:#555570;--text3:#888899;
@@ -1272,9 +1273,9 @@ async function saveQuickSale(){
   const date=document.getElementById('qs-date').value;
   const studio=document.getElementById('qs-studio').value;
   const newSales=+document.getElementById('qs-new').value||0;
-  const renew=+document.getElementById('qs-renew').value||0;
+  const archive=+document.getElementById('qs-renew').value||0;
 
-  if(newSales<=0&&renew<=0){
+  if(newSales<=0&&archive<=0){
     const el=document.getElementById('qs-error');
     el.textContent='Укажите сумму хотя бы по одному полю';el.style.display='block';
     btn.disabled=false;btn.textContent='💾 Сохранить';
@@ -1283,7 +1284,8 @@ async function saveQuickSale(){
 
   const {error}=await sb.from('quick_sales').insert({
     date,studio,admin:currentUser.name,
-    new_sales:newSales,renew,
+    new_sales:newSales+archive,
+    renew:0,
   });
 
   btn.disabled=false;btn.textContent='💾 Сохранить';
