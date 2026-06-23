@@ -751,6 +751,7 @@ function renderMarathons(){
   const active=marathons.filter(m=>m.active&&m.date_start<=todayStr&&m.date_end>=todayStr);
   const planned=marathons.filter(m=>m.active&&m.date_start>todayStr);
   const ended=marathons.filter(m=>!m.active||m.date_end<todayStr);
+  const admins=[...new Set(shifts.map(s=>s.admin))].filter(Boolean).sort();
   let html=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
     <div class="section-title" style="margin:0">Активные марафоны</div>
     <button class="btn btn-primary btn-sm" onclick="openMarathonModalWithStaff()">🏆 Создать</button>
