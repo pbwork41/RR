@@ -437,7 +437,10 @@ function renderShifts(){
           <div class="shift-date">${formatDate(s.date)}</div>
           <div class="shift-meta">${s.time_start||'—'} — ${s.time_end||'—'}</div>
         </div>
-        <span class="${studioLabel}">${s.studio==='Империал'?'ТЦ Империал':'ТЦ Мечта'}</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="${studioLabel}">${s.studio==='Империал'?'ТЦ Империал':'ТЦ Мечта'}</span>
+          <button class="btn btn-sm" onclick="openEditReport(${s.id})">✏️</button>
+        </div>
       </div>
       <div class="history-row"><span style="color:var(--text3)">Тренировок всего / проведено / нулевых</span><span style="font-weight:600">${s.trainings_total||0} / ${s.trainings_done||0} / ${s.trainings_zero||0}</span></div>
       <div class="history-row"><span style="color:var(--text3)">Новых клиентов</span><span style="font-weight:600">${s.new_clients||0}</span></div>
@@ -550,6 +553,66 @@ function switchTab(t){
   });
 }
 
+// ── EDIT REPORT ────────────────────────────────────
+let editingReportId=null;
+
+function openEditReport(id){
+  const s=myShifts.find(x=>x.id===id);
+  if(!s)return;
+  editingReportId=id;
+  document.getElementById('e-date').value=s.date;
+  document.getElementById('e-studio').value=s.studio;
+  document.getElementById('e-start').value=s.time_start||'';
+  document.getElementById('e-end').value=s.time_end||'';
+  document.getElementById('e-total').value=s.trainings_total||0;
+  document.getElementById('e-done').value=s.trainings_done||0;
+  document.getElementById('e-zero').value=s.trainings_zero||0;
+  document.getElementById('e-new-clients').value=s.new_clients||0;
+  document.getElementById('e-bought').value=s.clients_bought||0;
+  document.getElementById('e-sales').value=s.sales_amount||0;
+  document.getElementById('edit-err').style.display='none';
+  document.getElementById('edit-modal').style.display='flex';
+  lockScroll();
+}
+
+function calcEditZero(){
+  const total=+document.getElementById('e-total').value||0;
+  const done=+document.getElementById('e-done').value||0;
+  document.getElementById('e-zero').value=Math.max(0,total-done);
+}
+
+async function updateReport(){
+  const btn=document.getElementById('update-report-btn');
+  btn.disabled=true;btn.textContent='Сохранение...';
+  const total=+document.getElementById('e-total').value||0;
+  const done=+document.getElementById('e-done').value||0;
+  const {error}=await sb.from('trainer_shifts').update({
+    date:document.getElementById('e-date').value,
+    studio:document.getElementById('e-studio').value,
+    time_start:document.getElementById('e-start').value||null,
+    time_end:document.getElementById('e-end').value||null,
+    trainings_total:total,
+    trainings_done:done,
+    trainings_zero:Math.max(0,total-done),
+    new_clients:+document.getElementById('e-new-clients').value||0,
+    clients_bought:+document.getElementById('e-bought').value||0,
+    sales_amount:+document.getElementById('e-sales').value||0,
+  }).eq('id',editingReportId);
+  btn.disabled=false;btn.textContent='✓ Сохранить';
+  if(error){const el=document.getElementById('edit-err');el.textContent='Ошибка: '+error.message;el.style.display='block';return;}
+  document.getElementById('edit-modal').style.display='none';
+  unlockScroll();
+  await loadData();
+}
+
+async function deleteReport(){
+  if(!confirm('Удалить этот отчёт?'))return;
+  await sb.from('trainer_shifts').delete().eq('id',editingReportId);
+  document.getElementById('edit-modal').style.display='none';
+  unlockScroll();
+  await loadData();
+}
+
 // ── INIT ───────────────────────────────────────────
 document.addEventListener('DOMContentLoaded',()=>{
   function runSafe(label,fn){try{fn();}catch(e){console.error('Init: '+label,e);}}
@@ -602,8 +665,62 @@ document.addEventListener('DOMContentLoaded',()=>{
     document.getElementById('r-done').addEventListener('input',calcZero);
   });
 
+  runSafe('edit modal',()=>{
+    document.getElementById('close-edit-modal').addEventListener('click',()=>{document.getElementById('edit-modal').style.display='none';unlockScroll();});
+    document.getElementById('cancel-edit-btn').addEventListener('click',()=>{document.getElementById('edit-modal').style.display='none';unlockScroll();});
+    document.getElementById('update-report-btn').addEventListener('click',updateReport);
+    document.getElementById('delete-report-btn').addEventListener('click',deleteReport);
+    document.getElementById('e-total').addEventListener('input',calcEditZero);
+    document.getElementById('e-done').addEventListener('input',calcEditZero);
+  });
+
   checkSession();
 });
 </script>
+<!-- EDIT MODAL -->
+<div id="edit-modal" style="display:none" class="modal-bg">
+<div class="modal">
+  <div class="modal-header">
+    <div class="modal-title">Редактировать отчёт</div>
+    <button class="btn btn-sm" id="close-edit-modal">✕</button>
+  </div>
+  <div class="grid2">
+    <div class="form-row"><label>Дата</label><input type="date" id="e-date"></div>
+    <div class="form-row"><label>Филиал</label>
+      <select id="e-studio">
+        <option value="Империал">ТЦ Империал</option>
+        <option value="Мечта">ТЦ Мечта</option>
+      </select>
+    </div>
+  </div>
+  <div class="grid2">
+    <div class="form-row"><label>Начало смены</label><input type="time" id="e-start"></div>
+    <div class="form-row"><label>Конец смены</label><input type="time" id="e-end"></div>
+  </div>
+  <div class="divider"></div>
+  <div class="subsection-title">Тренировки</div>
+  <div class="grid3">
+    <div class="form-row"><label>Тренировок всего</label><input type="number" id="e-total" value="0" min="0"></div>
+    <div class="form-row"><label>Проведено</label><input type="number" id="e-done" value="0" min="0"></div>
+    <div class="form-row"><label>Нулевых</label><input type="number" id="e-zero" value="0" min="0" readonly style="background:var(--bg2)"></div>
+  </div>
+  <div class="divider"></div>
+  <div class="subsection-title">Новые клиенты</div>
+  <div class="grid2">
+    <div class="form-row"><label>Пришло новых</label><input type="number" id="e-new-clients" value="0" min="0"></div>
+    <div class="form-row"><label>Купили абонемент</label><input type="number" id="e-bought" value="0" min="0"></div>
+  </div>
+  <div class="form-row"><label>Сумма продаж, ₽</label><input type="number" id="e-sales" value="0" min="0"></div>
+  <div id="edit-err" class="alert alert-red" style="display:none"></div>
+  <div style="display:flex;justify-content:space-between;margin-top:1rem">
+    <button class="btn btn-danger btn-sm" id="delete-report-btn">🗑 Удалить</button>
+    <div style="display:flex;gap:8px">
+      <button class="btn" id="cancel-edit-btn">Отмена</button>
+      <button class="btn btn-primary" id="update-report-btn">✓ Сохранить</button>
+    </div>
+  </div>
+</div>
+</div>
+
 </body>
 </html>
