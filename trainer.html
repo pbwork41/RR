@@ -239,7 +239,7 @@ input:focus,select:focus{outline:none;border-color:var(--teal)}
   <div class="divider"></div>
   <div class="subsection-title">Тренировки</div>
   <div class="grid3">
-    <div class="form-row"><label>Всего слотов</label><input type="number" id="r-total" value="0" min="0"></div>
+    <div class="form-row"><label>Тренировок всего</label><input type="number" id="r-total" value="0" min="0"></div>
     <div class="form-row"><label>Проведено</label><input type="number" id="r-done" value="0" min="0"></div>
     <div class="form-row"><label>Нулевых</label><input type="number" id="r-zero" value="0" min="0" readonly style="background:var(--bg2)"></div>
   </div>
@@ -449,16 +449,19 @@ function renderShifts(){
 }
 
 // ── PROFILE ────────────────────────────────────────
-function renderProfile(){
+async function renderProfile(){
   const name=currentUser.name;
   const trainings=myShifts.reduce((a,s)=>a+(+s.trainings_done||0),0);
   const newClients=myShifts.reduce((a,s)=>a+(+s.new_clients||0),0);
   const bought=myShifts.reduce((a,s)=>a+(+s.clients_bought||0),0);
   const sales=myShifts.reduce((a,s)=>a+(+s.sales_amount||0),0);
   // Salary: base per shift + % from sales (example scheme - configure as needed)
-  const BASE_PER_SHIFT=1500;
-  const SALES_PCT=0.05;
-  const salary=myShifts.length*BASE_PER_SHIFT+Math.round(sales*SALES_PCT);
+  // Fetch current motivation scheme
+  const {data:motivData}=await sb.from('trainer_motivation').select('*').order('effective_from',{ascending:false}).limit(1);
+  const curMotiv=motivData&&motivData[0]?motivData[0]:null;
+  const BASE_PER_SHIFT=curMotiv?+curMotiv.hourly_rate:null;
+  const SALES_PCT=curMotiv?+curMotiv.sales_pct/100:null;
+  const salary=BASE_PER_SHIFT!==null?myShifts.length*BASE_PER_SHIFT+Math.round(sales*SALES_PCT):null;
 
   document.getElementById('profile-content').innerHTML=`
     <div class="card" style="text-align:center">
@@ -468,6 +471,7 @@ function renderProfile(){
       <button class="btn btn-sm btn-danger" id="logout-btn">Выйти</button>
     </div>
 
+    ${salary!==null?`
     <div class="salary-box">
       <div style="font-size:12px;color:var(--teal-text);margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em">Зарплата за ${monthLabel()}</div>
       <div class="salary-total">${fmt(salary)} ₽</div>
@@ -475,7 +479,8 @@ function renderProfile(){
         <div class="history-row"><span style="font-size:13px;color:var(--text2)">Оклад (${myShifts.length} смен × ${fmt(BASE_PER_SHIFT)} ₽)</span><span style="font-weight:600">${fmt(myShifts.length*BASE_PER_SHIFT)} ₽</span></div>
         <div class="history-row"><span style="font-size:13px;color:var(--text2)">% с продаж (${Math.round(SALES_PCT*100)}%)</span><span style="font-weight:600">${fmt(sales*SALES_PCT)} ₽</span></div>
       </div>
-    </div>
+    </div>`:`
+    <div class="card-muted" style="margin-bottom:1rem;text-align:center;color:var(--amber-text);font-size:13px">⚠ Схема мотивации пока не задана руководителем</div>`}
 
     <div class="card">
       <div class="subsection-title">Показатели месяца</div>
