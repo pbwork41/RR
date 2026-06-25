@@ -291,7 +291,10 @@ input:focus,select:focus{outline:none;border-color:var(--blue)}
   <div class="divider"></div>
   <div class="subsection-title">Воронка</div>
   <div class="grid2">
+    <div class="form-row"><label>Лиды</label><input type="number" id="f-leads" value="0" min="0"></div>
     <div class="form-row"><label>Записей на пробное</label><input type="number" id="f-bookings" value="0" min="0"></div>
+  </div>
+  <div class="grid2">
     <div class="form-row"><label>Сколько пришло?</label><input type="number" id="f-visits" value="0" min="0"></div>
   </div>
   <div class="divider"></div>
@@ -302,7 +305,7 @@ input:focus,select:focus{outline:none;border-color:var(--blue)}
     <div class="form-row"><label>Продления, ₽</label><input type="number" id="f-renew" value="0" min="0"></div>
   </div>
   <div class="grid2">
-    <div class="form-row"><label>Возврат, ₽</label><input type="number" id="f-restore" value="0" min="0"></div>
+    <div class="form-row"><label>Возврат клиента, ₽</label><input type="number" id="f-restore" value="0" min="0"></div>
     <div class="form-row"><label>Массаж (записей)</label><input type="number" id="f-massage" value="0" min="0"></div>
   </div>
   <div id="f-miss-block" style="display:none">
@@ -378,7 +381,7 @@ input:focus,select:focus{outline:none;border-color:var(--blue)}
     <div class="form-row"><label>Продления, ₽</label><input type="number" id="e-renew" value="0" min="0"></div>
   </div>
   <div class="grid2">
-    <div class="form-row"><label>Возврат, ₽</label><input type="number" id="e-restore" value="0" min="0"></div>
+    <div class="form-row"><label>Возврат клиента, ₽</label><input type="number" id="e-restore" value="0" min="0"></div>
     <div class="form-row"><label>Массаж (записей)</label><input type="number" id="e-massage" value="0" min="0"></div>
   </div>
   <div class="form-row"><label>Отзывов</label><input type="number" id="e-reviews" value="0" min="0"></div>
@@ -470,7 +473,13 @@ let loginPin='', regPin='', regPin2='';
 
 // ===== UTILS =====
 const fmt = n => Math.round(n||0).toLocaleString('ru-RU');
-const today = () => { const d=new Date(); return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10); };
+function formatDate(d){
+  if(!d)return'—';
+  const p=String(d).slice(0,10).split('-');
+  if(p.length!==3)return d;
+  return p[2]+'.'+p[1]+'.'+p[0];
+}
+const today = () => { const d=new Date(); return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString(); };
 const monthKey = () => today().slice(0,7);
 const monthLabel = () => new Date().toLocaleString('ru-RU',{month:'long',year:'numeric'});
 const simpleHash = str => { let h=0; for(let i=0;i<str.length;i++){h=Math.imul(31,h)+str.charCodeAt(i)|0;} return Math.abs(h).toString(36); };
@@ -696,7 +705,7 @@ function renderBanners(){
       <div style="display:flex;justify-content:space-between;gap:12px">
         <div style="flex:1">
           <div class="marathon-banner-title">🏆 ${m.title}</div>
-          <div style="font-size:11px;color:var(--amber-text);opacity:.85;margin-bottom:4px">📅 ${m.date_start} — ${m.date_end}</div>
+          <div style="font-size:11px;color:var(--amber-text);opacity:.85;margin-bottom:4px">📅 ${formatDate(m.date_start)} — ${formatDate(m.date_end)}</div>
           ${m.description?`<div style="font-size:12px;color:var(--text2);margin-bottom:4px">${m.description}</div>`:''}
           ${m.condition_type?`<div style="font-size:12px;color:var(--amber-text);font-weight:500;margin-bottom:6px">🎯 ${conditionLabel(m.condition_type,m.condition_value)}</div>`:''}
           <div class="progress-wrap-sm"><div class="progress-fill-sm" style="width:${prog.pct}%;background:${col}"></div></div>
@@ -769,7 +778,7 @@ function renderShifts(){
         <div>
           <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:6px">
             <span class="tag ${cls}">${s.studio}</span>
-            <span style="font-size:13px;font-weight:600">${s.date}</span>
+            <span style="font-size:13px;font-weight:600">${formatDate(s.date)}</span>
             <span style="font-size:12px;color:var(--text2)">${s.admin||''}</span>
             ${isMe?'<span style="font-size:10px;background:var(--blue-bg);color:var(--blue-text);padding:1px 6px;border-radius:10px;font-weight:600">моя</span>':''}
           </div>
@@ -777,7 +786,7 @@ function renderShifts(){
             <span class="chip">Касса: ${fmt(cash)} ₽</span>
             ${s.newSales>0?`<span class="chip">Новые: ${fmt(s.newSales)} ₽</span>`:''}
             ${s.renew>0?`<span class="chip">Продления: ${fmt(s.renew)} ₽</span>`:''}
-            ${s.restore>0?`<span class="chip">Возврат: ${fmt(s.restore)} ₽</span>`:''}
+            ${s.restore>0?`<span class="chip">Возврат клиента: ${fmt(s.restore)} ₽</span>`:''}
           </div>
           <div class="chips">
             ${s.leads>0?`<span class="chip chip-green">Лиды: ${s.leads}</span>`:''}
@@ -898,7 +907,7 @@ function renderProfile(){
         <div style="display:flex;justify-content:space-between;gap:12px">
           <div style="flex:1">
             <div class="marathon-banner-title">🏆 ${m.title}</div>
-            <div style="font-size:11px;color:var(--amber-text);opacity:.85;margin-bottom:4px">📅 ${m.date_start} — ${m.date_end}</div>
+            <div style="font-size:11px;color:var(--amber-text);opacity:.85;margin-bottom:4px">📅 ${formatDate(m.date_start)} — ${formatDate(m.date_end)}</div>
             ${m.description?`<div style="font-size:12px;color:var(--text2);margin-bottom:4px">${m.description}</div>`:''}
             ${m.condition_type?`<div style="font-size:12px;color:var(--amber-text);font-weight:500;margin-bottom:6px">🎯 ${conditionLabel(m.condition_type,m.condition_value)}</div>`:''}
             <div class="progress-wrap-sm"><div class="progress-fill-sm" style="width:${prog.pct}%;background:${col}"></div></div>
@@ -953,7 +962,7 @@ function renderHistory(){
     ms.forEach(s=>{
       const cash=s.newSales+s.renew+s.restore;
       const cls=s.studio==='Империал'?'tag-imp':'tag-mec';
-      html+=`<div class="history-row"><span style="color:var(--text3)">${s.date}</span><span class="tag ${cls}">${s.studio}</span><span style="font-weight:600">${fmt(cash)} ₽</span></div>`;
+      html+=`<div class="history-row"><span style="color:var(--text3)">${formatDate(s.date)}</span><span class="tag ${cls}">${s.studio}</span><span style="font-weight:600">${fmt(cash)} ₽</span></div>`;
     });
     html+='<div style="height:6px"></div>';
   });
@@ -1025,7 +1034,7 @@ async function openAddShift(){
   document.getElementById('f-date').value=dateVal;
   const myLast=shifts.filter(s=>s.admin===currentUser.name).sort((a,b)=>b.date.localeCompare(a.date));
   document.getElementById('f-studio').value=myLast.length?myLast[0].studio:'Империал';
-  ['f-bookings','f-visits','f-new','f-renew','f-restore','f-massage','f-reviews','f-calls','f-tasks','f-yoga','f-mc'].forEach(id=>document.getElementById(id).value=0);
+  ['f-leads','f-bookings','f-visits','f-new','f-renew','f-restore','f-massage','f-reviews','f-calls','f-tasks','f-yoga','f-mc'].forEach(id=>document.getElementById(id).value=0);
   document.getElementById('f-miss-comment').value='';
   document.getElementById('f-miss-trainer-detail').value='';
   document.getElementById('f-self-weakspot').value='';
@@ -1063,7 +1072,7 @@ async function saveShift(){
     new_sales:+document.getElementById('f-new').value||0,
     renew:+document.getElementById('f-renew').value||0,
     restore:+document.getElementById('f-restore').value||0,
-    leads:0,
+    leads:+document.getElementById('f-leads').value||0,
     leads_booked:0,
     bookings:+document.getElementById('f-bookings').value||0,
     visits:+document.getElementById('f-visits').value||0,

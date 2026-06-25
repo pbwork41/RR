@@ -311,7 +311,13 @@ const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 let shifts=[],shiftsLast=[],marathons=[],plans={};
 
 function fmt(n){return Math.round(n||0).toLocaleString('ru-RU')}
-function today(){const d=new Date();return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);}
+function formatDate(d){
+  if(!d)return'—';
+  const p=d.split('-');
+  if(p.length!==3)return d;
+  return p[2]+'.'+p[1]+'.'+p[0];
+}
+function today(){const d=new Date();return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString();}
 function monthKey(){return today().slice(0,7)}
 function prevMonthKey(){const d=new Date();d.setDate(1);d.setMonth(d.getMonth()-1);return d.toISOString().slice(0,7);}
 function monthLabel(){return new Date().toLocaleString('ru-RU',{month:'long',year:'numeric'})}
@@ -471,8 +477,8 @@ function weakestFunnelStage(fact,plan){
 function funnelHtml(fact,plan){
   const stages=[
     {label:'Лиды',fact:fact.leads,plan:plan.leads||0},
-    {label:'Записи',fact:fact.bookings,plan:plan.bookings||0,cv:fact.cv1,cvPlan:plan.cv1||0,cvLabel:'Лид → запись'},
-    {label:'Доходимость',fact:fact.visits,plan:plan.visits||0,cv:fact.cv2,cvPlan:plan.cv2||0,cvLabel:'Запись → приход'},
+    {label:'Записей на пробное',fact:fact.bookings,plan:plan.bookings||0,cv:fact.cv1,cvPlan:plan.cv1||0,cvLabel:'Лид → запись'},
+    {label:'Пришло на пробное',fact:fact.visits,plan:plan.visits||0,cv:fact.cv2,cvPlan:plan.cv2||0,cvLabel:'Запись → приход'},
     {label:'Новые продажи',fact:fact.newSalesCount,plan:plan.new_clients||0,cv:fact.cv3,cvPlan:plan.cv3||0,cvLabel:'Приход → продажа'},
   ];
   return`<div>${stages.map((s,i)=>{
@@ -544,7 +550,7 @@ function renderOverview(){
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
           <div>
             <div class="marathon-title">🏆 ${m.title}</div>
-            <div style="font-size:12px;color:var(--amber-text);opacity:.85;margin-top:2px">📅 ${m.date_start} — ${m.date_end} · ${daysLeft} дн. осталось · бонус ${fmt(m.prize)} ₽</div>
+            <div style="font-size:12px;color:var(--amber-text);opacity:.85;margin-top:2px">📅 ${formatDate(m.date_start)} — ${formatDate(m.date_end)} · ${daysLeft} дн. осталось · бонус ${fmt(m.prize)} ₽</div>
           </div>
           <div style="font-size:13px;color:var(--amber-text);font-weight:600;white-space:nowrap;margin-left:8px">цель ${isMonetary(m)?fmt(target)+' ₽':target}</div>
         </div>
@@ -557,7 +563,7 @@ function renderOverview(){
   }
 
   // Missed shift alert
-  const yesterday=(()=>{const d=new Date(today());d.setDate(d.getDate()-1);return d.toISOString().slice(0,10);})();
+  const yesterday=(()=>{const d=new Date(today());d.setDate(d.getDate()-1);return d.toISOString();})();
   const missedStudios=studios.filter(st=>!shifts.some(s=>s.studio===st&&s.date===yesterday));
   if(missedStudios.length){
     html+=`<div style="background:var(--red-bg);border:1px solid var(--red);border-radius:var(--radius-sm);padding:10px 14px;display:flex;align-items:center;gap:10px;margin-bottom:12px;font-size:13px;color:var(--red-text)">
@@ -626,23 +632,31 @@ function renderOverview(){
       </div>
     </div>
 
-    <!-- Воронка -->
-    <div style="border-top:1px solid var(--border);padding:14px 16px">
-      <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Воронка продаж</div>
-      ${sortedStudios.map(({st,fact,plan})=>{
-        const pill=st==='Империал'?'pill-imp':'pill-mec';
-        if(!(fact.leads>0||fact.bookings>0||fact.visits>0)) return`<div style="font-size:13px;color:var(--text3);margin-bottom:8px"><span class="${pill}" style="font-size:11px;margin-right:6px">${st}</span>нет данных</div>`;
-        const weak=weakestFunnelStage(fact,plan);
-        return`<div style="margin-bottom:12px">
-          <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
-            <span class="${pill}" style="font-size:11px">${st}</span>
-            ${weak?`<span style="font-size:11px;color:var(--red-text)">· узкое горлышко: ${weak.label} (${weak.cv}%)</span>`:''}
-          </div>
-          ${funnelHtml(fact,plan)}
-        </div>`;
-      }).join('')}
-    </div>
+  </div>`;
 
+  // Воронка — отдельные карточки по студиям
+  html+=`<div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">
+    ${sortedStudios.map(({st,fact,plan})=>{
+      const pill=st==='Империал'?'pill-imp':'pill-mec';
+      const weak=weakestFunnelStage(fact,plan);
+      if(!(fact.leads>0||fact.bookings>0||fact.visits>0)){
+        return`<div class="card">
+          <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Воронка продаж</div>
+          <span class="${pill}" style="font-size:12px;margin-right:6px">${st}</span>
+          <span style="font-size:13px;color:var(--text3)">нет данных за месяц</span>
+        </div>`;
+      }
+      return`<div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div>
+            <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Воронка продаж</div>
+            <span class="${pill}" style="font-size:12px">${st}</span>
+          </div>
+          ${weak?`<span style="font-size:11px;color:var(--red-text);background:var(--red-bg);padding:3px 8px;border-radius:var(--radius-sm)">⚠ узкое горлышко: ${weak.label} (${weak.cv}%)</span>`:''}
+        </div>
+        ${funnelHtml(fact,plan)}
+      </div>`;
+    }).join('')}
   </div>`;
 
   document.getElementById('overview-content').innerHTML=html;
@@ -787,7 +801,7 @@ function renderMarathons(){
           <div class="marathon-title">🏆 ${m.title}</div>
           ${m.description?`<div style="font-size:12px;color:var(--text2);margin-bottom:4px">${m.description}</div>`:''}
           <div style="font-size:12px;font-weight:600;color:var(--amber-text);margin-bottom:4px">${m.condition_type?conditionLabel(m.condition_type,m.condition_value):''}</div>
-          <div style="font-size:11px;color:var(--text3)">📅 ${m.date_start} — ${m.date_end}</div>
+          <div style="font-size:11px;color:var(--text3)">📅 ${formatDate(m.date_start)} — ${formatDate(m.date_end)}</div>
         </div>
         <div class="marathon-prize">${fmt(m.prize)} ₽</div>
       </div>`;
@@ -826,7 +840,7 @@ function renderMarathons(){
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
           <div style="flex:1">
             <div style="font-size:15px;font-weight:700">${m.title}</div>
-            <div style="font-size:12px;color:var(--blue-text);margin-top:2px">⏳ Старт: ${m.date_start} — ${m.date_end}</div>
+            <div style="font-size:12px;color:var(--blue-text);margin-top:2px">⏳ Старт: ${formatDate(m.date_start)} — ${formatDate(m.date_end)}</div>
             ${m.description?`<div style="font-size:13px;color:var(--text2);margin-top:4px">${m.description}</div>`:''}
             ${m.condition_type?`<div style="font-size:12px;color:var(--blue-text);margin-top:4px">🎯 ${conditionLabel(m.condition_type,m.condition_value)}</div>`:''}
           </div>
@@ -847,7 +861,7 @@ function renderMarathons(){
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
           <div><div class="marathon-title">${m.title}</div>
           ${m.condition_type?`<div style="font-size:12px;color:var(--text3)">${conditionLabel(m.condition_type,m.condition_value)}</div>`:''}
-          <div style="font-size:11px;color:var(--text3);margin-top:4px">📅 ${m.date_start} — ${m.date_end}</div></div>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px">📅 ${formatDate(m.date_start)} — ${formatDate(m.date_end)}</div></div>
           <div style="font-size:16px;font-weight:700;color:var(--text3)">${fmt(m.prize)} ₽</div>
         </div>
         <div style="margin-top:10px;display:flex;gap:6px">
@@ -1115,7 +1129,7 @@ function renderReports(){
           ${allDates.map(date=>{
             const ds=shifts.filter(s=>s.date===date);
             return ds.map(s=>`<tr>
-              <td>${date}</td>
+              <td>${formatDate(date)}</td>
               <td>${s.admin}</td>
               <td>${fmt(s.newSales+s.renew+s.restore)} ₽</td>
               <td>${s.calls||'—'}</td>
@@ -1152,7 +1166,7 @@ function renderReports(){
       ${withComment.length?`<div style="border-top:1px solid var(--border);padding-top:12px">
         <div style="font-size:12px;color:var(--text3);margin-bottom:6px">Последние комментарии</div>
         <div style="display:flex;flex-direction:column;gap:6px">
-          ${withComment.map(s=>`<div style="font-size:13px"><span style="color:var(--text3)">${s.date}, ${s.studio} (${s.admin}) —</span> «${s.missComment}»</div>`).join('')}
+          ${withComment.map(s=>`<div style="font-size:13px"><span style="color:var(--text3)">${formatDate(s.date)}, ${s.studio} (${s.admin}) —</span> «${s.missComment}»</div>`).join('')}
         </div>
       </div>`:''}
     </div>`;
@@ -1180,7 +1194,7 @@ function renderReports(){
       ${withTomorrow.length?`<div style="border-top:1px solid var(--border);padding-top:12px">
         <div style="font-size:12px;color:var(--text3);margin-bottom:6px">Что обещали сделать по-другому</div>
         <div style="display:flex;flex-direction:column;gap:6px">
-          ${withTomorrow.map(s=>`<div style="font-size:13px"><span style="color:var(--text3)">${s.date}, ${s.studio} (${s.admin}) —</span> «${s.selfTomorrow}»</div>`).join('')}
+          ${withTomorrow.map(s=>`<div style="font-size:13px"><span style="color:var(--text3)">${formatDate(s.date)}, ${s.studio} (${s.admin}) —</span> «${s.selfTomorrow}»</div>`).join('')}
         </div>
       </div>`:''}
     </div>`;
@@ -1261,7 +1275,7 @@ async function renderStaff(){
       ${pending.map(p=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
         <div>
           <div style="font-weight:600">${p.name}</div>
-          <div style="font-size:12px;color:var(--text3)">Зарегистрирован: ${p.created_at?p.created_at.slice(0,10):'—'}</div>
+          <div style="font-size:12px;color:var(--text3)">Зарегистрирован: ${p.created_at?p.created_at:'—'}</div>
         </div>
         <div style="display:flex;gap:6px">
           <button class="btn btn-sm btn-primary" onclick="toggleStaff(${p.id},true)">✓ Активировать</button>
@@ -1345,7 +1359,7 @@ async function renderSalary(){
       <div style="font-size:14px;font-weight:600;margin-bottom:10px">Выберите период</div>
       <div class="grid2">
         <div class="form-row"><label>С</label><input type="date" id="sal-from" value="${curMonth}-01"></div>
-        <div class="form-row"><label>По</label><input type="date" id="sal-to" value="${now.toISOString().slice(0,10)}"></div>
+        <div class="form-row"><label>По</label><input type="date" id="sal-to" value="${now.toISOString()}"></div>
       </div>
       <button class="btn btn-primary btn-sm" id="sal-load-btn">Загрузить</button>
     </div>
