@@ -25,6 +25,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;ba
 .topbar-sub{font-size:12px;opacity:.8;margin-top:2px}
 .layout{display:grid;grid-template-columns:200px 1fr;gap:1rem;align-items:start}
 .tabs{display:flex;flex-direction:column;gap:4px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:8px;position:sticky;top:1rem}
+.nav-divider{display:flex;align-items:center;gap:6px;padding:6px 4px 2px}
+.nav-divider-line{flex:1;height:0.5px;background:var(--border)}
+.nav-divider-label{font-size:9px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;white-space:nowrap}
 .tab{width:100%;padding:11px 12px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:none;color:var(--text2);border-radius:var(--radius-sm);transition:all .15s;font-family:inherit;white-space:nowrap;text-align:left;display:flex;align-items:center;gap:8px}
 .tab.active{background:var(--purple);color:#fff}
 .tab:hover:not(.active){background:var(--bg2)}
@@ -33,6 +36,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;ba
 @media(max-width:860px){
   .layout{display:block}
   .tabs{flex-direction:row;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;position:static;margin-bottom:1rem;padding:4px}
+  .nav-divider{display:none}
   .tabs::-webkit-scrollbar{display:none}
   .tab{width:auto;flex:1;padding:8px 6px;font-size:12px;text-align:center;justify-content:center}
 }
@@ -112,6 +116,7 @@ textarea{resize:vertical;min-height:70px}
 .admin-progress-val{font-size:12px;color:var(--text2);margin-top:2px}
 .admin-done{color:var(--green-text);font-weight:700}
 </style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
 </head>
 <body>
 
@@ -140,16 +145,34 @@ textarea{resize:vertical;min-height:70px}
 
   <div class="layout">
   <div class="tabs">
-    <button class="tab active" onclick="switchTab('overview')">📊 <span>Сводка</span></button>
-    <button class="tab" onclick="switchTab('mom')">📈 <span>Динамика</span></button>
-    <button class="tab" onclick="switchTab('studios')">🏢 <span>Студии</span></button>
-    <button class="tab" onclick="switchTab('admins')">👤 <span>Администраторы</span></button>
-    <button class="tab" onclick="switchTab('marathons')">🏆 <span>Марафоны</span></button>
-    <button class="tab" onclick="switchTab('reports')">📋 <span>Отчёты</span></button>
-    <button class="tab" onclick="switchTab('salary')">💰 <span>Зарплаты</span></button>
-    <button class="tab" onclick="switchTab('plans')">🎯 <span>Планы</span></button>
-    <button class="tab" onclick="switchTab('motivation')">🎯 <span>Мотивация</span></button>
-    <button class="tab" onclick="switchTab('staff')">👥 <span>Сотрудники</span></button>
+    <button class="tab active" onclick="switchTab('overview')"><i class="ti ti-layout-dashboard" aria-hidden="true"></i> <span>Сводка</span></button>
+    <button class="tab" onclick="switchTab('mom')"><i class="ti ti-trending-up" aria-hidden="true"></i> <span>Динамика</span></button>
+    <button class="tab" onclick="switchTab('studios')"><i class="ti ti-building" aria-hidden="true"></i> <span>Аналитика</span></button>
+
+    <div class="nav-divider">
+      <div class="nav-divider-line"></div>
+      <span class="nav-divider-label">Администраторы</span>
+      <div class="nav-divider-line"></div>
+    </div>
+
+    <button class="tab" onclick="switchTab('admins')"><i class="ti ti-chart-bar" aria-hidden="true"></i> <span>Рейтинг МПП</span></button>
+    <button class="tab" onclick="switchTab('marathons')"><i class="ti ti-trophy" aria-hidden="true"></i> <span>Марафоны</span></button>
+    <button class="tab" onclick="switchTab('reports')"><i class="ti ti-file-analytics" aria-hidden="true"></i> <span>Отчёты</span></button>
+    <button class="tab" onclick="switchTab('salary')"><i class="ti ti-coin" aria-hidden="true"></i> <span>Зарплаты</span></button>
+    <button class="tab" onclick="switchTab('plans')"><i class="ti ti-target" aria-hidden="true"></i> <span>Планы</span></button>
+    <button class="tab" onclick="switchTab('motivation')"><i class="ti ti-bolt" aria-hidden="true"></i> <span>Мотивация</span></button>
+    <button class="tab" onclick="switchTab('staff')"><i class="ti ti-settings" aria-hidden="true"></i> <span>Сотрудники</span></button>
+
+    <div class="nav-divider">
+      <div class="nav-divider-line"></div>
+      <span class="nav-divider-label">Тренеры</span>
+      <div class="nav-divider-line"></div>
+    </div>
+
+    <button class="tab" onclick="switchTab('trainers-team')"><i class="ti ti-users" aria-hidden="true"></i> <span>Команда</span></button>
+    <button class="tab" onclick="switchTab('trainers-marathons')"><i class="ti ti-trophy" aria-hidden="true"></i> <span>Марафоны</span></button>
+    <button class="tab" onclick="switchTab('trainers-salary')"><i class="ti ti-coin" aria-hidden="true"></i> <span>Зарплата</span></button>
+    <button class="tab" onclick="switchTab('trainers-motivation')"><i class="ti ti-bolt" aria-hidden="true"></i> <span>Мотивация</span></button>
   </div>
   <div class="content-col">
 
@@ -163,6 +186,10 @@ textarea{resize:vertical;min-height:70px}
   <div id="tab-plans" class="section"><div id="plans-content"></div></div>
   <div id="tab-salary" class="section"><div id="salary-content"></div></div>
   <div id="tab-motivation" class="section"><div id="motivation-content"></div></div>
+  <div id="tab-trainers-team" class="section"><div id="trainers-team-content"></div></div>
+  <div id="tab-trainers-marathons" class="section"><div id="trainers-marathons-content"></div></div>
+  <div id="tab-trainers-salary" class="section"><div id="trainers-salary-content"></div></div>
+  <div id="tab-trainers-motivation" class="section"><div id="trainers-motivation-content"></div></div>
   </div>
   </div>
 </div>
@@ -563,7 +590,7 @@ function renderOverview(){
   }
 
   // Missed shift alert
-  const yesterday=(()=>{const d=new Date(today());d.setDate(d.getDate()-1);return d.toISOString();})();
+  const yesterday=(()=>{const d=new Date();d.setDate(d.getDate()-1);return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);})();
   const missedStudios=studios.filter(st=>!shifts.some(s=>s.studio===st&&s.date===yesterday));
   if(missedStudios.length){
     html+=`<div style="background:var(--red-bg);border:1px solid var(--red);border-radius:var(--radius-sm);padding:10px 14px;display:flex;align-items:center;gap:10px;margin-bottom:12px;font-size:13px;color:var(--red-text)">
@@ -1614,13 +1641,213 @@ async function updateMotivation(id){
 }
 
 function switchTab(t){
-  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['overview','mom','studios','admins','marathons','reports','salary','plans','motivation','staff'][i]===t));
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['overview','mom','studios','admins','marathons','reports','salary','plans','motivation','staff','trainers-team','trainers-marathons','trainers-salary','trainers-motivation'][i]===t));
   document.querySelectorAll('.section').forEach(el=>el.classList.remove('active'));
   document.getElementById('tab-'+t).classList.add('active');
   if(t==='reports')renderReports();
   if(t==='staff')renderStaff();
   if(t==='salary')renderSalary();
   if(t==='motivation')renderMotivation();
+  if(t==='trainers-team')renderTrainerTeam();
+  if(t==='trainers-marathons')renderTrainerMarathons();
+  if(t==='trainers-salary')renderTrainerSalary();
+  if(t==='trainers-motivation')renderTrainerMotivation();
+}
+
+// ===== TRAINERS =====
+async function trainerData(){
+  const lastDay=new Date(new Date().getFullYear(),new Date().getMonth()+1,0).getDate();
+  const [{data:tProfiles},{data:tShifts}]=await Promise.all([
+    sb.from('trainer_profiles').select('*').order('created_at',{ascending:false}),
+    sb.from('trainer_shifts').select('*').gte('date',monthKey()+'-01').lte('date',monthKey()+'-'+lastDay)
+  ]);
+  return{trainerList:tProfiles||[],shiftList:tShifts||[]};
+}
+
+async function renderTrainerTeam(){
+  const el=document.getElementById('trainers-team-content');
+  el.innerHTML='<div style="color:var(--text3);padding:1rem;text-align:center">Загрузка...</div>';
+  const {trainerList,shiftList}=await trainerData();
+  const active=trainerList.filter(t=>t.active);
+  const pending=trainerList.filter(t=>!t.active);
+  let html='';
+  if(pending.length){
+    html+=`<div class="card"><div class="section-title" style="color:var(--amber-text)">⏳ Ожидают подтверждения (${pending.length})</div>
+      ${pending.map(t=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px">
+        <div><div style="font-weight:600">${t.name}</div><div style="font-size:12px;color:var(--text3)">${formatDate(t.created_at?.slice(0,10))}</div></div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-sm btn-primary" onclick="approveTrainer(${t.id},\`${t.name}\`)">✓ Подтвердить</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteTrainer(${t.id},\`${t.name}\`)">🗑</button>
+        </div>
+      </div>`).join('')}
+    </div>`;
+  }
+  html+=`<div class="card"><div class="section-title">✅ Активные тренеры (${active.length})</div>
+    ${active.length?active.map(t=>{
+      const ts=shiftList.filter(s=>s.trainer_id===t.id);
+      const trainings=ts.reduce((a,s)=>a+(+s.trainings_done||0),0);
+      const sales=ts.reduce((a,s)=>a+(+s.sales_amount||0),0);
+      return`<div style="padding:10px 0;border-bottom:1px solid var(--border)">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:6px">
+          <div style="font-weight:600">${t.name}</div>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-sm" onclick="resetTrainerPin(${t.id},\`${t.name}\`)">🔑 Сбросить пин</button>
+            <button class="btn btn-sm btn-danger" onclick="deactivateTrainer(${t.id})">Деактивировать</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:16px;font-size:12px;color:var(--text3)">
+          <span>Смен: <b style="color:var(--text)">${ts.length}</b></span>
+          <span>Тренировок: <b style="color:var(--text)">${trainings}</b></span>
+          <span>Продажи: <b style="color:var(--text)">${fmt(sales)} ₽</b></span>
+        </div>
+      </div>`;
+    }).join(''):`<div style="color:var(--text3);font-size:13px;text-align:center;padding:1rem">Нет активных тренеров</div>`}
+  </div>`;
+  el.innerHTML=html;
+}
+
+async function renderTrainerMarathons(){
+  document.getElementById('trainers-marathons-content').innerHTML='<div class="card"><div style="color:var(--text3);font-size:13px;text-align:center;padding:2rem">🏆 Марафоны для тренеров — в разработке</div></div>';
+}
+
+async function renderTrainerSalary(){
+  const el=document.getElementById('trainers-salary-content');
+  el.innerHTML='<div style="color:var(--text3);padding:1rem;text-align:center">Загрузка...</div>';
+  const {trainerList,shiftList}=await trainerData();
+  const active=trainerList.filter(t=>t.active);
+  const BASE=1500,PCT=0.05;
+  el.innerHTML=`<div class="card"><div class="section-title">💰 Зарплата — ${monthLabel()}</div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:12px">Схема: ${fmt(BASE)} ₽ за смену + ${Math.round(PCT*100)}% с продаж</div>
+    ${active.length?active.map(t=>{
+      const ts=shiftList.filter(s=>s.trainer_id===t.id);
+      const sales=ts.reduce((a,s)=>a+(+s.sales_amount||0),0);
+      const salary=ts.length*BASE+Math.round(sales*PCT);
+      return`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
+        <div><div style="font-weight:600;margin-bottom:3px">${t.name}</div>
+        <div style="font-size:12px;color:var(--text3)">${ts.length} смен · ${fmt(sales)} ₽</div></div>
+        <div style="font-size:18px;font-weight:700;color:var(--green-text)">${fmt(salary)} ₽</div>
+      </div>`;
+    }).join(''):`<div style="color:var(--text3);font-size:13px;text-align:center;padding:1rem">Нет активных тренеров</div>`}
+  </div>`;
+}
+
+async function renderTrainerMotivation(){
+  const el=document.getElementById('trainers-motivation-content');
+  el.innerHTML='<div style="color:var(--text3);padding:1rem;text-align:center">Загрузка...</div>';
+  const {trainerList}=await trainerData();
+  const active=trainerList.filter(t=>t.active);
+  const {data:motivData}=await sb.from('trainer_motivation').select('*').order('effective_from',{ascending:false}).limit(1);
+  const curMotiv=motivData&&motivData[0]?motivData[0]:null;
+  const {data:bonusData}=await sb.from('trainer_bonuses').select('*').eq('month',monthKey()).order('created_at',{ascending:false});
+  const bonuses=bonusData||[];
+  el.innerHTML=`<div class="card"><div class="section-title">⚡ Мотивация</div>
+    <div class="grid2" style="margin-bottom:12px">
+      <div class="metric"><div class="metric-label">Ставка (час)</div><div style="font-size:20px;font-weight:700">${curMotiv?fmt(curMotiv.hourly_rate)+' ₽':'—'}</div></div>
+      <div class="metric"><div class="metric-label">% с продаж</div><div style="font-size:20px;font-weight:700">${curMotiv?curMotiv.sales_pct+'%':'—'}</div></div>
+    </div>
+    ${curMotiv?`<div style="font-size:12px;color:var(--text3);margin-bottom:12px">Действует с ${formatDate(curMotiv.effective_from)}</div>`:''}
+    <div class="divider"></div>
+    <div class="subsection-title">Обновить схему</div>
+    <div class="grid2" style="margin-bottom:8px">
+      <div class="form-row"><label>Ставка (час), ₽</label><input type="number" id="tm-rate" value="${curMotiv?curMotiv.hourly_rate:0}" min="0"></div>
+      <div class="form-row"><label>% с продаж</label><input type="number" id="tm-pct" value="${curMotiv?curMotiv.sales_pct:5}" min="0" max="100" step="0.5"></div>
+    </div>
+    <div class="form-row"><label>Действует с</label><input type="date" id="tm-from" value="${today()}"></div>
+    <button class="btn btn-primary btn-sm" onclick="saveTrainerMotivation()" style="margin-top:6px">💾 Сохранить схему</button>
+    <div id="tm-err" class="alert alert-red" style="display:none;margin-top:8px"></div>
+  </div>
+  <div class="card"><div class="section-title">💰 Начислить бонус</div>
+    <div class="form-row"><label>Тренер</label>
+      <select id="tm-bonus-trainer">
+        ${active.map(t=>`<option value="${t.id}" data-name="${t.name}">${t.name}</option>`).join('')}
+        ${!active.length?'<option disabled>Нет активных тренеров</option>':''}
+      </select>
+    </div>
+    <div class="grid2" style="margin-bottom:8px">
+      <div class="form-row"><label>Сумма, ₽</label><input type="number" id="tm-bonus-amount" value="0" min="0"></div>
+      <div class="form-row"><label>Причина</label><input type="text" id="tm-bonus-reason" placeholder="Например: выполнение KPI"></div>
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="saveTrainerBonus()">💰 Начислить бонус</button>
+    <div id="tm-bonus-err" class="alert alert-red" style="display:none;margin-top:8px"></div>
+    ${bonuses.length?`<div style="margin-top:14px;border-top:1px solid var(--border);padding-top:12px">
+      <div style="font-size:12px;color:var(--text3);margin-bottom:8px">Бонусы за ${monthLabel()}</div>
+      ${bonuses.map(b=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">
+        <div><b>${b.trainer_name}</b>${b.reason?' — '+b.reason:''}</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-weight:600;color:var(--green-text)">${fmt(b.amount)} ₽</span>
+          <button class="btn btn-sm btn-danger" onclick="deleteTrainerBonus(${b.id})">🗑</button>
+        </div>
+      </div>`).join('')}
+    </div>`:''}
+  </div>`;
+}
+
+function toggleTrainerSection(id){
+  const el=document.getElementById(id);
+  const icon=document.getElementById(id+'-icon');
+  if(!el)return;
+  const open=el.style.display!=='none';
+  el.style.display=open?'none':'block';
+  if(icon)icon.textContent=open?'▶':'▼';
+}
+
+async function saveTrainerMotivation(){
+  const rate=+document.getElementById('tm-rate').value||0;
+  const pct=+document.getElementById('tm-pct').value||0;
+  const from=document.getElementById('tm-from').value;
+  const el=document.getElementById('tm-err');
+  if(!from){el.textContent='Укажите дату';el.style.display='block';return;}
+  const {error}=await sb.from('trainer_motivation').insert({hourly_rate:rate,sales_pct:pct,effective_from:from});
+  if(error){el.textContent='Ошибка: '+error.message;el.style.display='block';return;}
+  el.style.display='none';
+  renderTrainers();
+}
+
+async function saveTrainerBonus(){
+  const sel=document.getElementById('tm-bonus-trainer');
+  const el=document.getElementById('tm-bonus-err');
+  if(!sel||!sel.value){el.textContent='Выберите тренера';el.style.display='block';return;}
+  const trainerId=+sel.value;
+  const trainerName=sel.options[sel.selectedIndex].dataset.name;
+  const amount=+document.getElementById('tm-bonus-amount').value||0;
+  const reason=document.getElementById('tm-bonus-reason').value.trim();
+  if(amount<=0){el.textContent='Укажите сумму бонуса';el.style.display='block';return;}
+  const {error}=await sb.from('trainer_bonuses').insert({trainer_id:trainerId,trainer_name:trainerName,amount,reason:reason||null,month:monthKey()});
+  if(error){el.textContent='Ошибка: '+error.message;el.style.display='block';return;}
+  el.style.display='none';
+  document.getElementById('tm-bonus-amount').value=0;
+  document.getElementById('tm-bonus-reason').value='';
+  renderTrainers();
+}
+
+async function deleteTrainerBonus(id){
+  if(!confirm('Удалить бонус?'))return;
+  await sb.from('trainer_bonuses').delete().eq('id',id);
+  renderTrainers();
+}
+
+async function approveTrainer(id,name){
+  if(!confirm('Подтвердить тренера '+name+'?'))return;
+  await sb.from('trainer_profiles').update({active:true}).eq('id',id);
+  renderTrainers();
+}
+
+async function deleteTrainer(id,name){
+  if(!confirm('Удалить тренера '+name+'?'))return;
+  await sb.from('trainer_profiles').delete().eq('id',id);
+  renderTrainers();
+}
+
+async function deactivateTrainer(id){
+  if(!confirm('Деактивировать тренера?'))return;
+  await sb.from('trainer_profiles').update({active:false}).eq('id',id);
+  renderTrainers();
+}
+
+async function resetTrainerPin(id,name){
+  if(!confirm('Сбросить пин тренера '+name+'?'))return;
+  await sb.from('trainer_profiles').update({password_hash:null}).eq('id',id);
+  alert('Пин сброшен.');
 }
 
 document.getElementById('pin-field').focus();

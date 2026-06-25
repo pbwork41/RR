@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Lady Stretch — Тренер</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{overflow-x:hidden;max-width:100%}
+body.modal-open{overflow:hidden;position:fixed;width:100%;left:0;right:0}
+:root{
+  --bg:#fff;--bg2:#f8f9fa;--bg3:#f1f3f5;
+  --text:#1a1a2e;--text2:#555570;--text3:#888899;
+  --border:#e0e0eb;--border2:#c8c8d8;
+  --blue:#2563eb;--blue-bg:#eff6ff;--blue-text:#1d4ed8;
+  --green:#16a34a;--green-bg:#f0fdf4;--green-text:#15803d;
+  --amber:#d97706;--amber-bg:#fffbeb;--amber-text:#b45309;
+  --red:#dc2626;--red-bg:#fef2f2;--red-text:#b91c1c;
+  --purple:#7c3aed;--purple-bg:#f5f3ff;--purple-text:#6d28d9;
+  --teal:#0d9488;--teal-bg:#f0fdfa;--teal-text:#0f766e;
+  --radius:10px;--radius-sm:6px;--shadow:0 1px 3px rgba(0,0,0,.08);
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:var(--bg3);color:var(--text);font-size:15px;min-height:100vh}
+.app{max-width:600px;margin:0 auto;padding:1rem}
+
+/* TOPBAR */
+.topbar{background:var(--teal);color:#fff;padding:12px 16px;border-radius:var(--radius);margin-bottom:1rem}
+.topbar-row1{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.topbar-title{font-size:17px;font-weight:700}
+.topbar-sub{font-size:12px;opacity:.8;margin-top:2px}
+.topbar-btn{width:100%;padding:10px 4px;font-size:13px;font-weight:600;background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:var(--radius-sm);cursor:pointer;font-family:inherit;text-align:center;-webkit-tap-highlight-color:transparent}
+.topbar-btn:active{background:rgba(255,255,255,.3)}
+
+/* TABS */
+.tabs{display:flex;gap:4px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:4px;margin-bottom:1rem}
+.tab{flex:1;padding:8px 4px;font-size:12px;font-weight:500;cursor:pointer;border:none;background:none;color:var(--text2);border-radius:var(--radius-sm);font-family:inherit;text-align:center}
+.tab.active{background:var(--teal);color:#fff}
+.section{display:none}.section.active{display:block}
+
+/* CARDS */
+.card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;margin-bottom:1rem;box-shadow:var(--shadow)}
+.card-muted{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:1rem;margin-bottom:.75rem}
+
+/* GRID */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+@media(max-width:480px){.grid3{grid-template-columns:1fr 1fr}.modal .grid2{grid-template-columns:1fr}}
+
+/* METRICS */
+.metric{background:var(--bg2);border-radius:var(--radius-sm);padding:.75rem;border:1px solid var(--border);text-align:center}
+.metric-label{font-size:11px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.03em}
+.metric-val{font-size:22px;font-weight:700}
+.metric-sub{font-size:11px;color:var(--text3);margin-top:3px}
+
+/* FORM */
+label{display:block;font-size:11px;color:var(--text2);margin-bottom:4px;font-weight:500}
+input,select,textarea{width:100%;padding:9px 12px;font-size:16px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);font-family:inherit}
+input:focus,select:focus{outline:none;border-color:var(--teal)}
+.form-row{margin-bottom:10px}
+.subsection-title{font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
+
+/* BUTTONS */
+.btn{padding:9px 18px;font-size:14px;font-weight:500;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px;-webkit-tap-highlight-color:transparent}
+.btn:active{opacity:.8}
+.btn-primary{background:var(--teal);color:#fff;border-color:var(--teal)}
+.btn-danger{color:var(--red-text);border-color:#fca5a5}
+.btn-sm{padding:5px 12px;font-size:12px}
+.btn-block{width:100%;justify-content:center}
+.alert{padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;margin-bottom:12px}
+.alert-red{background:var(--red-bg);color:var(--red-text);border:1px solid #fca5a5}
+
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-start;justify-content:center;z-index:100;padding:1rem;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.modal{background:var(--bg);border-radius:var(--radius);padding:1.5rem;width:min(540px,100%);max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem}
+.modal-title{font-size:17px;font-weight:700}
+
+/* SHIFT ROW */
+.shift-row{border:1px solid var(--border);border-radius:var(--radius-sm);padding:.875rem;margin-bottom:8px;background:var(--bg)}
+.shift-date{font-size:13px;font-weight:600;color:var(--text)}
+.shift-meta{font-size:12px;color:var(--text3);margin-top:2px}
+
+/* SALARY */
+.salary-box{background:linear-gradient(135deg,var(--teal-bg),#e0fdf4);border:1px solid #99f6e4;border-radius:var(--radius);padding:1.25rem;margin-bottom:1rem}
+.salary-total{font-size:32px;font-weight:800;color:var(--teal-text)}
+
+/* AUTH */
+.auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem}
+.auth-card{background:var(--bg);border-radius:var(--radius);padding:2rem;width:min(420px,100%);box-shadow:0 4px 24px rgba(0,0,0,.1)}
+.auth-logo{text-align:center;margin-bottom:1.5rem}
+.auth-logo-icon{font-size:40px;margin-bottom:8px}
+.auth-logo-title{font-size:22px;font-weight:700;color:var(--teal)}
+.auth-logo-sub{font-size:13px;color:var(--text3);margin-top:2px}
+.pin-dots{display:flex;gap:12px;justify-content:center;margin:12px 0}
+.pin-dot{width:14px;height:14px;border-radius:50%;background:var(--border2)}
+.pin-dot.filled{background:var(--teal)}
+.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+.pin-key{padding:14px;font-size:20px;font-weight:500;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg2);cursor:pointer;text-align:center;-webkit-tap-highlight-color:transparent;font-family:inherit}
+.pin-key:active{background:var(--border2)}
+.auth-tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--bg2);border-radius:var(--radius-sm);padding:4px;margin-bottom:1.25rem}
+.auth-tab{padding:8px;font-size:13px;font-weight:500;border:none;background:none;border-radius:6px;cursor:pointer;font-family:inherit;color:var(--text2)}
+.auth-tab.active{background:var(--bg);color:var(--teal);font-weight:600;box-shadow:var(--shadow)}
+
+/* PROFILE AVATAR */
+.profile-avatar{width:60px;height:60px;border-radius:50%;background:var(--teal);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;margin:0 auto 12px}
+
+/* PILLS */
+.pill-imp{background:#eff6ff;color:#1d4ed8;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:500}
+.pill-mec{background:#f5f3ff;color:#6d28d9;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:500}
+
+.history-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
+.history-row:last-child{border-bottom:none}
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="auth-screen" class="auth-wrap">
+<div class="auth-card">
+  <div class="auth-logo">
+    <div class="auth-logo-icon">🏋️</div>
+    <div class="auth-logo-title">Lady Stretch</div>
+    <div class="auth-logo-sub">Панель тренера</div>
+  </div>
+  <div class="auth-tabs">
+    <button class="auth-tab active" id="tab-login-btn">Вход</button>
+    <button class="auth-tab" id="tab-reg-btn">Регистрация</button>
+  </div>
+
+  <!-- LOGIN -->
+  <div id="tab-login">
+    <div class="form-row"><label>Имя</label><input type="text" id="login-first" placeholder="Имя"></div>
+    <div class="form-row"><label>Фамилия</label><input type="text" id="login-last" placeholder="Фамилия"></div>
+    <div class="form-row">
+      <label>Пин-код</label>
+      <div class="pin-dots" id="login-dots">
+        <div class="pin-dot" id="ld0"></div><div class="pin-dot" id="ld1"></div>
+        <div class="pin-dot" id="ld2"></div><div class="pin-dot" id="ld3"></div>
+      </div>
+      <div class="pin-pad" id="login-pad"></div>
+    </div>
+    <div id="login-err" class="alert alert-red" style="display:none"></div>
+    <button class="btn btn-primary btn-block" id="do-login-btn" style="margin-top:8px">Войти</button>
+  </div>
+
+  <!-- REGISTER -->
+  <div id="tab-reg" style="display:none">
+    <div id="reg-step1">
+      <div class="form-row"><label>Имя</label><input type="text" id="reg-first" placeholder="Имя"></div>
+      <div class="form-row"><label>Фамилия</label><input type="text" id="reg-last" placeholder="Фамилия"></div>
+      <div class="form-row">
+        <label>Придумайте пин-код (4 цифры)</label>
+        <div class="pin-dots" id="reg-dots">
+          <div class="pin-dot" id="rd0"></div><div class="pin-dot" id="rd1"></div>
+          <div class="pin-dot" id="rd2"></div><div class="pin-dot" id="rd3"></div>
+        </div>
+        <div class="pin-pad" id="reg-pad"></div>
+      </div>
+      <div id="reg-err" class="alert alert-red" style="display:none"></div>
+      <button class="btn btn-primary btn-block" id="reg-next-btn" style="margin-top:8px">Далее →</button>
+    </div>
+    <div id="reg-step2" style="display:none">
+      <p style="font-size:14px;color:var(--text2);margin-bottom:12px">Повторите пин-код</p>
+      <div class="pin-dots" id="reg2-dots">
+        <div class="pin-dot" id="r2d0"></div><div class="pin-dot" id="r2d1"></div>
+        <div class="pin-dot" id="r2d2"></div><div class="pin-dot" id="r2d3"></div>
+      </div>
+      <div class="pin-pad" id="reg-pad2"></div>
+      <div id="reg2-err" class="alert alert-red" style="display:none"></div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn btn-block" id="reg-back-btn">← Назад</button>
+        <button class="btn btn-primary btn-block" id="do-reg-btn">Зарегистрироваться</button>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- PENDING APPROVAL -->
+<div id="pending-screen" style="display:none" class="auth-wrap">
+<div class="auth-card" style="text-align:center">
+  <div style="font-size:40px;margin-bottom:12px">⏳</div>
+  <div style="font-size:18px;font-weight:700;margin-bottom:8px">Ожидание подтверждения</div>
+  <p style="font-size:14px;color:var(--text2);margin-bottom:16px">Руководитель должен подтвердить ваш аккаунт в Панели царей. После этого вы сможете войти.</p>
+  <button class="btn btn-block" id="back-to-login-btn">Попробовать войти снова</button>
+</div>
+</div>
+
+<!-- MAIN APP -->
+<div id="main-app" style="display:none">
+  <div class="app">
+    <div class="topbar">
+      <div class="topbar-row1">
+        <div>
+          <div class="topbar-title">🏋️ Lady Stretch</div>
+          <div class="topbar-sub" id="month-label"></div>
+        </div>
+        <span style="font-size:11px;opacity:.8" id="sync-text">загрузка...</span>
+      </div>
+      <button class="topbar-btn" id="btn-report">📋 Сдать отчёт</button>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" id="tab-dashboard">📊 Сводка</button>
+      <button class="tab" id="tab-shifts">📅 Смены</button>
+      <button class="tab" id="tab-profile">👤 Кабинет</button>
+    </div>
+
+    <div id="sec-dashboard" class="section active"><div id="dashboard-content"></div></div>
+    <div id="sec-shifts" class="section"><div id="shifts-content"></div></div>
+    <div id="sec-profile" class="section"><div id="profile-content"></div></div>
+  </div>
+</div>
+
+<!-- REPORT MODAL -->
+<div id="report-modal" style="display:none" class="modal-bg">
+<div class="modal">
+  <div class="modal-header">
+    <div class="modal-title">📋 Отчёт за смену</div>
+    <button class="btn btn-sm" id="close-report-modal">✕</button>
+  </div>
+  <div class="grid2">
+    <div class="form-row"><label>Дата</label><input type="date" id="r-date"></div>
+    <div class="form-row">
+      <label>Филиал</label>
+      <select id="r-studio">
+        <option value="Империал">ТЦ Империал</option>
+        <option value="Мечта">ТЦ Мечта</option>
+      </select>
+    </div>
+  </div>
+  <div class="grid2">
+    <div class="form-row"><label>Начало смены</label><input type="time" id="r-start" value="09:00"></div>
+    <div class="form-row"><label>Конец смены</label><input type="time" id="r-end" value="21:00"></div>
+  </div>
+  <div class="divider"></div>
+  <div class="subsection-title">Тренировки</div>
+  <div class="grid3">
+    <div class="form-row"><label>Всего слотов</label><input type="number" id="r-total" value="0" min="0"></div>
+    <div class="form-row"><label>Проведено</label><input type="number" id="r-done" value="0" min="0"></div>
+    <div class="form-row"><label>Нулевых</label><input type="number" id="r-zero" value="0" min="0" readonly style="background:var(--bg2)"></div>
+  </div>
+  <div class="divider"></div>
+  <div class="subsection-title">Новые клиенты</div>
+  <div class="grid2">
+    <div class="form-row"><label>Пришло новых</label><input type="number" id="r-new-clients" value="0" min="0"></div>
+    <div class="form-row"><label>Купили абонемент</label><input type="number" id="r-bought" value="0" min="0"></div>
+  </div>
+  <div class="form-row"><label>Сумма продаж, ₽</label><input type="number" id="r-sales" value="0" min="0"></div>
+  <div id="report-err" class="alert alert-red" style="display:none"></div>
+  <div style="display:flex;gap:8px;margin-top:1rem">
+    <button class="btn btn-block" id="cancel-report-btn">Отмена</button>
+    <button class="btn btn-primary btn-block" id="save-report-btn">✓ Отправить отчёт</button>
+  </div>
+</div>
+</div>
+
+<script>
+const SUPABASE_URL='https://nhiyoilfegmmvdtqsgkm.supabase.co';
+const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oaXlvaWxmZWdtbXZkdHFzZ2ttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2MDc0MTMsImV4cCI6MjA5NjE4MzQxM30.VL7a64jalOvhGC3yLMdeR-qR1Jlffht-uYcYmwDn7oQ';
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+let currentUser=null;
+let myShifts=[];
+let loginPin='',regPin='',regPin2='';
+
+// ── UTILS ──────────────────────────────────────────
+const simpleHash=str=>{let h=0;for(let i=0;i<str.length;i++){h=Math.imul(31,h)+str.charCodeAt(i)|0;}return Math.abs(h).toString(36);};
+function formatDate(d){if(!d)return'—';const p=String(d).slice(0,10).split('-');if(p.length!==3)return d;return p[2]+'.'+p[1]+'.'+p[0];}
+function today(){const d=new Date();return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);}
+function monthKey(){return today().slice(0,7);}
+function monthLabel(){const d=new Date();return d.toLocaleString('ru-RU',{month:'long',year:'numeric'});}
+function fmt(n){return Math.round(n).toLocaleString('ru-RU');}
+function lockScroll(){const y=window.scrollY;document.body.classList.add('modal-open');document.body.style.top='-'+y+'px';}
+function unlockScroll(){const y=parseInt(document.body.style.top||'0')*-1;document.body.classList.remove('modal-open');document.body.style.top='';window.scrollTo(0,y);}
+
+// ── PIN PAD ────────────────────────────────────────
+function buildPad(containerId,mode){
+  const c=document.getElementById(containerId);
+  if(!c)return;
+  const keys=['1','2','3','4','5','6','7','8','9','','0','⌫'];
+  c.innerHTML=keys.map(k=>k===''?'<div></div>':`<button class="pin-key" data-key="${k}">${k}</button>`).join('');
+  c.querySelectorAll('[data-key]').forEach(btn=>{
+    btn.addEventListener('click',()=>handlePinKey(btn.dataset.key,mode));
+  });
+}
+
+function updateDots(mode){
+  const pin=mode==='login'?loginPin:mode==='reg'?regPin:regPin2;
+  const prefix=mode==='login'?'ld':mode==='reg'?'rd':'r2d';
+  for(let i=0;i<4;i++){
+    const d=document.getElementById(prefix+i);
+    if(d)d.className='pin-dot'+(i<pin.length?' filled':'');
+  }
+}
+
+function handlePinKey(key,mode){
+  if(key==='⌫'){
+    if(mode==='login')loginPin=loginPin.slice(0,-1);
+    else if(mode==='reg')regPin=regPin.slice(0,-1);
+    else regPin2=regPin2.slice(0,-1);
+  } else {
+    if(mode==='login'&&loginPin.length<4)loginPin+=key;
+    else if(mode==='reg'&&regPin.length<4)regPin+=key;
+    else if(mode==='reg2'&&regPin2.length<4)regPin2+=key;
+  }
+  updateDots(mode);
+}
+
+function showAuthErr(id,msg){const el=document.getElementById(id);el.textContent=msg;el.style.display='block';}
+
+// ── AUTH ───────────────────────────────────────────
+function showAuthTab(t){
+  document.getElementById('tab-login').style.display=t==='login'?'block':'none';
+  document.getElementById('tab-reg').style.display=t==='reg'?'block':'none';
+  document.getElementById('tab-login-btn').className='auth-tab'+(t==='login'?' active':'');
+  document.getElementById('tab-reg-btn').className='auth-tab'+(t==='reg'?' active':'');
+}
+
+async function doLogin(){
+  const first=document.getElementById('login-first').value.trim();
+  const last=document.getElementById('login-last').value.trim();
+  if(!first||!last){showAuthErr('login-err','Введите имя и фамилию');return;}
+  if(loginPin.length<4){showAuthErr('login-err','Введите пин-код');return;}
+  const fullName=first+' '+last;
+  const hash=simpleHash(fullName+loginPin);
+  const {data,error}=await sb.from('trainer_profiles').select('*').eq('name',fullName).single();
+  if(error||!data){showAuthErr('login-err','Тренер не найден');return;}
+  if(data.password_hash!==hash){showAuthErr('login-err','Неверный пин-код');return;}
+  if(!data.active){
+    document.getElementById('auth-screen').style.display='none';
+    document.getElementById('pending-screen').style.display='flex';
+    return;
+  }
+  currentUser={name:data.name,id:data.id};
+  localStorage.setItem('tr_session',JSON.stringify({name:data.name,id:data.id}));
+  enterApp();
+}
+
+async function doRegister(){
+  if(regPin!==regPin2){showAuthErr('reg2-err','Пин-коды не совпадают');return;}
+  const first=document.getElementById('reg-first').value.trim();
+  const last=document.getElementById('reg-last').value.trim();
+  if(!first||!last){showAuthErr('reg-err','Введите имя и фамилию');return;}
+  const fullName=first+' '+last;
+  const {data:ex}=await sb.from('trainer_profiles').select('id').eq('name',fullName).single();
+  if(ex){showAuthErr('reg2-err','Тренер с таким именем уже зарегистрирован');return;}
+  const hash=simpleHash(fullName+regPin);
+  const {error}=await sb.from('trainer_profiles').insert({name:fullName,password_hash:hash,active:false});
+  if(error){showAuthErr('reg2-err','Ошибка: '+error.message);return;}
+  document.getElementById('auth-screen').style.display='none';
+  document.getElementById('pending-screen').style.display='flex';
+}
+
+async function checkSession(){
+  const s=localStorage.getItem('tr_session');
+  if(!s)return;
+  try{
+    const sess=JSON.parse(s);
+    const {data}=await sb.from('trainer_profiles').select('*').eq('id',sess.id).single();
+    if(data&&data.active){
+      currentUser={name:data.name,id:data.id};
+      enterApp();
+    }
+  }catch(e){}
+}
+
+function doLogout(){
+  localStorage.removeItem('tr_session');
+  currentUser=null;
+  location.reload();
+}
+
+// ── APP ────────────────────────────────────────────
+async function enterApp(){
+  document.getElementById('auth-screen').style.display='none';
+  document.getElementById('pending-screen').style.display='none';
+  document.getElementById('main-app').style.display='block';
+  document.getElementById('month-label').textContent=monthLabel();
+  await loadData();
+}
+
+async function loadData(){
+  document.getElementById('sync-text').textContent='загрузка...';
+  const m=monthKey();
+  const lastDay=new Date(new Date().getFullYear(),new Date().getMonth()+1,0).getDate();
+  const {data}=await sb.from('trainer_shifts').select('*').eq('trainer_id',currentUser.id).gte('date',m+'-01').lte('date',m+'-'+lastDay).order('date',{ascending:false});
+  myShifts=data||[];
+  document.getElementById('sync-text').textContent='обновлено ✓';
+  renderDashboard();
+  renderShifts();
+  renderProfile();
+}
+
+// ── DASHBOARD ──────────────────────────────────────
+function renderDashboard(){
+  const total=myShifts.length;
+  const trainings=myShifts.reduce((a,s)=>a+(+s.trainings_done||0),0);
+  const newClients=myShifts.reduce((a,s)=>a+(+s.new_clients||0),0);
+  const bought=myShifts.reduce((a,s)=>a+(+s.clients_bought||0),0);
+  const sales=myShifts.reduce((a,s)=>a+(+s.sales_amount||0),0);
+  const cv=newClients>0?Math.round(bought/newClients*100):0;
+
+  document.getElementById('dashboard-content').innerHTML=`
+    <div class="card">
+      <div class="subsection-title" style="margin-bottom:12px">${monthLabel()} — сводка</div>
+      <div class="grid2" style="margin-bottom:12px">
+        <div class="metric"><div class="metric-label">Смен</div><div class="metric-val">${total}</div></div>
+        <div class="metric"><div class="metric-label">Тренировок</div><div class="metric-val">${trainings}</div></div>
+      </div>
+      <div class="grid3" style="margin-bottom:12px">
+        <div class="metric"><div class="metric-label">Новых клиентов</div><div class="metric-val">${newClients}</div></div>
+        <div class="metric"><div class="metric-label">Купили</div><div class="metric-val">${bought}</div></div>
+        <div class="metric"><div class="metric-label">Конверсия</div><div class="metric-val">${cv}%</div></div>
+      </div>
+      <div class="metric"><div class="metric-label">Сумма продаж</div><div class="metric-val" style="font-size:26px;color:var(--teal-text)">${fmt(sales)} ₽</div></div>
+    </div>
+    ${total===0?`<div style="text-align:center;padding:2rem;color:var(--text3)"><div style="font-size:36px;margin-bottom:8px">📋</div><div>Сдайте первый отчёт<br>нажав кнопку выше</div></div>`:''}
+  `;
+}
+
+// ── SHIFTS ─────────────────────────────────────────
+function renderShifts(){
+  if(!myShifts.length){
+    document.getElementById('shifts-content').innerHTML=`<div style="text-align:center;padding:3rem;color:var(--text3)"><div style="font-size:36px;margin-bottom:8px">📅</div><div>Смен пока нет</div></div>`;
+    return;
+  }
+  document.getElementById('shifts-content').innerHTML=myShifts.map(s=>{
+    const studioLabel=s.studio==='Империал'?'pill-imp':'pill-mec';
+    const cv=s.new_clients>0?Math.round(s.clients_bought/s.new_clients*100):0;
+    return`<div class="shift-row">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+        <div>
+          <div class="shift-date">${formatDate(s.date)}</div>
+          <div class="shift-meta">${s.time_start||'—'} — ${s.time_end||'—'}</div>
+        </div>
+        <span class="${studioLabel}">${s.studio==='Империал'?'ТЦ Империал':'ТЦ Мечта'}</span>
+      </div>
+      <div class="history-row"><span style="color:var(--text3)">Тренировок всего / проведено / нулевых</span><span style="font-weight:600">${s.trainings_total||0} / ${s.trainings_done||0} / ${s.trainings_zero||0}</span></div>
+      <div class="history-row"><span style="color:var(--text3)">Новых клиентов</span><span style="font-weight:600">${s.new_clients||0}</span></div>
+      <div class="history-row"><span style="color:var(--text3)">Купили абонемент</span><span style="font-weight:600">${s.clients_bought||0}</span></div>
+      <div class="history-row"><span style="color:var(--text3)">Конверсия</span><span style="font-weight:600">${cv}%</span></div>
+      <div class="history-row"><span style="color:var(--text3)">Сумма продаж</span><span style="font-weight:600;color:var(--teal-text)">${fmt(s.sales_amount||0)} ₽</span></div>
+    </div>`;
+  }).join('');
+}
+
+// ── PROFILE ────────────────────────────────────────
+function renderProfile(){
+  const name=currentUser.name;
+  const trainings=myShifts.reduce((a,s)=>a+(+s.trainings_done||0),0);
+  const newClients=myShifts.reduce((a,s)=>a+(+s.new_clients||0),0);
+  const bought=myShifts.reduce((a,s)=>a+(+s.clients_bought||0),0);
+  const sales=myShifts.reduce((a,s)=>a+(+s.sales_amount||0),0);
+  // Salary: base per shift + % from sales (example scheme - configure as needed)
+  const BASE_PER_SHIFT=1500;
+  const SALES_PCT=0.05;
+  const salary=myShifts.length*BASE_PER_SHIFT+Math.round(sales*SALES_PCT);
+
+  document.getElementById('profile-content').innerHTML=`
+    <div class="card" style="text-align:center">
+      <div class="profile-avatar">${name[0]}</div>
+      <div style="font-size:18px;font-weight:700;margin-bottom:4px">${name}</div>
+      <div style="font-size:13px;color:var(--text3);margin-bottom:16px">Тренер</div>
+      <button class="btn btn-sm btn-danger" id="logout-btn">Выйти</button>
+    </div>
+
+    <div class="salary-box">
+      <div style="font-size:12px;color:var(--teal-text);margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em">Зарплата за ${monthLabel()}</div>
+      <div class="salary-total">${fmt(salary)} ₽</div>
+      <div style="margin-top:12px;display:flex;flex-direction:column;gap:6px">
+        <div class="history-row"><span style="font-size:13px;color:var(--text2)">Оклад (${myShifts.length} смен × ${fmt(BASE_PER_SHIFT)} ₽)</span><span style="font-weight:600">${fmt(myShifts.length*BASE_PER_SHIFT)} ₽</span></div>
+        <div class="history-row"><span style="font-size:13px;color:var(--text2)">% с продаж (${Math.round(SALES_PCT*100)}%)</span><span style="font-weight:600">${fmt(sales*SALES_PCT)} ₽</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="subsection-title">Показатели месяца</div>
+      <div class="history-row"><span style="color:var(--text3)">Смен</span><span style="font-weight:600">${myShifts.length}</span></div>
+      <div class="history-row"><span style="color:var(--text3)">Тренировок проведено</span><span style="font-weight:600">${trainings}</span></div>
+      <div class="history-row"><span style="color:var(--text3)">Новых клиентов</span><span style="font-weight:600">${newClients}</span></div>
+      <div class="history-row"><span style="color:var(--text3)">Купили абонемент</span><span style="font-weight:600">${bought}</span></div>
+      <div class="history-row"><span style="color:var(--text3)">Сумма продаж</span><span style="font-weight:600;color:var(--teal-text)">${fmt(sales)} ₽</span></div>
+    </div>
+  `;
+
+  const lb=document.getElementById('logout-btn');
+  if(lb)lb.addEventListener('click',doLogout);
+}
+
+// ── REPORT MODAL ───────────────────────────────────
+function openReport(){
+  document.getElementById('r-date').value=today();
+  document.getElementById('r-total').value=0;
+  document.getElementById('r-done').value=0;
+  document.getElementById('r-zero').value=0;
+  document.getElementById('r-new-clients').value=0;
+  document.getElementById('r-bought').value=0;
+  document.getElementById('r-sales').value=0;
+  document.getElementById('report-err').style.display='none';
+  document.getElementById('report-modal').style.display='flex';
+  lockScroll();
+}
+
+function calcZero(){
+  const total=+document.getElementById('r-total').value||0;
+  const done=+document.getElementById('r-done').value||0;
+  document.getElementById('r-zero').value=Math.max(0,total-done);
+}
+
+async function saveReport(){
+  const btn=document.getElementById('save-report-btn');
+  btn.disabled=true;btn.textContent='Сохранение...';
+  const total=+document.getElementById('r-total').value||0;
+  const done=+document.getElementById('r-done').value||0;
+  const {error}=await sb.from('trainer_shifts').insert({
+    trainer_id:currentUser.id,
+    trainer_name:currentUser.name,
+    date:document.getElementById('r-date').value,
+    studio:document.getElementById('r-studio').value,
+    time_start:document.getElementById('r-start').value||null,
+    time_end:document.getElementById('r-end').value||null,
+    trainings_total:total,
+    trainings_done:done,
+    trainings_zero:Math.max(0,total-done),
+    new_clients:+document.getElementById('r-new-clients').value||0,
+    clients_bought:+document.getElementById('r-bought').value||0,
+    sales_amount:+document.getElementById('r-sales').value||0,
+  });
+  btn.disabled=false;btn.textContent='✓ Отправить отчёт';
+  if(error){const el=document.getElementById('report-err');el.textContent='Ошибка: '+error.message;el.style.display='block';return;}
+  document.getElementById('report-modal').style.display='none';
+  unlockScroll();
+  await loadData();
+}
+
+// ── TABS ───────────────────────────────────────────
+function switchTab(t){
+  ['dashboard','shifts','profile'].forEach(id=>{
+    document.getElementById('tab-'+id).classList.toggle('active',id===t);
+    document.getElementById('sec-'+id).classList.toggle('active',id===t);
+  });
+}
+
+// ── INIT ───────────────────────────────────────────
+document.addEventListener('DOMContentLoaded',()=>{
+  function runSafe(label,fn){try{fn();}catch(e){console.error('Init: '+label,e);}}
+
+  runSafe('pads',()=>{
+    buildPad('login-pad','login');
+    buildPad('reg-pad','reg');
+    buildPad('reg-pad2','reg2');
+  });
+
+  runSafe('auth tabs',()=>{
+    document.getElementById('tab-login-btn').addEventListener('click',()=>showAuthTab('login'));
+    document.getElementById('tab-reg-btn').addEventListener('click',()=>showAuthTab('reg'));
+  });
+
+  runSafe('auth actions',()=>{
+    document.getElementById('do-login-btn').addEventListener('click',doLogin);
+    document.getElementById('do-reg-btn').addEventListener('click',doRegister);
+    document.getElementById('reg-next-btn').addEventListener('click',()=>{
+      const f=document.getElementById('reg-first').value.trim();
+      const l=document.getElementById('reg-last').value.trim();
+      if(!f||!l){showAuthErr('reg-err','Введите имя и фамилию');return;}
+      if(regPin.length<4){showAuthErr('reg-err','Введите 4 цифры');return;}
+      document.getElementById('reg-step1').style.display='none';
+      document.getElementById('reg-step2').style.display='block';
+      regPin2='';updateDots('reg2');
+    });
+    document.getElementById('reg-back-btn').addEventListener('click',()=>{
+      document.getElementById('reg-step2').style.display='none';
+      document.getElementById('reg-step1').style.display='block';
+    });
+    document.getElementById('back-to-login-btn').addEventListener('click',()=>{
+      document.getElementById('pending-screen').style.display='none';
+      document.getElementById('auth-screen').style.display='flex';
+    });
+  });
+
+  runSafe('main tabs',()=>{
+    document.getElementById('tab-dashboard').addEventListener('click',()=>switchTab('dashboard'));
+    document.getElementById('tab-shifts').addEventListener('click',()=>switchTab('shifts'));
+    document.getElementById('tab-profile').addEventListener('click',()=>switchTab('profile'));
+  });
+
+  runSafe('report modal',()=>{
+    document.getElementById('btn-report').addEventListener('click',openReport);
+    document.getElementById('close-report-modal').addEventListener('click',()=>{document.getElementById('report-modal').style.display='none';unlockScroll();});
+    document.getElementById('cancel-report-btn').addEventListener('click',()=>{document.getElementById('report-modal').style.display='none';unlockScroll();});
+    document.getElementById('save-report-btn').addEventListener('click',saveReport);
+    document.getElementById('r-total').addEventListener('input',calcZero);
+    document.getElementById('r-done').addEventListener('input',calcZero);
+  });
+
+  checkSession();
+});
+</script>
+</body>
+</html>
