@@ -1808,34 +1808,167 @@ async function renderTrainerTeam(){
 }
 
 async function renderTrainerMarathons(){
-  document.getElementById('trainers-marathons-content').innerHTML='<div class="card"><div style="color:var(--text3);font-size:13px;text-align:center;padding:2rem">🏆 Марафоны для тренеров — в разработке</div></div>';
+  const el=document.getElementById('trainers-marathons-content');
+  el.innerHTML='<div style="color:var(--text3);padding:1rem;text-align:center">Загрузка...</div>';
+  const {trainerList}=await trainerData();
+  const active=trainerList.filter(t=>t.active);
+  const {data:mData}=await sb.from('marathons').select('*').order('date_start',{ascending:false});
+  const trainerMarathons=(mData||[]).filter(m=>m.target_role==='trainer'||m.target_profile_id===null&&m.target_role==='trainer');
+  let html=`<div class="card">
+    <div class="section-title">🏆 Создать марафон для тренеров</div>
+    <div class="form-row"><label>Название</label><input type="text" id="tm-title" placeholder="Например: Рекорд по конверсии"></div>
+    <div class="form-row"><label>Описание</label><input type="text" id="tm-desc" placeholder="Необязательно"></div>
+    <div class="grid2">
+      <div class="form-row"><label>Дата старта</label><input type="date" id="tm-dstart" value="${today()}"></div>
+      <div class="form-row"><label>Дата завершения</label><input type="date" id="tm-dend"></div>
+    </div>
+    <div class="form-row"><label>Участник</label>
+      <select id="tm-target">
+        <option value="">— Все тренеры —</option>
+        ${active.map(t=>`<option value="${t.id}">${t.name}</option>`).join('')}
+      </select>
+    </div>
+    <div class="form-row"><label>Тип цели</label>
+      <select id="tm-ctype" onchange="onTrainerMarathonTypeChange()">
+        <option value="revenue">Сумма продаж, ₽</option>
+        <option value="trainings">Кол-во тренировок</option>
+        <option value="new_clients">Новые клиенты</option>
+        <option value="cv_buy">Конверсия: приход → покупка, %</option>
+      </select>
+    </div>
+    <div class="form-row"><label id="tm-cval-label">Цель (сумма, ₽)</label>
+      <input type="number" id="tm-cval" value="0" min="0" step="any">
+    </div>
+    <div class="form-row"><label>Бонус за выполнение, ₽</label><input type="number" id="tm-prize" value="5000" min="0"></div>
+    <div id="tm-marathon-err" class="alert alert-red" style="display:none;margin-top:8px"></div>
+    <button class="btn btn-primary btn-sm" onclick="saveTrainerMarathon()" style="margin-top:8px">🏆 Создать марафон</button>
+  </div>`;
+
+  if(trainerMarathons.length){
+    html+=`<div class="card"><div class="section-title">Активные и прошедшие марафоны тренеров</div>
+      ${trainerMarathons.map(m=>{
+        const isActive=m.active&&m.date_end>=today();
+        return`<div style="padding:10px 0;border-bottom:1px solid var(--border)">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">
+            <div><div style="font-weight:600">${m.title}</div>
+              <div style="font-size:12px;color:var(--text3)">${formatDate(m.date_start)} — ${formatDate(m.date_end)} · ${conditionLabel(m.condition_type,m.condition_value)} · бонус ${fmt(m.prize)} ₽</div>
+            </div>
+            <div style="display:flex;gap:6px;align-items:center">
+              ${isActive?'<span style="font-size:11px;background:var(--green-bg);color:var(--green-text);padding:2px 8px;border-radius:20px">Активен</span>':'<span style="font-size:11px;background:var(--bg2);color:var(--text3);padding:2px 8px;border-radius:20px">Завершён</span>'}
+              <button class="btn btn-sm btn-danger" onclick="deleteMarathon(${m.id})">🗑</button>
+            </div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }
+  el.innerHTML=html;
+}
+
+function onTrainerMarathonTypeChange(){
+  const t=document.getElementById('tm-ctype').value;
+  const labels={revenue:'Цель (сумма, ₽)',trainings:'Цель (кол-во тренировок)',new_clients:'Цель (новых клиентов)',cv_buy:'Цель конверсии, %'};
+  const lbl=document.getElementById('tm-cval-label');
+  if(lbl)lbl.textContent=labels[t]||'Цель';
+}
+
+async function saveTrainerMarathon(){
+  const title=document.getElementById('tm-title').value.trim();
+  const desc=document.getElementById('tm-desc').value.trim();
+  const dstart=document.getElementById('tm-dstart').value;
+  const dend=document.getElementById('tm-dend').value;
+  const target=document.getElementById('tm-target').value;
+  const ctype=document.getElementById('tm-ctype').value;
+  const cval=+document.getElementById('tm-cval').value||0;
+  const prize=+document.getElementById('tm-prize').value||0;
+  const err=document.getElementById('tm-marathon-err');
+  if(!title){err.textContent='Введите название';err.style.display='block';return;}
+  if(!dend){err.textContent='Укажите дату завершения';err.style.display='block';return;}
+  if(cval<=0){err.textContent='Укажите цель больше 0';err.style.display='block';return;}
+  const {error}=await sb.from('marathons').insert({
+    title,description:desc||null,
+    date_start:dstart,date_end:dend,
+    condition_type:ctype,condition_value:cval,
+    prize,active:true,
+    target_profile_id:target?+target:null,
+    target_role:'trainer'
+  });
+  if(error){err.textContent='Ошибка: '+error.message;err.style.display='block';return;}
+  err.style.display='none';
+  renderTrainerMarathons();
+}
+
+async function deleteMarathon(id){
+  if(!confirm('Удалить марафон?'))return;
+  await sb.from('marathons').delete().eq('id',id);
+  renderTrainerMarathons();
 }
 
 async function renderTrainerSalary(){
   const el=document.getElementById('trainers-salary-content');
-  el.innerHTML='<div style="color:var(--text3);padding:1rem;text-align:center">Загрузка...</div>';
-  const [{trainerList,shiftList},{data:motivData}]=await Promise.all([
-    trainerData(),
-    sb.from('trainer_motivation').select('*').order('effective_from',{ascending:false}).limit(1)
+  const now=new Date();
+  const defFrom=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-01';
+  const lastDay=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
+  const defTo=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(lastDay).padStart(2,'0');
+  el.innerHTML=`<div class="card">
+    <div class="section-title">💰 Зарплата тренеров</div>
+    <div class="grid2" style="margin-bottom:12px">
+      <div class="form-row"><label>С</label><input type="date" id="sal-from" value="${defFrom}"></div>
+      <div class="form-row"><label>По</label><input type="date" id="sal-to" value="${defTo}"></div>
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="calcTrainerSalary()">Рассчитать</button>
+  </div>
+  <div id="trainer-salary-result"></div>`;
+  calcTrainerSalary();
+}
+
+async function calcTrainerSalary(){
+  const fromEl=document.getElementById('sal-from');
+  const toEl=document.getElementById('sal-to');
+  if(!fromEl||!toEl)return;
+  const from=fromEl.value;
+  const to=toEl.value;
+  const res=document.getElementById('trainer-salary-result');
+  if(res)res.innerHTML='<div style="color:var(--text3);padding:1rem;text-align:center">Расчёт...</div>';
+  const [{data:tProfiles},{data:shiftData},{data:motivAll},{data:bonusData}]=await Promise.all([
+    sb.from('trainer_profiles').select('*').eq('active',true).order('created_at',{ascending:false}),
+    sb.from('trainer_shifts').select('*').gte('date',from).lte('date',to),
+    sb.from('trainer_motivation').select('*').order('effective_from',{ascending:false}),
+    sb.from('trainer_bonuses').select('*').gte('month',from.slice(0,7)).lte('month',to.slice(0,7))
   ]);
-  const active=trainerList.filter(t=>t.active);
-  const curMotiv=motivData&&motivData[0]?motivData[0]:null;
-  const BASE=curMotiv?+curMotiv.hourly_rate:null;
-  const PCT=curMotiv?+curMotiv.sales_pct/100:null;
-  if(!curMotiv){el.innerHTML='<div class="card"><div style="color:var(--amber-text);font-size:13px;text-align:center;padding:1.5rem">⚠ Схема мотивации не задана. Перейдите в раздел Мотивация и укажите ставку.</div></div>';return;}
-  el.innerHTML=`<div class="card"><div class="section-title">💰 Зарплата — ${monthLabel()}</div>
-    <div style="font-size:12px;color:var(--text3);margin-bottom:12px">Ставка ${fmt(BASE)} ₽/смена + ${curMotiv.sales_pct}% с продаж · с ${formatDate(curMotiv.effective_from)}</div>
-    ${active.length?active.map(t=>{
-      const ts=shiftList.filter(s=>s.trainer_id===t.id);
-      const sales=ts.reduce((a,s)=>a+(+s.sales_amount||0),0);
-      const salary=ts.length*BASE+Math.round(sales*PCT);
-      return`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
-        <div><div style="font-weight:600;margin-bottom:3px">${t.name}</div>
-        <div style="font-size:12px;color:var(--text3)">${ts.length} смен · продажи ${fmt(sales)} ₽</div></div>
-        <div style="font-size:18px;font-weight:700;color:var(--green-text)">${fmt(salary)} ₽</div>
-      </div>`;
-    }).join(''):`<div style="color:var(--text3);font-size:13px;text-align:center;padding:1rem">Нет активных тренеров</div>`}
-  </div>`;
+  const active=tProfiles||[];
+  const shifts=shiftData||[];
+  const bonuses=bonusData||[];
+  const motivByTrainer={};
+  (motivAll||[]).forEach(m=>{
+    const key=m.trainer_id?String(m.trainer_id):'global';
+    if(!motivByTrainer[key])motivByTrainer[key]=m;
+  });
+  if(!active.length){if(res)res.innerHTML='<div class="card" style="color:var(--text3);text-align:center;padding:1rem">Нет активных тренеров</div>';return;}
+  if(res)res.innerHTML=active.map(t=>{
+    const ts=shifts.filter(s=>s.trainer_id===t.id);
+    const sales=ts.reduce((a,s)=>a+(+s.sales_amount||0),0);
+    const m=motivByTrainer[String(t.id)]||motivByTrainer['global']||null;
+    const BASE=m?+m.hourly_rate:null;
+    const PCT=m?+m.sales_pct/100:null;
+    const trainerBonuses=bonuses.filter(b=>b.trainer_id===t.id);
+    const bonusTotal=trainerBonuses.reduce((a,b)=>a+(+b.amount||0),0);
+    const salary=BASE!==null?ts.length*BASE+Math.round(sales*PCT)+bonusTotal:null;
+    return`<div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+        <div style="font-weight:600;font-size:15px">${t.name}</div>
+        <div style="font-size:20px;font-weight:700;color:var(--green-text)">${salary!==null?fmt(salary)+' ₽':'—'}</div>
+      </div>
+      ${!m?'<div style="font-size:12px;color:var(--amber-text);margin-bottom:8px">⚠ Мотивация не задана</div>':''}
+      <div style="display:flex;flex-direction:column;gap:4px;font-size:13px">
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Смен за период</span><span>${ts.length}</span></div>
+        ${m?`<div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Оклад (${ts.length} × ${fmt(BASE)} ₽)</span><span>${fmt(ts.length*BASE)} ₽</span></div>`:''}
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Продажи</span><span>${fmt(sales)} ₽</span></div>
+        ${m?`<div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">% с продаж (${m.sales_pct}%)</span><span>${fmt(sales*PCT)} ₽</span></div>`:''}
+        ${bonusTotal>0?`<div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Бонусы</span><span style="color:var(--green-text)">${fmt(bonusTotal)} ₽</span></div>`:''}
+      </div>
+    </div>`;
+  }).join('');
 }
 
 async function renderTrainerMotivation(){
@@ -1843,24 +1976,50 @@ async function renderTrainerMotivation(){
   el.innerHTML='<div style="color:var(--text3);padding:1rem;text-align:center">Загрузка...</div>';
   const {trainerList}=await trainerData();
   const active=trainerList.filter(t=>t.active);
-  const {data:motivData}=await sb.from('trainer_motivation').select('*').order('effective_from',{ascending:false}).limit(1);
-  const curMotiv=motivData&&motivData[0]?motivData[0]:null;
+  const {data:motivAll}=await sb.from('trainer_motivation').select('*').order('effective_from',{ascending:false});
   const {data:bonusData}=await sb.from('trainer_bonuses').select('*').eq('month',monthKey()).order('created_at',{ascending:false});
   const bonuses=bonusData||[];
-  el.innerHTML=`<div class="card"><div class="section-title">⚡ Мотивация</div>
-    <div class="grid2" style="margin-bottom:12px">
-      <div class="metric"><div class="metric-label">Ставка (час)</div><div style="font-size:20px;font-weight:700">${curMotiv?fmt(curMotiv.hourly_rate)+' ₽':'—'}</div></div>
-      <div class="metric"><div class="metric-label">% с продаж</div><div style="font-size:20px;font-weight:700">${curMotiv?curMotiv.sales_pct+'%':'—'}</div></div>
+
+  // Build current scheme per trainer (latest record per trainer_id)
+  const motivByTrainer={};
+  (motivAll||[]).forEach(m=>{
+    const key=m.trainer_id||'global';
+    if(!motivByTrainer[key])motivByTrainer[key]=m;
+  });
+
+  let html=`<div class="card">
+    <div class="section-title">⚡ Текущая мотивация по тренерам</div>
+    ${active.length?`<table class="kpi-table" style="width:100%">
+      <thead><tr><th>Тренер</th><th>Ставка (час)</th><th>% с продаж</th><th>С даты</th></tr></thead>
+      <tbody>
+        ${active.map(t=>{
+          const m=motivByTrainer[t.id]||motivByTrainer['global']||null;
+          return`<tr>
+            <td style="font-weight:500">${t.name}</td>
+            <td>${m?fmt(m.hourly_rate)+' ₽':'—'}</td>
+            <td>${m?m.sales_pct+'%':'—'}</td>
+            <td>${m?formatDate(m.effective_from):'—'}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`:
+    '<div style="color:var(--text3);font-size:13px;text-align:center;padding:1rem">Нет активных тренеров</div>'}
+  </div>
+  <div class="card">
+    <div class="section-title">📝 Задать мотивацию</div>
+    <div class="form-row"><label>Тренер</label>
+      <select id="tm-trainer-sel" onchange="onMotivTrainerChange()">
+        <option value="">— выберите тренера —</option>
+        ${active.map(t=>`<option value="${t.id}">${t.name}</option>`).join('')}
+      </select>
     </div>
-    ${curMotiv?`<div style="font-size:12px;color:var(--text3);margin-bottom:12px">Действует с ${formatDate(curMotiv.effective_from)}</div>`:''}
-    <div class="divider"></div>
-    <div class="subsection-title">Обновить схему</div>
+    <div id="tm-current-info" style="display:none;background:var(--bg2);border-radius:var(--radius-sm);padding:8px 12px;font-size:12px;color:var(--text2);margin-bottom:8px"></div>
     <div class="grid2" style="margin-bottom:8px">
-      <div class="form-row"><label>Ставка (час), ₽</label><input type="number" id="tm-rate" value="${curMotiv?curMotiv.hourly_rate:0}" min="0"></div>
-      <div class="form-row"><label>% с продаж</label><input type="number" id="tm-pct" value="${curMotiv?curMotiv.sales_pct:5}" min="0" max="100" step="0.5"></div>
+      <div class="form-row"><label>Ставка (час), ₽</label><input type="number" id="tm-rate" value="0" min="0"></div>
+      <div class="form-row"><label>% с продаж</label><input type="number" id="tm-pct" value="5" min="0" max="100" step="0.5"></div>
     </div>
     <div class="form-row"><label>Действует с</label><input type="date" id="tm-from" value="${today()}"></div>
-    <button class="btn btn-primary btn-sm" onclick="saveTrainerMotivation()" style="margin-top:6px">💾 Сохранить схему</button>
+    <button class="btn btn-primary btn-sm" onclick="saveTrainerMotivation()" style="margin-top:6px">💾 Сохранить</button>
     <div id="tm-err" class="alert alert-red" style="display:none;margin-top:8px"></div>
   </div>
   <div class="card"><div class="section-title">💰 Начислить бонус</div>
@@ -1887,6 +2046,27 @@ async function renderTrainerMotivation(){
       </div>`).join('')}
     </div>`:''}
   </div>`;
+  el.innerHTML=html;
+  window._trainerMotivMap=motivByTrainer;
+}
+
+function onMotivTrainerChange(){
+  const sel=document.getElementById('tm-trainer-sel');
+  const id=sel.value;
+  const info=document.getElementById('tm-current-info');
+  if(!id){info.style.display='none';return;}
+  const m=window._trainerMotivMap&&(window._trainerMotivMap[id]||window._trainerMotivMap['global']);
+  if(m){
+    info.style.display='block';
+    info.textContent=`Текущая схема: ${fmt(m.hourly_rate)} ₽/час · ${m.sales_pct}% с продаж · с ${formatDate(m.effective_from)}`;
+    document.getElementById('tm-rate').value=m.hourly_rate;
+    document.getElementById('tm-pct').value=m.sales_pct;
+  } else {
+    info.style.display='block';
+    info.textContent='Мотивация ещё не задана';
+    document.getElementById('tm-rate').value=0;
+    document.getElementById('tm-pct').value=5;
+  }
 }
 
 function toggleTrainerSection(id){
@@ -1902,12 +2082,15 @@ async function saveTrainerMotivation(){
   const rate=+document.getElementById('tm-rate').value||0;
   const pct=+document.getElementById('tm-pct').value||0;
   const from=document.getElementById('tm-from').value;
+  const sel=document.getElementById('tm-trainer-sel');
+  const trainerId=sel&&sel.value?+sel.value:null;
   const el=document.getElementById('tm-err');
+  if(!trainerId){el.textContent='Выберите тренера';el.style.display='block';return;}
   if(!from){el.textContent='Укажите дату';el.style.display='block';return;}
-  const {error}=await sb.from('trainer_motivation').insert({hourly_rate:rate,sales_pct:pct,effective_from:from});
+  const {error}=await sb.from('trainer_motivation').insert({hourly_rate:rate,sales_pct:pct,effective_from:from,trainer_id:trainerId});
   if(error){el.textContent='Ошибка: '+error.message;el.style.display='block';return;}
   el.style.display='none';
-  renderTrainers();
+  renderTrainerMotivation();
 }
 
 async function saveTrainerBonus(){
