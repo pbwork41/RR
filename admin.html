@@ -148,6 +148,9 @@ textarea{resize:vertical;min-height:70px}
 
   <div class="layout">
   <div class="tabs">
+    <button class="tab" onclick="switchTab('schedule')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> <span>Расписание</span></button>
+    <button class="tab" onclick="switchTab('refunds')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg> <span>Возвраты аб.</span></button>
+    <div class="nav-divider"><div class="nav-divider-line"></div><span class="nav-divider-label">Аналитика</span><div class="nav-divider-line"></div></div>
     <button class="tab active" onclick="switchTab('overview')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg> <span>Сводка</span></button>
     <button class="tab" onclick="switchTab('mom')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg> <span>Динамика</span></button>
     <button class="tab" onclick="switchTab('studios')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h1"/><path d="M14 9h1"/><path d="M9 14h1"/><path d="M14 14h1"/><path d="M9 19v-5h6v5"/></svg> <span>Аналитика</span></button>
@@ -172,10 +175,6 @@ textarea{resize:vertical;min-height:70px}
       <div class="nav-divider-line"></div>
     </div>
 
-    <div class="nav-divider"><div class="nav-divider-line"></div><span class="nav-divider-label">Общее</span><div class="nav-divider-line"></div></div>
-    <button class="tab" onclick="switchTab('schedule')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> <span>Расписание</span></button>
-    <button class="tab" onclick="switchTab('refunds')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg> <span>Возвраты аб.</span></button>
-    <div class="nav-divider"><div class="nav-divider-line"></div><span class="nav-divider-label">Тренеры</span><div class="nav-divider-line"></div></div>
     <button class="tab" onclick="switchTab('trainers-team')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> <span>Команда</span></button>
     <button class="tab" onclick="switchTab('trainers-marathons')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 21h10"/><path d="M12 17v4"/><path d="M6 3H4v5a8 8 0 0 0 16 0V3h-2"/><path d="M6 3h12"/><path d="M4 8H2"/><path d="M22 8h-2"/></svg> <span>Марафоны</span></button>
     <button class="tab" onclick="switchTab('trainers-salary')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M14.8 9A2 2 0 0 0 13 8h-2a2 2 0 0 0 0 4h2a2 2 0 0 1 0 4h-2a2 2 0 0 1-1.8-1"/><path d="M12 7v1m0 8v1"/></svg> <span>Зарплата</span></button>
@@ -1824,7 +1823,7 @@ async function updateMotivation(id){
 }
 
 function switchTab(t){
-  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['overview','mom','studios','admins','marathons','reports','salary','plans','motivation','staff','schedule','refunds','trainers-team','trainers-marathons','trainers-salary','trainers-motivation'][i]===t));
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['schedule','refunds','overview','mom','studios','admins','marathons','reports','salary','plans','motivation','staff','trainers-team','trainers-marathons','trainers-salary','trainers-motivation'][i]===t));
   document.querySelectorAll('.section').forEach(el=>el.classList.remove('active'));
   document.getElementById('tab-'+t).classList.add('active');
   if(t==='reports')renderReports();
@@ -2387,7 +2386,7 @@ async function renderSchedule(){
   const daysInMonth=new Date(y,m+1,0).getDate();
   const [{data:sched},{data:profiles}]=await Promise.all([
     sb.from('schedule').select('*').gte('date',monthStr+'-01').lte('date',monthStr+'-'+daysInMonth).order('date'),
-    sb.from('profiles').select('id,name,studio').eq('active',true)
+    sb.from('profiles').select('id,name').eq('active',true)
   ]);
   scheduleAdmins=(profiles||[]).filter(p=>p.name);
   scheduleData={};
@@ -2566,7 +2565,7 @@ function openRefundModal(prefill){
   const pl=document.getElementById('rf-payments-list');if(pl){pl.innerHTML='';if(f.payment_schedule)f.payment_schedule.forEach(p=>addRefundPayment(p.date,p.amount));}
   document.getElementById('refund-modal').style.display='flex';calcRefund();
 }
-async function openRefundEdit(id){const{data:r}=await sb.from('refunds').select('*').eq('id',id).single();if(!r)return;editingRefundId=id;openRefundModal(r);document.getElementById('rf-modal-title').textContent='Редактировать возврат';const db=document.getElementById('rf-delete-btn');if(db)db.style.display='block';}
+async function openRefundEdit(id){const{data:r}=await sb.from('refunds').select('*').eq('id',id).single();if(!r)return;openRefundModal(r);editingRefundId=id;document.getElementById('rf-modal-title').textContent='Редактировать возврат';const db=document.getElementById('rf-delete-btn');if(db)db.style.display='block';}
 function onRefundPaymentTypeChange(){const t=document.getElementById('rf-payment-type').value;const b=document.getElementById('rf-installment-block');if(b){b.style.display=t==='installment'?'block':'none';if(t==='installment'&&document.getElementById('rf-payments-list').children.length===0){addRefundPayment('','');addRefundPayment('','');}}}
 function addRefundPayment(date,amount){const list=document.getElementById('rf-payments-list');if(!list)return;const id='rp-'+(++paymentCount);const row=document.createElement('div');row.className='grid2';row.style.cssText='margin-bottom:6px;align-items:center';row.id=id;row.innerHTML=`<div class="form-row" style="margin:0"><input type="date" id="${id}-date" value="${date||''}"></div><div style="display:flex;gap:4px;align-items:center"><div class="form-row" style="margin:0;flex:1"><input type="number" id="${id}-amount" value="${amount||''}" placeholder="Сумма ₽"></div><button class="btn btn-sm btn-danger" onclick="document.getElementById('${id}').remove()" style="padding:4px 8px">✕</button></div>`;list.appendChild(row);}
 function getPaymentSchedule(){const list=document.getElementById('rf-payments-list');const result=[];if(list)list.querySelectorAll('[id^="rp-"]').forEach(row=>{const id=row.id;const date=document.getElementById(id+'-date')?.value;const amount=+document.getElementById(id+'-amount')?.value||0;if(date||amount)result.push({date,amount});});return result;}
