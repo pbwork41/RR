@@ -24,6 +24,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;ba
 .topbar-title{font-size:17px;font-weight:600}
 .topbar-sub{font-size:12px;opacity:.8;margin-top:2px}
 .layout{display:grid;grid-template-columns:200px 1fr;gap:1rem;align-items:start}
+.nav-divider{display:flex;align-items:center;gap:6px;padding:6px 4px 2px}
+.nav-divider-line{flex:1;height:0.5px;background:var(--border)}
+.nav-divider-label{font-size:9px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;white-space:nowrap}
 .tabs{display:flex;flex-direction:column;gap:4px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:8px;position:sticky;top:1rem}
 .nav-divider{display:flex;align-items:center;gap:6px;padding:6px 4px 2px}
 .nav-divider-line{flex:1;height:0.5px;background:var(--border)}
@@ -35,6 +38,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;ba
 .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -4px;padding:0 4px}
 @media(max-width:860px){
   .layout{display:block}
+  .nav-divider{display:none}
   .tabs{flex-direction:row;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;position:static;margin-bottom:1rem;padding:4px}
   .nav-divider{display:none}
   .tabs::-webkit-scrollbar{display:none}
@@ -168,6 +172,10 @@ textarea{resize:vertical;min-height:70px}
       <div class="nav-divider-line"></div>
     </div>
 
+    <div class="nav-divider"><div class="nav-divider-line"></div><span class="nav-divider-label">Общее</span><div class="nav-divider-line"></div></div>
+    <button class="tab" onclick="switchTab('schedule')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> <span>Расписание</span></button>
+    <button class="tab" onclick="switchTab('refunds')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg> <span>Возвраты аб.</span></button>
+    <div class="nav-divider"><div class="nav-divider-line"></div><span class="nav-divider-label">Тренеры</span><div class="nav-divider-line"></div></div>
     <button class="tab" onclick="switchTab('trainers-team')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> <span>Команда</span></button>
     <button class="tab" onclick="switchTab('trainers-marathons')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 21h10"/><path d="M12 17v4"/><path d="M6 3H4v5a8 8 0 0 0 16 0V3h-2"/><path d="M6 3h12"/><path d="M4 8H2"/><path d="M22 8h-2"/></svg> <span>Марафоны</span></button>
     <button class="tab" onclick="switchTab('trainers-salary')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M14.8 9A2 2 0 0 0 13 8h-2a2 2 0 0 0 0 4h2a2 2 0 0 1 0 4h-2a2 2 0 0 1-1.8-1"/><path d="M12 7v1m0 8v1"/></svg> <span>Зарплата</span></button>
@@ -185,6 +193,8 @@ textarea{resize:vertical;min-height:70px}
   <div id="tab-plans" class="section"><div id="plans-content"></div></div>
   <div id="tab-salary" class="section"><div id="salary-content"></div></div>
   <div id="tab-motivation" class="section"><div id="motivation-content"></div></div>
+  <div id="tab-schedule" class="section"><div id="schedule-content"></div></div>
+  <div id="tab-refunds" class="section"><div id="refunds-content"></div></div>
   <div id="tab-trainers-team" class="section"><div id="trainers-team-content"></div></div>
   <div id="tab-trainers-marathons" class="section"><div id="trainers-marathons-content"></div></div>
   <div id="tab-trainers-salary" class="section"><div id="trainers-salary-content"></div></div>
@@ -420,6 +430,86 @@ textarea{resize:vertical;min-height:70px}
   </div>
 </div>
 </div>
+
+<!-- SCHEDULE MODAL -->
+<div id="schedule-modal" style="display:none" class="modal-bg">
+<div class="modal">
+  <div class="modal-header">
+    <div class="modal-title">Назначить на период</div>
+    <button class="btn btn-sm" onclick="closeScheduleModal()">✕</button>
+  </div>
+  <div class="form-row"><label>Администратор</label><select id="sch-admin"><option value="">— выберите —</option></select></div>
+  <div class="form-row"><label>Студия</label><select id="sch-studio"><option value="Империал">Империал</option><option value="Мечта">Мечта</option></select></div>
+  <div class="grid2">
+    <div class="form-row"><label>С даты</label><input type="date" id="sch-from"></div>
+    <div class="form-row"><label>По дату</label><input type="date" id="sch-to"></div>
+  </div>
+  <div id="sch-err" class="alert alert-red" style="display:none"></div>
+  <div style="display:flex;gap:8px;margin-top:1rem">
+    <button class="btn btn-block" onclick="closeScheduleModal()">Отмена</button>
+    <button class="btn btn-primary btn-block" onclick="saveScheduleEntry()">✓ Назначить</button>
+  </div>
+</div>
+</div>
+
+<!-- REFUND MODAL -->
+<div id="refund-modal" style="display:none" class="modal-bg">
+<div class="modal">
+  <div class="modal-header">
+    <div class="modal-title" id="rf-modal-title">Новый возврат</div>
+    <button class="btn btn-sm" onclick="document.getElementById('refund-modal').style.display='none'">✕</button>
+  </div>
+  <div class="subsection-title">Клиент</div>
+  <div class="form-row"><label>ФИО</label><input type="text" id="rf-name" placeholder="Иванова Мария Сергеевна"></div>
+  <div class="grid2">
+    <div class="form-row"><label>Телефон</label><input type="tel" id="rf-phone" placeholder="+7 924 ..."></div>
+    <div class="form-row"><label>Студия</label><select id="rf-studio"><option value="Империал">Империал</option><option value="Мечта">Мечта</option></select></div>
+  </div>
+  <div class="divider"></div>
+  <div class="subsection-title">Абонемент</div>
+  <div class="form-row"><label>Какой абонемент?</label><input type="text" id="rf-membership" placeholder="Лёгкий старт, 36 занятий"></div>
+  <div class="grid2">
+    <div class="form-row"><label>Цена покупки, ₽</label><input type="number" id="rf-price" placeholder="0" oninput="calcRefund()"></div>
+    <div class="form-row"><label>Всего занятий</label><input type="number" id="rf-total" placeholder="0" oninput="calcRefund()"></div>
+  </div>
+  <div class="grid2">
+    <div class="form-row"><label>Осталось занятий</label><input type="number" id="rf-remaining" placeholder="0" oninput="calcRefund()"></div>
+    <div class="form-row"><label>Штраф, ₽</label><input type="number" id="rf-penalty" placeholder="0" oninput="calcRefund()"></div>
+  </div>
+  <div class="form-row"><label>К возврату, ₽</label><input type="number" id="rf-refund" placeholder="0" style="font-weight:600;color:var(--green-text)"></div>
+  <div style="font-size:11px;color:var(--text3);margin-bottom:10px">(цена / кол-во занятий) × остаток − штраф</div>
+  <div class="divider"></div>
+  <div class="form-row"><label>Причина возврата</label>
+    <select id="rf-reason"><option value="">— выберите —</option><option>Переезд</option><option>Травма / болезнь</option><option>Финансовые трудности</option><option>Не нравится</option><option>Беременность</option><option>Другое</option></select>
+  </div>
+  <div class="form-row"><label>Комментарий</label><input type="text" id="rf-comment" placeholder="Необязательно"></div>
+  <div class="divider"></div>
+  <div class="subsection-title">Условия выплаты</div>
+  <div class="form-row">
+    <select id="rf-payment-type" onchange="onRefundPaymentTypeChange()">
+      <option value="full">Единоразовая выплата (полная)</option>
+      <option value="installment">Разбивка платежа</option>
+    </select>
+  </div>
+  <div id="rf-installment-block" style="display:none;margin-top:6px">
+    <div id="rf-payments-list"></div>
+    <button class="btn btn-sm" onclick="addRefundPayment('','')" style="margin-top:4px">+ Добавить платёж</button>
+  </div>
+  <div class="divider"></div>
+  <div class="subsection-title">Заявление</div>
+  <div class="form-row"><label>Фото заявления (JPG, PNG, PDF)</label><input type="file" id="rf-file" accept="image/*,application/pdf" style="font-size:13px;padding:6px"></div>
+  <div id="rf-file-current" style="display:none;font-size:12px;color:var(--blue-text);margin-top:4px"></div>
+  <div id="rf-err" class="alert alert-red" style="display:none"></div>
+  <div style="display:flex;justify-content:space-between;margin-top:1rem">
+    <button class="btn btn-sm btn-danger" id="rf-delete-btn" style="display:none" onclick="deleteRefund()">🗑 Удалить</button>
+    <div style="display:flex;gap:8px;margin-left:auto">
+      <button class="btn" onclick="document.getElementById('refund-modal').style.display='none'">Отмена</button>
+      <button class="btn btn-primary" onclick="saveRefund()">✓ Сохранить</button>
+    </div>
+  </div>
+</div>
+</div>
+
 
 <script>
 const PIN='8387';
@@ -1734,13 +1824,15 @@ async function updateMotivation(id){
 }
 
 function switchTab(t){
-  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['overview','mom','studios','admins','marathons','reports','salary','plans','motivation','staff','trainers-team','trainers-marathons','trainers-salary','trainers-motivation'][i]===t));
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['overview','mom','studios','admins','marathons','reports','salary','plans','motivation','staff','schedule','refunds','trainers-team','trainers-marathons','trainers-salary','trainers-motivation'][i]===t));
   document.querySelectorAll('.section').forEach(el=>el.classList.remove('active'));
   document.getElementById('tab-'+t).classList.add('active');
   if(t==='reports')renderReports();
   if(t==='staff')renderStaff();
   if(t==='salary')renderSalary();
   if(t==='motivation')renderMotivation();
+  if(t==='schedule')renderSchedule();
+  if(t==='refunds')renderRefunds();
   if(t==='trainers-team')renderTrainerTeam();
   if(t==='trainers-marathons')renderTrainerMarathons();
   if(t==='trainers-salary')renderTrainerSalary();
@@ -2280,6 +2372,221 @@ document.getElementById('aet-done').addEventListener('input',()=>{
 });
 
 document.getElementById('pin-field').focus();
+
+// ===== РАСПИСАНИЕ =====
+let scheduleData={};
+let scheduleAdmins=[];
+let schedulePendingChanges={};  // {date: {name, studio} | null}  null = удалить
+let scheduleCurrentStudio='Империал';
+
+async function renderSchedule(){
+  const el=document.getElementById('schedule-content');
+  el.innerHTML='<div style="color:var(--text3);padding:1rem;text-align:center">Загрузка...</div>';
+  const now=new Date();const y=now.getFullYear(),m=now.getMonth();
+  const monthStr=y+'-'+String(m+1).padStart(2,'0');
+  const daysInMonth=new Date(y,m+1,0).getDate();
+  const [{data:sched},{data:profiles}]=await Promise.all([
+    sb.from('schedule').select('*').gte('date',monthStr+'-01').lte('date',monthStr+'-'+daysInMonth).order('date'),
+    sb.from('profiles').select('id,name,studio').eq('active',true)
+  ]);
+  scheduleAdmins=(profiles||[]).filter(p=>p.name);
+  scheduleData={};
+  schedulePendingChanges={};
+  (sched||[]).forEach(s=>{
+    if(!scheduleData[s.date])scheduleData[s.date]=[];
+    scheduleData[s.date].push({name:s.admin_name,studio:s.studio});
+  });
+  renderScheduleGrid(y,m,daysInMonth,monthStr);
+}
+
+function renderScheduleGrid(y,m,daysInMonth,monthStr){
+  const el=document.getElementById('schedule-content');
+  const now=new Date();
+  if(!monthStr)monthStr=y+'-'+String(m+1).padStart(2,'0');
+  if(!daysInMonth)daysInMonth=new Date(y,m+1,0).getDate();
+  const firstDow=new Date(y,m,1).getDay();
+  const offset=firstDow===0?6:firstDow-1;
+  const totalCells=Math.ceil((offset+daysInMonth)/7)*7;
+  const dayNames=['пн','вт','ср','чт','пт','сб','вс'];
+  const studio=scheduleCurrentStudio;
+
+  // Merge: base data + pending changes
+  const merged={};
+  Object.entries(scheduleData).forEach(([date,list])=>{
+    const entry=list.find(x=>x.studio===studio);
+    if(entry)merged[date]=entry.name;
+  });
+  Object.entries(schedulePendingChanges).forEach(([date,val])=>{
+    if(val===null)delete merged[date];
+    else merged[date]=val.name;
+  });
+
+  // Count pending
+  const pendingCount=Object.keys(schedulePendingChanges).length;
+
+  let calHtml=`<div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border-bottom:0.5px solid var(--border)">
+    ${dayNames.map(d=>`<div style="font-size:11px;color:var(--text3);text-align:center;padding:6px 2px;background:var(--bg2)">${d}</div>`).join('')}
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr))">
+  ${Array.from({length:totalCells},(_,i)=>{
+    const day=i-offset+1;
+    if(day<1||day>daysInMonth)return'<div style="min-height:52px;border-right:0.5px solid var(--border);border-bottom:0.5px solid var(--border);background:var(--bg3)"></div>';
+    const ds=monthStr+'-'+String(day).padStart(2,'0');
+    const assignedName=merged[ds]||null;
+    const isPending=ds in schedulePendingChanges;
+    const isToday=ds===(now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0'));
+    const bgColor=assignedName?(studio==='Империал'?'#E6F1FB':'#E1F5EE'):(isToday?'var(--blue-bg)':'transparent');
+    const textColor=assignedName?(studio==='Империал'?'#0C447C':'#085041'):'var(--text3)';
+    const borderColor=isPending?'2px solid var(--amber)':'0.5px solid var(--border)';
+    return`<div onclick="openSchDayPicker('${ds}','${monthStr}')" style="min-height:52px;padding:4px;border-right:0.5px solid var(--border);border-bottom:0.5px solid var(--border);cursor:pointer;background:${bgColor};box-sizing:border-box;${isPending?'outline:2px solid var(--amber);outline-offset:-2px;':''}">
+      <div style="font-size:10px;font-weight:500;color:${isToday?'var(--blue-text)':assignedName?textColor:'var(--text2)'};margin-bottom:2px">${day}</div>
+      ${assignedName?`<div style="font-size:9px;font-weight:600;color:${textColor};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.3">${assignedName.split(' ')[0]}</div><div style="font-size:9px;color:${textColor};opacity:.8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${assignedName.split(' ')[1]||''}</div>`:`<div style="font-size:9px;color:var(--text3);margin-top:4px">+</div>`}
+    </div>`;
+  }).join('')}
+  </div>`;
+
+  el.innerHTML=`<div class="card" style="padding:0;overflow:hidden">
+    <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+      <div style="font-size:15px;font-weight:600">${now.toLocaleString('ru-RU',{month:'long',year:'numeric'})}</div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <button onclick="scheduleCurrentStudio='Империал';renderSchedule()" style="padding:6px 14px;border-radius:var(--radius-sm);border:1px solid ${studio==='Империал'?'#185FA5':'var(--border)'};background:${studio==='Империал'?'#185FA5':'transparent'};color:${studio==='Империал'?'#fff':'var(--text2)'};font-size:13px;cursor:pointer;font-family:inherit">Империал</button>
+        <button onclick="scheduleCurrentStudio='Мечта';renderSchedule()" style="padding:6px 14px;border-radius:var(--radius-sm);border:1px solid ${studio==='Мечта'?'#0F6E56':'var(--border)'};background:${studio==='Мечта'?'#0F6E56':'transparent'};color:${studio==='Мечта'?'#fff':'var(--text2)'};font-size:13px;cursor:pointer;font-family:inherit">Мечта</button>
+      </div>
+    </div>
+    <div style="padding:8px 16px;background:var(--bg2);border-bottom:1px solid var(--border);font-size:12px;color:var(--text3)">
+      Нажмите на день чтобы назначить администратора · желтая рамка = несохранённые изменения
+    </div>
+    <div style="overflow-x:auto">${calHtml}</div>
+    ${pendingCount>0?`<div style="padding:10px 16px;background:var(--amber-bg);border-top:1px solid var(--amber);display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:12px;color:var(--amber-text)">⚠ Несохранённых изменений: ${pendingCount}</span>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-sm" onclick="schedulePendingChanges={};renderSchedule()">Отменить</button>
+        <button class="btn btn-primary btn-sm" onclick="saveSchedule()">💾 Сохранить</button>
+      </div>
+    </div>`:'<div style="padding:8px 16px;border-top:1px solid var(--border);display:flex;justify-content:flex-end"><button class="btn btn-primary btn-sm" onclick="saveSchedule()" style="opacity:.4" disabled>💾 Сохранить</button></div>'}
+  </div>
+  <div id="sch-picker" style="display:none;position:fixed;z-index:9999;background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius);padding:12px;min-width:220px;max-width:260px;box-shadow:0 4px 20px rgba(0,0,0,.15)"></div>`;
+}
+
+function openSchDayPicker(date,monthStr){
+  const picker=document.getElementById('sch-picker');
+  if(!picker)return;
+  const studio=scheduleCurrentStudio;
+  const current=(schedulePendingChanges[date]!==undefined?
+    (schedulePendingChanges[date]?.name||null):
+    (scheduleData[date]||[]).find(x=>x.studio===studio)?.name||null);
+  picker.style.display='block';
+  // Position near center of screen
+  picker.style.top='30%';picker.style.left='50%';picker.style.transform='translateX(-50%)';
+  picker.innerHTML=`<div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:10px;display:flex;justify-content:space-between;align-items:center">
+    <span>${formatDate(date)} · ${studio}</span>
+    <button onclick="document.getElementById('sch-picker').style.display='none'" style="background:none;border:none;font-size:16px;cursor:pointer;color:var(--text3)">✕</button>
+  </div>
+  ${current?`<div style="margin-bottom:8px;padding:6px 10px;background:${studio==='Империал'?'#E6F1FB':'#E1F5EE'};border-radius:6px;font-size:13px;color:${studio==='Империал'?'#0C447C':'#085041'}">
+    Сейчас: <b>${current}</b>
+    <button onclick="setSchDay('${date}',null);document.getElementById('sch-picker').style.display='none'" style="float:right;background:none;border:none;cursor:pointer;color:var(--red-text);font-size:12px">Убрать</button>
+  </div>`:'<div style="font-size:12px;color:var(--text3);margin-bottom:8px">Не назначено</div>'}
+  <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Назначить</div>
+  ${scheduleAdmins.map(a=>`<div onclick="setSchDay('${date}','${a.name}');document.getElementById('sch-picker').style.display='none'" style="padding:8px 10px;border-radius:6px;cursor:pointer;margin-bottom:4px;background:var(--bg2);font-size:13px;${a.name===current?'border:1px solid var(--border2);':''}">${a.name}</div>`).join('')}`;
+  // Close on outside click
+  setTimeout(()=>{
+    const hide=(e)=>{if(!picker.contains(e.target)){picker.style.display='none';document.removeEventListener('click',hide);}};
+    document.addEventListener('click',hide);
+  },50);
+}
+
+function setSchDay(date,adminName){
+  const studio=scheduleCurrentStudio;
+  const current=(scheduleData[date]||[]).find(x=>x.studio===studio)?.name||null;
+  if(adminName===null){
+    if(current===null)delete schedulePendingChanges[date];
+    else schedulePendingChanges[date]=null;
+  } else {
+    if(adminName===current)delete schedulePendingChanges[date];
+    else schedulePendingChanges[date]={name:adminName,studio};
+  }
+  // Re-render grid without full reload
+  const now=new Date();const y=now.getFullYear(),m=now.getMonth();
+  const monthStr=y+'-'+String(m+1).padStart(2,'0');
+  const daysInMonth=new Date(y,m+1,0).getDate();
+  renderScheduleGrid(y,m,daysInMonth,monthStr);
+}
+
+async function saveSchedule(){
+  const studio=scheduleCurrentStudio;
+  const toDelete=Object.entries(schedulePendingChanges).filter(([,v])=>v===null).map(([d])=>d);
+  const toUpsert=Object.entries(schedulePendingChanges).filter(([,v])=>v!==null).map(([d,v])=>({admin_name:v.name,studio:v.studio,date:d,created_by:'admin'}));
+  let hasError=false;
+  if(toDelete.length){
+    for(const date of toDelete){
+      const {error}=await sb.from('schedule').delete().eq('date',date).eq('studio',studio);
+      if(error){alert('Ошибка удаления: '+error.message);hasError=true;break;}
+    }
+  }
+  if(!hasError&&toUpsert.length){
+    const {error}=await sb.from('schedule').upsert(toUpsert,{onConflict:'admin_name,date'});
+    if(error){alert('Ошибка сохранения: '+error.message);hasError=true;}
+  }
+  if(!hasError){schedulePendingChanges={};await renderSchedule();}
+}
+
+// ===== ВОЗВРАТЫ =====
+const REFUND_STAGES=[{key:'new',label:'Входящий',color:'var(--text3)',bg:'var(--bg2)'},{key:'in_progress',label:'В работе',color:'var(--amber-text)',bg:'var(--amber-bg)'},{key:'payment',label:'На выплате',color:'var(--blue-text)',bg:'var(--blue-bg)'},{key:'done',label:'Выплачен',color:'var(--green-text)',bg:'var(--green-bg)'},{key:'declined',label:'Отказ',color:'var(--red-text)',bg:'var(--red-bg)'}];
+function stageInfo(s){return REFUND_STAGES.find(x=>x.key===s)||REFUND_STAGES[0];}
+async function renderRefunds(){
+  const el=document.getElementById('refunds-content');
+  el.innerHTML='<div style="color:var(--text3);padding:1rem;text-align:center">Загрузка...</div>';
+  const{data:refunds}=await sb.from('refunds').select('*').order('created_at',{ascending:false});
+  const list=refunds||[];const counts={};REFUND_STAGES.forEach(s=>counts[s.key]=0);list.forEach(r=>counts[r.status]=(counts[r.status]||0)+1);
+  const totalAmt=list.filter(r=>r.status==='done').reduce((a,r)=>a+(+r.refund_amount||0),0);
+  const pendAmt=list.filter(r=>['new','in_progress','payment'].includes(r.status)).reduce((a,r)=>a+(+r.refund_amount||0),0);
+  el.innerHTML=`<div class="card" style="padding:0;overflow:hidden"><div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center"><span style="font-size:15px;font-weight:600">Возвраты абонементов</span><button class="btn btn-primary btn-sm" onclick="openRefundModal()">+ Новый возврат</button></div><div style="display:flex;overflow-x:auto;border-bottom:1px solid var(--border)">${REFUND_STAGES.map(s=>`<div style="flex:1;min-width:80px;padding:10px 6px;text-align:center;border-right:1px solid var(--border);cursor:pointer" onclick="filterRefunds('${s.key}')"><div style="font-size:20px;font-weight:700;color:${s.color}">${counts[s.key]||0}</div><div style="font-size:10px;padding:2px 6px;border-radius:20px;background:${s.bg};color:${s.color};display:inline-block;margin-top:2px">${s.label}</div></div>`).join('')}</div><div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--border)"><div style="padding:10px 16px;border-right:1px solid var(--border)"><div style="font-size:11px;color:var(--text3)">Выплачено</div><div style="font-size:16px;font-weight:700;color:var(--green-text)">${fmt(totalAmt)} ₽</div></div><div style="padding:10px 16px"><div style="font-size:11px;color:var(--text3)">В обработке</div><div style="font-size:16px;font-weight:700;color:var(--amber-text)">${fmt(pendAmt)} ₽</div></div></div></div><div id="refunds-list">${list.length?list.map(r=>refundCard(r)).join(''):'<div style="text-align:center;padding:3rem;color:var(--text3);font-size:13px">Возвратов пока нет</div>'}</div>`;
+}
+function refundCard(r){
+  const st=stageInfo(r.status);const next=REFUND_STAGES.filter(s=>s.key!==r.status&&s.key!=='declined');
+  return`<div class="card" style="margin-bottom:0;border-radius:0;border-left:none;border-right:none;border-top:none"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px"><div><div style="font-size:14px;font-weight:600;margin-bottom:2px">${r.full_name}</div><div style="font-size:12px;color:var(--text3)">${r.phone||'—'} · ${r.studio||'—'}</div></div><span style="font-size:11px;padding:3px 10px;border-radius:20px;background:${st.bg};color:${st.color};white-space:nowrap">${st.label}</span></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px;margin-bottom:10px"><div style="color:var(--text3)">Абонемент <span style="color:var(--text)">${r.membership_type||'—'}</span></div><div style="color:var(--text3)">Куплен за <span style="color:var(--text)">${fmt(r.membership_price||0)} ₽</span></div><div style="color:var(--text3)">Осталось <span style="color:var(--text);font-weight:500">${r.remaining_sessions||0} из ${r.total_sessions||0}</span></div><div style="color:var(--text3)">К возврату <span style="color:var(--green-text);font-weight:600">${fmt(r.refund_amount||0)} ₽</span></div>${r.payment_type==='installment'&&r.payment_schedule?`<div style="color:var(--text3);grid-column:1/-1">Разбивка: ${(r.payment_schedule||[]).map(p=>formatDate(p.date)+' — '+fmt(p.amount)+' ₽').join(', ')}</div>`:''}${r.reason?`<div style="color:var(--text3)">Причина: ${r.reason}</div>`:''}</div>${r.file_url?`<div style="margin-bottom:8px"><a href="${r.file_url}" target="_blank" style="font-size:12px;color:var(--blue-text)">📎 Заявление</a></div>`:''}<div style="display:flex;gap:6px;flex-wrap:wrap">${next.map(s=>`<button class="btn btn-sm" onclick="moveRefund(${r.id},'${s.key}')" style="font-size:11px;background:${s.bg};color:${s.color};border-color:${s.color}">${s.label} →</button>`).join('')}<button class="btn btn-sm btn-danger" onclick="moveRefund(${r.id},'declined')" style="font-size:11px">Отказ</button><button class="btn btn-sm" onclick="openRefundEdit(${r.id})" style="font-size:11px;margin-left:auto">✏️</button></div><div style="font-size:11px;color:var(--text3);margin-top:6px">${r.admin_name||'—'} · ${formatDate(r.created_at?.slice(0,10))}</div></div>`;
+}
+async function moveRefund(id,status){await sb.from('refunds').update({status,updated_at:new Date().toISOString()}).eq('id',id);renderRefunds();}
+async function filterRefunds(stage){const{data:r}=await sb.from('refunds').select('*').eq('status',stage).order('created_at',{ascending:false});const el=document.getElementById('refunds-list');if(el)el.innerHTML=(r&&r.length)?r.map(x=>refundCard(x)).join(''):'<div style="text-align:center;padding:2rem;color:var(--text3);font-size:13px">Нет возвратов</div>';}
+let editingRefundId=null;let paymentCount=0;
+function openRefundModal(prefill){
+  editingRefundId=null;const f=prefill||{};
+  document.getElementById('rf-name').value=f.full_name||'';document.getElementById('rf-phone').value=f.phone||'';
+  document.getElementById('rf-studio').value=f.studio||'Империал';document.getElementById('rf-membership').value=f.membership_type||'';
+  document.getElementById('rf-price').value=f.membership_price||'';document.getElementById('rf-total').value=f.total_sessions||'';
+  document.getElementById('rf-remaining').value=f.remaining_sessions||'';document.getElementById('rf-penalty').value=f.penalty||'';
+  document.getElementById('rf-reason').value=f.reason||'';document.getElementById('rf-comment').value=f.comment||'';
+  document.getElementById('rf-refund').value=f.refund_amount||'';document.getElementById('rf-payment-type').value=f.payment_type||'full';
+  const fi=document.getElementById('rf-file');if(fi)fi.value='';
+  const db=document.getElementById('rf-delete-btn');if(db)db.style.display='none';
+  const fi2=document.getElementById('rf-file-current');if(fi2){if(f.file_url){fi2.style.display='block';fi2.innerHTML=`📎 <a href="${f.file_url}" target="_blank" style="color:var(--blue-text)">Заявление</a>`;}else fi2.style.display='none';}
+  document.getElementById('rf-err').style.display='none';document.getElementById('rf-modal-title').textContent='Новый возврат';
+  onRefundPaymentTypeChange();
+  const pl=document.getElementById('rf-payments-list');if(pl){pl.innerHTML='';if(f.payment_schedule)f.payment_schedule.forEach(p=>addRefundPayment(p.date,p.amount));}
+  document.getElementById('refund-modal').style.display='flex';calcRefund();
+}
+async function openRefundEdit(id){const{data:r}=await sb.from('refunds').select('*').eq('id',id).single();if(!r)return;editingRefundId=id;openRefundModal(r);document.getElementById('rf-modal-title').textContent='Редактировать возврат';const db=document.getElementById('rf-delete-btn');if(db)db.style.display='block';}
+function onRefundPaymentTypeChange(){const t=document.getElementById('rf-payment-type').value;const b=document.getElementById('rf-installment-block');if(b){b.style.display=t==='installment'?'block':'none';if(t==='installment'&&document.getElementById('rf-payments-list').children.length===0){addRefundPayment('','');addRefundPayment('','');}}}
+function addRefundPayment(date,amount){const list=document.getElementById('rf-payments-list');if(!list)return;const id='rp-'+(++paymentCount);const row=document.createElement('div');row.className='grid2';row.style.cssText='margin-bottom:6px;align-items:center';row.id=id;row.innerHTML=`<div class="form-row" style="margin:0"><input type="date" id="${id}-date" value="${date||''}"></div><div style="display:flex;gap:4px;align-items:center"><div class="form-row" style="margin:0;flex:1"><input type="number" id="${id}-amount" value="${amount||''}" placeholder="Сумма ₽"></div><button class="btn btn-sm btn-danger" onclick="document.getElementById('${id}').remove()" style="padding:4px 8px">✕</button></div>`;list.appendChild(row);}
+function getPaymentSchedule(){const list=document.getElementById('rf-payments-list');const result=[];if(list)list.querySelectorAll('[id^="rp-"]').forEach(row=>{const id=row.id;const date=document.getElementById(id+'-date')?.value;const amount=+document.getElementById(id+'-amount')?.value||0;if(date||amount)result.push({date,amount});});return result;}
+function calcRefund(){const price=+document.getElementById('rf-price').value||0;const total=+document.getElementById('rf-total').value||0;const rem=+document.getElementById('rf-remaining').value||0;const penalty=+document.getElementById('rf-penalty').value||0;document.getElementById('rf-refund').value=total>0?Math.max(0,Math.round(price/total*rem)-penalty):0;}
+async function saveRefund(){
+  const name=document.getElementById('rf-name').value.trim();const err=document.getElementById('rf-err');
+  if(!name){err.textContent='Введите ФИО';err.style.display='block';return;}
+  const total=+document.getElementById('rf-total').value||0;const rem=+document.getElementById('rf-remaining').value||0;
+  const payType=document.getElementById('rf-payment-type').value;const paySchedule=payType==='installment'?getPaymentSchedule():null;
+  let fileUrl=null;
+  const fileInput=document.getElementById('rf-file');
+  if(fileInput&&fileInput.files&&fileInput.files[0]){const file=fileInput.files[0];const ext=file.name.split('.').pop();const fname=`refund_${Date.now()}.${ext}`;const{error:upe}=await sb.storage.from('refund-files').upload(fname,file,{upsert:true});if(!upe){const{data:pub}=sb.storage.from('refund-files').getPublicUrl(fname);fileUrl=pub.publicUrl;}}
+  const row={full_name:name,phone:document.getElementById('rf-phone').value,studio:document.getElementById('rf-studio').value,membership_type:document.getElementById('rf-membership').value,membership_price:+document.getElementById('rf-price').value||0,total_sessions:total,remaining_sessions:rem,used_sessions:Math.max(0,total-rem),penalty:+document.getElementById('rf-penalty').value||0,refund_amount:+document.getElementById('rf-refund').value||0,reason:document.getElementById('rf-reason').value,comment:document.getElementById('rf-comment').value,payment_type:payType,payment_schedule:paySchedule,updated_at:new Date().toISOString()};
+  if(fileUrl)row.file_url=fileUrl;if(!editingRefundId){row.status='new';row.admin_name='admin';}
+  const{error}=editingRefundId?await sb.from('refunds').update(row).eq('id',editingRefundId):await sb.from('refunds').insert(row);
+  if(error){err.textContent='Ошибка: '+error.message;err.style.display='block';return;}
+  document.getElementById('refund-modal').style.display='none';renderRefunds();
+}
+async function deleteRefund(){if(!confirm('Удалить этот возврат?'))return;if(editingRefundId)await sb.from('refunds').delete().eq('id',editingRefundId);document.getElementById('refund-modal').style.display='none';renderRefunds();}
+
+
 </script>
 </body>
 </html>
