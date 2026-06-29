@@ -2379,10 +2379,12 @@ let schedulePendingChanges={};  // {date: {name, studio} | null}  null = уда�
 let scheduleCurrentStudio='Империал';
 let scheduleYear=new Date().getFullYear();
 let scheduleMonth=new Date().getMonth();
-function changeScheduleMonth(delta){
-  scheduleMonth+=delta;
-  if(scheduleMonth>11){scheduleMonth=0;scheduleYear++;}
-  if(scheduleMonth<0){scheduleMonth=11;scheduleYear--;}
+function onSchSelChange(){
+  const mSel=document.getElementById('sch-sel-month');
+  const ySel=document.getElementById('sch-sel-year');
+  if(!mSel||!ySel)return;
+  scheduleMonth=+mSel.value;
+  scheduleYear=+ySel.value;
   renderSchedule();
 }
 
@@ -2455,10 +2457,26 @@ function renderScheduleGrid(y,m,daysInMonth,monthStr){
   el.innerHTML=`<div class="card" style="padding:0;overflow:hidden">
     <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:10px">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-        <div style="display:flex;align-items:center;gap:8px">
-          <button onclick="changeScheduleMonth(-1)" style="padding:4px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg2);cursor:pointer;font-size:16px">‹</button>
-          <span style="font-size:15px;font-weight:600;min-width:140px;text-align:center">${now.toLocaleString('ru-RU',{month:'long',year:'numeric'})}</span>
-          <button onclick="changeScheduleMonth(1)" style="padding:4px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg2);cursor:pointer;font-size:16px">›</button>
+        <div style="display:flex;align-items:center;gap:6px">
+          <select id="sch-sel-month" onchange="onSchSelChange()" style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;color:var(--text);background:var(--bg)">
+            <option value="0" ${m===0?"selected":""}>Январь</option>
+            <option value="1" ${m===1?"selected":""}>Февраль</option>
+            <option value="2" ${m===2?"selected":""}>Март</option>
+            <option value="3" ${m===3?"selected":""}>Апрель</option>
+            <option value="4" ${m===4?"selected":""}>Май</option>
+            <option value="5" ${m===5?"selected":""}>Июнь</option>
+            <option value="6" ${m===6?"selected":""}>Июль</option>
+            <option value="7" ${m===7?"selected":""}>Август</option>
+            <option value="8" ${m===8?"selected":""}>Сентябрь</option>
+            <option value="9" ${m===9?"selected":""}>Октябрь</option>
+            <option value="10" ${m===10?"selected":""}>Ноябрь</option>
+            <option value="11" ${m===11?"selected":""}>Декабрь</option>
+          </select>
+          <select id="sch-sel-year" onchange="onSchSelChange()" style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;color:var(--text);background:var(--bg)">
+            <option value="2025" ${y===2025?"selected":""}>2025</option>
+            <option value="2026" ${y===2026?"selected":""}>2026</option>
+            <option value="2027" ${y===2027?"selected":""}>2027</option>
+          </select>
         </div>
         <div style="display:flex;gap:6px;align-items:center">
           <button onclick="scheduleCurrentStudio='Империал';renderScheduleGrid(scheduleYear,scheduleMonth,new Date(scheduleYear,scheduleMonth+1,0).getDate(),scheduleYear+'-'+String(scheduleMonth+1).padStart(2,'0'))" style="padding:6px 14px;border-radius:var(--radius-sm);border:1px solid ${studio==='Империал'?'#185FA5':'var(--border)'};background:${studio==='Империал'?'#185FA5':'transparent'};color:${studio==='Империал'?'#fff':'var(--text2)'};font-size:13px;cursor:pointer;font-family:inherit">Империал</button>
@@ -2477,7 +2495,10 @@ function renderScheduleGrid(y,m,daysInMonth,monthStr){
         <button class="btn btn-sm" onclick="schedulePendingChanges={};renderSchedule()">Отменить</button>
         <button class="btn btn-primary btn-sm" onclick="saveSchedule()">💾 Сохранить</button>
       </div>
-    </div>`:'<div style="padding:8px 16px;border-top:1px solid var(--border);display:flex;justify-content:flex-end"><button class="btn btn-primary btn-sm" onclick="saveSchedule()" style="opacity:.4" disabled>💾 Сохранить</button></div>'}
+    </div>`:`<div style="padding:8px 16px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+      <button class="btn btn-sm btn-danger" onclick="clearScheduleMonth()">🗑 Очистить ${studio} за месяц</button>
+      <button class="btn btn-primary btn-sm" onclick="saveSchedule()" style="opacity:.4" disabled>💾 Сохранить</button>
+    </div>`}
   </div>
   <div id="sch-picker" style="display:none;position:fixed;z-index:9999;background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius);padding:12px;min-width:220px;max-width:260px;box-shadow:0 4px 20px rgba(0,0,0,.15)"></div>`;
 }
@@ -2524,6 +2545,18 @@ function setSchDay(date,adminName){
   const monthStr=y+'-'+String(m+1).padStart(2,'0');
   const daysInMonth=new Date(y,m+1,0).getDate();
   renderScheduleGrid(y,m,daysInMonth,monthStr);
+}
+
+async function clearScheduleMonth(){
+  const now=new Date(scheduleYear,scheduleMonth,1);
+  const monthStr=scheduleYear+'-'+String(scheduleMonth+1).padStart(2,'0');
+  const daysInMonth=new Date(scheduleYear,scheduleMonth+1,0).getDate();
+  const studio=scheduleCurrentStudio;
+  if(!confirm(`Очистить расписание ${studio} за ${now.toLocaleString('ru-RU',{month:'long',year:'numeric'})}? Все назначения будут удалены.`))return;
+  const {error}=await sb.from('schedule').delete().eq('studio',studio).gte('date',monthStr+'-01').lte('date',monthStr+'-'+daysInMonth);
+  if(error){alert('Ошибка: '+error.message);return;}
+  schedulePendingChanges={};
+  renderSchedule();
 }
 
 async function saveSchedule(){
