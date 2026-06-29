@@ -234,12 +234,16 @@ input:focus,select:focus{outline:none;border-color:var(--blue)}
 
   <div class="tabs">
     <button class="tab active" id="tab-dashboard">📊 Сводка</button>
-    <button class="tab" id="tab-shifts">📅 Смены</button>
+    <button class="tab" id="tab-schedule-admin">📅 Расписание</button>
+    <button class="tab" id="tab-shifts">📋 Смены</button>
+    <button class="tab" id="tab-refunds-admin">↩ Возвраты</button>
     <button class="tab" id="tab-profile">👤 Кабинет</button>
   </div>
 
   <div id="sec-dashboard" class="section active"><div id="dashboard-content"></div></div>
+  <div id="sec-schedule-admin" class="section"><div id="schedule-admin-content"></div></div>
   <div id="sec-shifts" class="section"><div id="shifts-content"></div></div>
+  <div id="sec-refunds-admin" class="section"><div id="refunds-admin-content"></div></div>
   <div id="sec-profile" class="section"><div id="profile-content"></div></div>
 </div>
 </div>
@@ -356,6 +360,44 @@ input:focus,select:focus{outline:none;border-color:var(--blue)}
 </div>
 
 <!-- EDIT MODAL -->
+<!-- ADMIN REFUND MODAL -->
+<div id="admin-refund-modal" style="display:none" class="modal-bg">
+<div class="modal">
+  <div class="modal-header">
+    <div class="modal-title">↩ Новый возврат</div>
+    <button class="btn btn-sm" onclick="document.getElementById('admin-refund-modal').style.display='none';unlockScroll()">✕</button>
+  </div>
+  <div class="form-row"><label>ФИО клиента</label><input type="text" id="arf-name" placeholder="Иванова Мария Сергеевна"></div>
+  <div class="form-row"><label>Телефон</label><input type="tel" id="arf-phone" placeholder="+7 924 ..."></div>
+  <div class="form-row"><label>Абонемент</label><input type="text" id="arf-membership" placeholder="Стройное тело, 6 мес"></div>
+  <div class="form-row"><label>Цена покупки, ₽</label><input type="number" id="arf-price" placeholder="0" oninput="calcAdminRefund()"></div>
+  <div class="grid2">
+    <div class="form-row"><label>Всего занятий</label><input type="number" id="arf-total" placeholder="0" oninput="calcAdminRefund()"></div>
+    <div class="form-row"><label>Осталось занятий</label><input type="number" id="arf-remaining" placeholder="0" oninput="calcAdminRefund()"></div>
+  </div>
+  <div class="divider"></div>
+  <div class="grid2">
+    <div class="form-row"><label>Штраф, ₽</label><input type="number" id="arf-penalty" placeholder="0" oninput="calcAdminRefund()"></div>
+    <div class="form-row"><label>К возврату, ₽</label><input type="number" id="arf-refund" placeholder="0" style="font-weight:600"></div>
+  </div>
+  <div style="font-size:12px;color:var(--text2);margin-bottom:10px">Считается автоматически: (цена / занятий) × остаток − штраф</div>
+  <div class="form-row"><label>Причина</label>
+    <select id="arf-reason">
+      <option value="">— выберите —</option>
+      <option>Переезд</option><option>Травма / болезнь</option>
+      <option>Финансовые трудности</option><option>Не нравится</option>
+      <option>Беременность</option><option>Другое</option>
+    </select>
+  </div>
+  <div class="form-row"><label>Комментарий</label><input type="text" id="arf-comment" placeholder="Необязательно"></div>
+  <div id="arf-err" class="alert alert-red" style="display:none"></div>
+  <div style="display:flex;gap:8px;margin-top:1rem">
+    <button class="btn btn-block" onclick="document.getElementById('admin-refund-modal').style.display='none';unlockScroll()">Отмена</button>
+    <button class="btn btn-primary btn-block" onclick="saveAdminRefund()">✓ Сохранить</button>
+  </div>
+</div>
+</div>
+
 <div id="edit-modal" style="display:none" class="modal-bg">
 <div class="modal">
   <div class="modal-header">
@@ -971,10 +1013,118 @@ function renderHistory(){
 
 // ===== TABS =====
 function switchTab(t){
-  ['dashboard','shifts','profile'].forEach(id=>{
-    document.getElementById('tab-'+id).classList.toggle('active',id===t);
-    document.getElementById('sec-'+id).classList.toggle('active',id===t);
+  ['dashboard','schedule-admin','shifts','profile','refunds-admin'].forEach(id=>{
+    const tabEl=document.getElementById('tab-'+id);
+    const secEl=document.getElementById('sec-'+id);
+    if(tabEl)tabEl.classList.toggle('active',id===t);
+    if(secEl)secEl.classList.toggle('active',id===t);
   });
+  if(t==='schedule-admin')renderAdminSchedule();
+  if(t==='refunds-admin')renderAdminRefunds();
+}
+
+// ===== ВОЗВРАТЫ (для администратора) =====
+const REFUND_STAGES_ADMIN=[
+  {key:'new',label:'Входящий',color:'#888',bg:'#f5f5f5'},
+  {key:'in_progress',label:'В работе',color:'var(--amber-text)',bg:'var(--amber-bg)'},
+  {key:'payment',label:'На выплате',color:'var(--blue-text)',bg:'var(--blue-bg)'},
+  {key:'done',label:'Выплачен',color:'var(--green-text)',bg:'var(--green-bg)'},
+  {key:'declined',label:'Отказ',color:'var(--red-text)',bg:'var(--red-bg)'},
+];
+
+async function renderAdminRefunds(){
+  const el=document.getElementById('refunds-admin-content');
+  el.innerHTML='<div style="color:var(--text2);padding:1rem;text-align:center">Загрузка...</div>';
+  const {data:refunds}=await sb.from('refunds').select('*').order('created_at',{ascending:false});
+  const list=refunds||[];
+  const counts={};
+  REFUND_STAGES_ADMIN.forEach(s=>counts[s.key]=0);
+  list.forEach(r=>counts[r.status]=(counts[r.status]||0)+1);
+
+  let html=`<div class="card" style="padding:0;overflow:hidden;margin-bottom:1rem">
+    <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:15px;font-weight:700">Возвраты абонементов</span>
+      <button class="btn btn-primary btn-sm" onclick="openAdminRefundModal()">+ Новый</button>
+    </div>
+    <div style="display:flex;overflow-x:auto">
+      ${REFUND_STAGES_ADMIN.map(s=>`<div style="flex:1;min-width:80px;padding:10px 6px;text-align:center;border-right:1px solid var(--border)">
+        <div style="font-size:20px;font-weight:700;color:${s.color}">${counts[s.key]||0}</div>
+        <div style="font-size:10px;padding:2px 6px;border-radius:20px;background:${s.bg};color:${s.color};display:inline-block;margin-top:2px">${s.label}</div>
+      </div>`).join('')}
+    </div>
+  </div>
+  ${list.map(r=>{
+    const st=REFUND_STAGES_ADMIN.find(x=>x.key===r.status)||REFUND_STAGES_ADMIN[0];
+    return`<div class="card" style="margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+        <div>
+          <div style="font-weight:600">${r.full_name}</div>
+          <div style="font-size:12px;color:var(--text3)">${r.phone||'—'} · ${r.membership_type||'—'}</div>
+        </div>
+        <span style="font-size:11px;padding:2px 8px;border-radius:20px;background:${st.bg};color:${st.color}">${st.label}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:12px;margin-bottom:8px">
+        <div style="color:var(--text3)">Осталось: <b>${r.remaining_sessions||0}</b> из <b>${r.total_sessions||0}</b></div>
+        <div style="color:var(--green-text);font-weight:600">К возврату: ${Math.round(r.refund_amount||0).toLocaleString('ru')} ₽</div>
+        ${r.reason?`<div style="color:var(--text3)">Причина: ${r.reason}</div>`:''}
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        ${REFUND_STAGES_ADMIN.filter(s=>s.key!==r.status).map(s=>`<button class="btn btn-sm" onclick="moveRefundAdmin(${r.id},'${s.key}')" style="font-size:11px;padding:4px 8px;background:${s.bg};color:${s.color};border-color:${s.color}">${s.label} →</button>`).join('')}
+      </div>
+    </div>`;
+  }).join('')}
+  ${!list.length?'<div style="text-align:center;padding:2rem;color:var(--text3)">Возвратов пока нет</div>':''}`;
+  el.innerHTML=html;
+}
+
+async function moveRefundAdmin(id,status){
+  await sb.from('refunds').update({status,updated_at:new Date().toISOString()}).eq('id',id);
+  renderAdminRefunds();
+}
+
+function openAdminRefundModal(){
+  document.getElementById('admin-refund-modal').style.display='flex';
+  lockScroll();
+  ['arf-name','arf-phone','arf-membership','arf-price','arf-total','arf-remaining','arf-penalty','arf-comment','arf-refund'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)el.value='';
+  });
+  document.getElementById('arf-err').style.display='none';
+}
+
+function calcAdminRefund(){
+  const price=+document.getElementById('arf-price').value||0;
+  const total=+document.getElementById('arf-total').value||0;
+  const rem=+document.getElementById('arf-remaining').value||0;
+  const penalty=+document.getElementById('arf-penalty').value||0;
+  const refund=total>0?Math.max(0,Math.round(price/total*rem)-penalty):0;
+  document.getElementById('arf-refund').value=refund;
+}
+
+async function saveAdminRefund(){
+  const name=document.getElementById('arf-name').value.trim();
+  const err=document.getElementById('arf-err');
+  if(!name){err.textContent='Введите ФИО';err.style.display='block';return;}
+  const total=+document.getElementById('arf-total').value||0;
+  const rem=+document.getElementById('arf-remaining').value||0;
+  const {error}=await sb.from('refunds').insert({
+    full_name:name,
+    phone:document.getElementById('arf-phone').value,
+    studio:currentUser?.studio||'Империал',
+    membership_type:document.getElementById('arf-membership').value,
+    membership_price:+document.getElementById('arf-price').value||0,
+    total_sessions:total,remaining_sessions:rem,used_sessions:Math.max(0,total-rem),
+    penalty:+document.getElementById('arf-penalty').value||0,
+    refund_amount:+document.getElementById('arf-refund').value||0,
+    reason:document.getElementById('arf-reason').value,
+    comment:document.getElementById('arf-comment').value,
+    status:'new',
+    admin_name:currentUser?.name||'',
+  });
+  if(error){err.textContent='Ошибка: '+error.message;err.style.display='block';return;}
+  document.getElementById('admin-refund-modal').style.display='none';
+  unlockScroll();
+  renderAdminRefunds();
 }
 
 // ===== SHIFT CRUD =====
@@ -1353,7 +1503,9 @@ document.addEventListener('DOMContentLoaded',()=>{
 
   runSafe('main tabs',()=>{
     document.getElementById('tab-dashboard').addEventListener('click',()=>switchTab('dashboard'));
+    document.getElementById('tab-schedule-admin').addEventListener('click',()=>switchTab('schedule-admin'));
     document.getElementById('tab-shifts').addEventListener('click',()=>switchTab('shifts'));
+    document.getElementById('tab-refunds-admin').addEventListener('click',()=>switchTab('refunds-admin'));
     document.getElementById('tab-profile').addEventListener('click',()=>switchTab('profile'));
   });
 
@@ -1402,6 +1554,68 @@ document.addEventListener('DOMContentLoaded',()=>{
 
   checkSession();
 });
+
+// ===== РАСПИСАНИЕ (для администратора — только просмотр) =====
+let adminSchedStudio='Империал';
+function setAdminSchedStudio(studio){
+  adminSchedStudio=studio;
+  const impBtn=document.getElementById('sch-btn-imp');
+  const mecBtn=document.getElementById('sch-btn-mec');
+  if(impBtn){impBtn.style.background=studio==='Империал'?'#185FA5':'transparent';impBtn.style.color=studio==='Империал'?'#fff':'var(--text2)';impBtn.style.borderColor=studio==='Империал'?'#185FA5':'var(--border)';}
+  if(mecBtn){mecBtn.style.background=studio==='Мечта'?'#0F6E56':'transparent';mecBtn.style.color=studio==='Мечта'?'#fff':'var(--text2)';mecBtn.style.borderColor=studio==='Мечта'?'#0F6E56':'var(--border)';}
+  // Re-render calendar with new studio filter
+  renderAdminScheduleView();
+}
+async function renderAdminSchedule(){
+  const el=document.getElementById('schedule-admin-content');
+  el.innerHTML='<div style="color:var(--text2);padding:1rem;text-align:center">Загрузка...</div>';
+  const now=new Date();const y=now.getFullYear(),m=now.getMonth();
+  const monthStr=y+'-'+String(m+1).padStart(2,'0');
+  const daysInMonth=new Date(y,m+1,0).getDate();
+  const {data:sched}=await sb.from('schedule').select('*').gte('date',monthStr+'-01').lte('date',monthStr+'-'+daysInMonth).order('date');
+  window._adminSchedData={sched,y,m,daysInMonth,monthStr,firstDow,offset,totalCells};
+  renderAdminScheduleView();
+}
+function renderAdminScheduleView(){
+  const el=document.getElementById('schedule-admin-content');if(!el||!window._adminSchedData)return;
+  const {sched,y,m,daysInMonth,monthStr,firstDow,offset,totalCells}=window._adminSchedData;
+  const now=new Date();
+  const dayNames=['пн','вт','ср','чт','пт','сб','вс'];
+  const studio=adminSchedStudio;
+  // Build lookup: date → [{name,studio}]
+  const schedMap={};
+  (sched||[]).forEach(s=>{if(!schedMap[s.date])schedMap[s.date]=[];schedMap[s.date].push({name:s.admin_name,studio:s.studio});});
+  const todayStr=today().slice(0,10);
+
+  const calHtml=`<div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border-bottom:0.5px solid var(--border)">${dayNames.map(d=>`<div style="font-size:11px;color:var(--text2);text-align:center;padding:6px 2px;background:var(--bg2)">${d}</div>`).join('')}</div><div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr))">${Array.from({length:totalCells},(_,i)=>{const day=i-offset+1;if(day<1||day>daysInMonth)return'<div style="min-height:58px;border-right:0.5px solid var(--border);border-bottom:0.5px solid var(--border);background:var(--bg2)"></div>';const ds=monthStr+'-'+String(day).padStart(2,'0');const allAssigned=schedMap[ds]||[];const assigned=allAssigned.filter(x=>x.studio===studio);const isToday=ds===todayStr;const myShift=assigned.find(x=>x.name===currentUser?.name);return`<div style="min-height:58px;padding:4px;border-right:0.5px solid var(--border);border-bottom:0.5px solid var(--border);background:${isToday?'var(--blue-bg)':myShift?'rgba(22,163,74,.06)':'transparent'};box-sizing:border-box"><div style="font-size:10px;font-weight:500;color:${isToday?'var(--blue)':'var(--text2)'};margin-bottom:3px">${day}</div>${assigned.map(a=>`<div style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:3px;margin-bottom:1px;background:${a.studio==='Империал'?'#185FA5':'#0F6E56'};color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap${a.name===currentUser?.name?';outline:2px solid var(--amber);outline-offset:1px':''}">${a.name.split(' ')[0]}</div>`).join('')}</div>`;}).join('')}</div>`;
+
+  // My shifts this month
+  const myDays=(sched||[]).filter(s=>s.admin_name===currentUser?.name&&s.studio===studio);
+  const myList=myDays.length?myDays.map(s=>{const dow=new Date(s.date).getDay();return`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:0.5px solid var(--border)"><span style="font-size:13px;font-weight:500;min-width:60px">${formatDate(s.date)}</span><span style="font-size:11px;color:var(--text2)">${['вс','пн','вт','ср','чт','пт','сб'][dow]}</span><span style="font-size:11px;padding:2px 8px;border-radius:20px;background:${s.studio==='Империал'?'#E6F1FB':'#E1F5EE'};color:${s.studio==='Империал'?'#0C447C':'#085041'}">${s.studio}</span></div>`;}).join(''):'<div style="font-size:13px;color:var(--text2);text-align:center;padding:1rem">Смен в этом месяце нет</div>';
+
+  el.innerHTML=`<div class="card" style="padding:0;overflow:hidden;margin-bottom:12px">
+    <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+      <div style="font-size:15px;font-weight:700">${now.toLocaleString('ru-RU',{month:'long',year:'numeric'})}</div>
+      <div style="display:flex;gap:10px;font-size:11px;color:var(--text2)">
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:50%;background:#185FA5;display:inline-block"></span>Империал</span>
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:50%;background:#0F6E56;display:inline-block"></span>Мечта</span>
+      </div>
+    </div>
+    <div style="padding:8px 12px;background:var(--bg2);border-bottom:0.5px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:11px;color:var(--text2)">⭐ Ваши смены выделены жёлтой рамкой</span>
+      <div style="display:flex;gap:6px">
+        <button id="sch-btn-imp" onclick="setAdminSchedStudio('Империал')" style="padding:4px 12px;border-radius:var(--radius-sm);border:1px solid #185FA5;background:#185FA5;color:#fff;font-size:12px;cursor:pointer;font-family:inherit">Империал</button>
+        <button id="sch-btn-mec" onclick="setAdminSchedStudio('Мечта')" style="padding:4px 12px;border-radius:var(--radius-sm);border:1px solid var(--border);background:transparent;color:var(--text2);font-size:12px;cursor:pointer;font-family:inherit">Мечта</button>
+      </div>
+    </div>
+    <div style="overflow-x:auto">${calHtml}</div>
+  </div>
+  <div class="card">
+    <div style="font-size:14px;font-weight:700;margin-bottom:10px">Мои смены в ${now.toLocaleString('ru-RU',{month:'long'})}</div>
+    ${myList}
+  </div>`;
+}
+
 </script>
 </body>
 </html>

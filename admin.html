@@ -2381,7 +2381,7 @@ let scheduleCurrentStudio='Империал';
 async function renderSchedule(){
   const el=document.getElementById('schedule-content');
   el.innerHTML='<div style="color:var(--text3);padding:1rem;text-align:center">Загрузка...</div>';
-  const now=new Date();const y=now.getFullYear(),m=now.getMonth();
+  const now=new Date(scheduleYear,scheduleMonth,1);const y=scheduleYear,m=scheduleMonth;
   const monthStr=y+'-'+String(m+1).padStart(2,'0');
   const daysInMonth=new Date(y,m+1,0).getDate();
   const [{data:sched},{data:profiles}]=await Promise.all([
@@ -2445,11 +2445,17 @@ function renderScheduleGrid(y,m,daysInMonth,monthStr){
   </div>`;
 
   el.innerHTML=`<div class="card" style="padding:0;overflow:hidden">
-    <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-      <div style="font-size:15px;font-weight:600">${now.toLocaleString('ru-RU',{month:'long',year:'numeric'})}</div>
-      <div style="display:flex;gap:6px;align-items:center">
-        <button onclick="scheduleCurrentStudio='Империал';renderSchedule()" style="padding:6px 14px;border-radius:var(--radius-sm);border:1px solid ${studio==='Империал'?'#185FA5':'var(--border)'};background:${studio==='Империал'?'#185FA5':'transparent'};color:${studio==='Империал'?'#fff':'var(--text2)'};font-size:13px;cursor:pointer;font-family:inherit">Империал</button>
-        <button onclick="scheduleCurrentStudio='Мечта';renderSchedule()" style="padding:6px 14px;border-radius:var(--radius-sm);border:1px solid ${studio==='Мечта'?'#0F6E56':'var(--border)'};background:${studio==='Мечта'?'#0F6E56':'transparent'};color:${studio==='Мечта'?'#fff':'var(--text2)'};font-size:13px;cursor:pointer;font-family:inherit">Мечта</button>
+    <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <button onclick="changeScheduleMonth(-1)" style="padding:4px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg2);cursor:pointer;font-size:16px">‹</button>
+          <span style="font-size:15px;font-weight:600;min-width:140px;text-align:center">${now.toLocaleString('ru-RU',{month:'long',year:'numeric'})}</span>
+          <button onclick="changeScheduleMonth(1)" style="padding:4px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg2);cursor:pointer;font-size:16px">›</button>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <button onclick="scheduleCurrentStudio='Империал';renderScheduleGrid(scheduleYear,scheduleMonth,new Date(scheduleYear,scheduleMonth+1,0).getDate(),scheduleYear+'-'+String(scheduleMonth+1).padStart(2,'0'))" style="padding:6px 14px;border-radius:var(--radius-sm);border:1px solid ${studio==='Империал'?'#185FA5':'var(--border)'};background:${studio==='Империал'?'#185FA5':'transparent'};color:${studio==='Империал'?'#fff':'var(--text2)'};font-size:13px;cursor:pointer;font-family:inherit">Империал</button>
+          <button onclick="scheduleCurrentStudio='Мечта';renderScheduleGrid(scheduleYear,scheduleMonth,new Date(scheduleYear,scheduleMonth+1,0).getDate(),scheduleYear+'-'+String(scheduleMonth+1).padStart(2,'0'))" style="padding:6px 14px;border-radius:var(--radius-sm);border:1px solid ${studio==='Мечта'?'#0F6E56':'var(--border)'};background:${studio==='Мечта'?'#0F6E56':'transparent'};color:${studio==='Мечта'?'#fff':'var(--text2)'};font-size:13px;cursor:pointer;font-family:inherit">Мечта</button>
+        </div>
       </div>
     </div>
     <div style="padding:8px 16px;background:var(--bg2);border-bottom:1px solid var(--border);font-size:12px;color:var(--text3);display:flex;align-items:center;gap:6px">
