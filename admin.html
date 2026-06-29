@@ -2377,6 +2377,14 @@ let scheduleData={};
 let scheduleAdmins=[];
 let schedulePendingChanges={};  // {date: {name, studio} | null}  null = удалить
 let scheduleCurrentStudio='Империал';
+let scheduleYear=new Date().getFullYear();
+let scheduleMonth=new Date().getMonth();
+function changeScheduleMonth(delta){
+  scheduleMonth+=delta;
+  if(scheduleMonth>11){scheduleMonth=0;scheduleYear++;}
+  if(scheduleMonth<0){scheduleMonth=11;scheduleYear--;}
+  renderSchedule();
+}
 
 async function renderSchedule(){
   const el=document.getElementById('schedule-content');
