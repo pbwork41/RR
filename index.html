@@ -848,7 +848,7 @@ function renderShifts(){
   }).join('');
 }
 
-function renderProfile(){
+async function renderProfile(){
   const name=currentUser.name;
   const myS=shifts.filter(s=>s.admin===name);
   // Include unattached quick_sales in revenue totals
@@ -870,6 +870,10 @@ function renderProfile(){
   // Quick sales also earn % commission
   myQuickSales.filter(s=>!s.shift_id).forEach(s=>{pNew+=Math.round((+s.new_sales||0)*0.05);pRenew+=Math.round((+s.renew||0)*0.08);});
   const salTotal=fix+pNew+pRenew+pRestore+bonus;
+  // Fetch manual bonuses from admin_bonuses
+  const {data:bonusRows}=await sb.from('admin_bonuses').select('*').eq('admin_name',name).eq('month',monthKey());
+  const manualBonus=(bonusRows||[]).reduce((a,b)=>a+(+b.amount||0),0);
+  const salWithBonus=salTotal+manualBonus;
   const now=new Date(),day=now.getDate(),dim=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
   const salEst=day>0?Math.round(salTotal/day*dim):0;
 
@@ -931,13 +935,14 @@ function renderProfile(){
     <div class="subsection-title">💰 Моя зарплата</div>
     <div class="salary-box">
       <div style="font-size:11px;color:var(--blue-text);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">За ${myS.length} смен этого месяца</div>
-      <div class="salary-total">${fmt(salTotal)} ₽</div>
+      <div class="salary-total">${fmt(salWithBonus)} ₽</div>
       <div style="font-size:13px;color:var(--blue-text);margin-top:6px;font-weight:600">Прогноз на месяц: ${fmt(salEst)} ₽</div>
     </div>
     <div class="card">
       ${[{l:`Оклад (${myS.length} × 1 500 ₽)`,v:fix},{l:'Новые (5%)',v:pNew},{l:'Продления (8%)',v:pRenew},{l:'Возврат (10%)',v:pRestore},{l:'Бонус за кассу',v:bonus}]
         .map(i=>`<div class="history-row"><span style="color:var(--text2)">${i.l}</span><span style="font-weight:600">${fmt(i.v)} ₽</span></div>`).join('')}
-      <div style="display:flex;justify-content:space-between;padding:10px 0;font-size:15px;font-weight:700;border-top:2px solid var(--border);margin-top:4px"><span>Итого</span><span>${fmt(salTotal)} ₽</span></div>
+      <div style="display:flex;justify-content:space-between;padding:10px 0;font-size:15px;font-weight:700;border-top:2px solid var(--border);margin-top:4px"><span>Итого</span><span>${fmt(salWithBonus)} ₽</span></div>
+      ${manualBonus>0?`<div style="margin-top:8px;padding:8px;background:var(--green-bg);border-radius:var(--radius-sm)"><div style="font-size:12px;font-weight:600;color:var(--green-text);margin-bottom:4px">🎁 Бонусы от руководителя</div>${(bonusRows||[]).map(b=>`<div style="display:flex;justify-content:space-between;font-size:13px;padding:2px 0"><span style="color:var(--text2)">${b.reason||'Бонус'}</span><span style="color:var(--green-text);font-weight:600">+${fmt(b.amount)} ₽</span></div>`).join('')}</div>`:''}
     </div>
 
     ${marathons.filter(m=>m.date_start<=today()&&(!m.target_profile_id||m.target_profile_id===currentUser.id)).length?`

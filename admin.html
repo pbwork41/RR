@@ -1467,6 +1467,27 @@ async function saveStaffPlan(){
   alert('✓ План сохранён');
 }
 
+async function saveAdminBonus(){
+  const adminName=document.getElementById('ab-admin')?.value;
+  const amount=+document.getElementById('ab-amount')?.value||0;
+  const reason=document.getElementById('ab-reason')?.value?.trim();
+  const err=document.getElementById('ab-err');
+  if(!adminName){err.textContent='Выберите администратора';err.style.display='block';return;}
+  if(amount<=0){err.textContent='Укажите сумму';err.style.display='block';return;}
+  const {error}=await sb.from('admin_bonuses').insert({admin_name:adminName,amount,reason:reason||null,month:monthKey(),created_by:'admin'});
+  if(error){err.textContent='Ошибка: '+error.message;err.style.display='block';return;}
+  err.style.display='none';
+  document.getElementById('ab-amount').value='';
+  document.getElementById('ab-reason').value='';
+  renderMotivation();
+}
+
+async function deleteAdminBonus(id){
+  if(!confirm('Удалить бонус?'))return;
+  await sb.from('admin_bonuses').delete().eq('id',id);
+  renderMotivation();
+}
+
 async function renderStaff(){
   const {data}=await sb.from('profiles').select('*').order('created_at',{ascending:false});
   // Update pending badge
@@ -1591,7 +1612,10 @@ async function loadSalaryData(){
   const btn=document.getElementById('sal-load-btn');
   btn.disabled=true;btn.textContent='Загрузка...';
   
-  const {data:sd}=await sb.from('shifts').select('*').gte('date',from).lte('date',to);
+  const {data:sd,error:sErr}=await sb.from('shifts').select('*').gte('date',from).lte('date',to);
+  const fromMonth=from.slice(0,7);
+  const toMonth=to.slice(0,7);
+  const {data:bonusData}=await sb.from('admin_bonuses').select('*').gte('month',fromMonth).lte('month',toMonth);
   
   btn.disabled=false;btn.textContent='Загрузить';
   
@@ -1621,7 +1645,9 @@ async function loadSalaryData(){
       fix+=sal.fix;pNew+=sal.pNew;pRenew+=sal.pRenew;pRestore+=sal.pRestore;bonus+=sal.bonus;
     });
     const total=fix+pNew+pRenew+pRestore+bonus;
-    return{admin,studio,n,revenue,fix,pNew,pRenew,pRestore,bonus,total};
+    const adminBonusList=(bonusData||[]).filter(b=>b.admin_name===admin);
+    const bonusManual=adminBonusList.reduce((a,b)=>a+(+b.amount||0),0);
+    return{admin,studio,n,revenue,fix,pNew,pRenew,pRestore,bonus,bonusManual,adminBonusList,total:total+bonusManual};
   }).sort((a,b)=>b.total-a.total);
   
   const grandTotal=adminData.reduce((a,d)=>a+d.total,0);
@@ -1655,11 +1681,13 @@ async function loadSalaryData(){
           {label:'Продления (8%)',val:d.pRenew},
           {label:'Восстановление (10%)',val:d.pRestore},
           {label:'Бонус за кассу',val:d.bonus},
+          {label:'Бонусы руководителя',val:d.bonusManual},
         ].filter(i=>i.val>0).map(i=>`
           <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);font-size:13px">
             <span style="color:var(--text2)">${i.label}</span>
             <span style="font-weight:600">${fmt(i.val)} ₽</span>
           </div>`).join('')}
+        ${d.adminBonusList&&d.adminBonusList.length?`<div style="margin-top:6px;padding-top:6px;border-top:1px solid var(--border)">${d.adminBonusList.map(b=>`<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px;color:var(--text2)"><span>↳ ${b.reason||'Бонус'}</span><span style="color:var(--green-text);font-weight:500">+${fmt(b.amount)} ₽</span></div>`).join('')}</div>`:''}
         <div style="display:flex;justify-content:space-between;padding:8px 0 0;font-size:14px;font-weight:700">
           <span>Итого</span><span style="color:var(--purple-text)">${fmt(d.total)} ₽</span>
         </div>
@@ -1725,6 +1753,39 @@ async function renderMotivation(){
       </div>`;
     });
   }
+  // Бонусы администраторов
+  const {data:adminBonuses}=await sb.from('admin_bonuses').select('*').eq('month',monthKey()).order('created_at',{ascending:false});
+  const {data:adminProfiles}=await sb.from('profiles').select('id,name').eq('active',true);
+  const bonusList=adminBonuses||[];
+  const bonusTotal=bonusList.reduce((a,b)=>a+(+b.amount||0),0);
+  html+=`<div class="section-title" style="margin-top:16px;margin-bottom:8px">💰 Бонусы администраторам — ${monthLabel()}</div>
+  <div class="card">
+    <div class="grid2" style="margin-bottom:12px">
+      <div class="form-row"><label>Администратор</label>
+        <select id="ab-admin">
+          ${(adminProfiles||[]).map(p=>`<option value="${p.name}">${p.name}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-row"><label>Сумма, ₽</label><input type="number" id="ab-amount" placeholder="0" min="0"></div>
+    </div>
+    <div class="form-row"><label>За что бонус</label><input type="text" id="ab-reason" placeholder="Например: перевыполнение плана, лучший результат месяца"></div>
+    <button class="btn btn-primary btn-sm" onclick="saveAdminBonus()" style="margin-top:8px">💰 Начислить бонус</button>
+    <div id="ab-err" class="alert alert-red" style="display:none;margin-top:8px"></div>
+    ${bonusList.length?`<div style="margin-top:14px;border-top:1px solid var(--border);padding-top:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div style="font-size:12px;color:var(--text3)">Бонусы за ${monthLabel()}</div>
+        <div style="font-size:13px;font-weight:600;color:var(--green-text)">Итого: ${fmt(bonusTotal)} ₽</div>
+      </div>
+      ${bonusList.map(b=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:0.5px solid var(--border);font-size:13px">
+        <div><b>${b.admin_name}</b>${b.reason?' — <span style="color:var(--text2)">'+b.reason+'</span>':''}</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-weight:600;color:var(--green-text)">${fmt(b.amount)} ₽</span>
+          <button class="btn btn-sm btn-danger" onclick="deleteAdminBonus(${b.id})" style="padding:2px 8px">🗑</button>
+        </div>
+      </div>`).join('')}
+    </div>`:''}
+  </div>`;
+
   el.innerHTML = html;
 }
 
@@ -2503,7 +2564,8 @@ function renderScheduleGrid(y,m,daysInMonth,monthStr){
       <button class="btn btn-primary btn-sm" onclick="saveSchedule()" style="opacity:.4" disabled>💾 Сохранить</button>
     </div>`}
   </div>
-  <div id="sch-picker" style="display:none;position:fixed;z-index:9999;background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius);padding:12px;min-width:220px;max-width:260px;box-shadow:0 4px 20px rgba(0,0,0,.15)"></div>`;
+  <div id="sch-picker" style="display:none;position:fixed;z-index:9999;background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius);padding:12px;min-width:220px;max-width:260px;box-shadow:0 4px 20px rgba(0,0,0,.15)"></div>
+  <div class="card" style="margin-top:12px"><div style="font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Смен в месяце · ${studio}</div><div style="display:flex;flex-wrap:wrap;gap:8px">${scheduleAdmins.map(a=>{const cnt=Object.entries({...Object.fromEntries(Object.entries(scheduleData).map(([d,list])=>[d,list.find(x=>x.name===a.name&&x.studio===studio)])),... Object.fromEntries(Object.entries(schedulePendingChanges).map(([d,v])=>[d,v&&v.studio===studio?v:null]))}).filter(([,v])=>v).length;return`<div style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:var(--bg2);border-radius:var(--radius-sm);font-size:13px"><span>${a.name.split(' ')[0]} ${(a.name.split(' ')[1]||'')[0]||''}.</span><span style="font-weight:700;min-width:20px;text-align:center;color:${studio==='Империал'?'#185FA5':'#0F6E56'}">${cnt}</span></div>`;}).join('')}</div></div>`;
 }
 
 function openSchDayPicker(date,monthStr){
