@@ -2096,14 +2096,14 @@ async function calcTrainerSalary(){
   const bonuses=bonusData||[];
   const motivByTrainer={};
   (motivAll||[]).forEach(m=>{
-    const key=m.trainer_id?String(m.trainer_id):'global';
-    if(!motivByTrainer[key])motivByTrainer[key]=m;
+    if(!m.trainer_id)return;
+    if(!motivByTrainer[m.trainer_id])motivByTrainer[m.trainer_id]=m;
   });
   if(!active.length){if(res)res.innerHTML='<div class="card" style="color:var(--text3);text-align:center;padding:1rem">Нет активных тренеров</div>';return;}
   if(res)res.innerHTML=active.map(t=>{
     const ts=shifts.filter(s=>s.trainer_id===t.id);
     const sales=ts.reduce((a,s)=>a+(+s.sales_amount||0),0);
-    const m=motivByTrainer[String(t.id)]||motivByTrainer['global']||null;
+    const m=motivByTrainer[t.id]||null;
     const BASE=m?+m.hourly_rate:null;
     const PCT=m?+m.sales_pct/100:null;
     const trainerBonuses=bonuses.filter(b=>b.trainer_id===t.id);
@@ -2135,25 +2135,26 @@ async function renderTrainerMotivation(){
   const {data:bonusData}=await sb.from('trainer_bonuses').select('*').eq('month',monthKey()).order('created_at',{ascending:false});
   const bonuses=bonusData||[];
 
-  // Build current scheme per trainer (latest record per trainer_id)
+  // Build current scheme per trainer (latest record per trainer_id) — no fallback to global/old records
   const motivByTrainer={};
   (motivAll||[]).forEach(m=>{
-    const key=m.trainer_id||'global';
-    if(!motivByTrainer[key])motivByTrainer[key]=m;
+    if(!m.trainer_id)return; // skip legacy records without trainer_id
+    if(!motivByTrainer[m.trainer_id])motivByTrainer[m.trainer_id]=m;
   });
 
   let html=`<div class="card">
     <div class="section-title">⚡ Текущая мотивация по тренерам</div>
     ${active.length?`<table class="kpi-table" style="width:100%">
-      <thead><tr><th>Тренер</th><th>Ставка (час)</th><th>% с продаж</th><th>С даты</th></tr></thead>
+      <thead><tr><th>Тренер</th><th>Ставка (час)</th><th>% с продаж</th><th>С даты</th><th></th></tr></thead>
       <tbody>
         ${active.map(t=>{
-          const m=motivByTrainer[t.id]||motivByTrainer['global']||null;
+          const m=motivByTrainer[t.id]||null;
           return`<tr>
             <td style="font-weight:500">${t.name}</td>
-            <td>${m?fmt(m.hourly_rate)+' ₽':'—'}</td>
+            <td>${m?fmt(m.hourly_rate)+' ₽':'<span style="color:var(--amber-text)">не задана</span>'}</td>
             <td>${m?m.sales_pct+'%':'—'}</td>
             <td>${m?formatDate(m.effective_from):'—'}</td>
+            <td><button class="btn btn-sm" onclick="editTrainerMotivFor(${t.id})">✏️</button></td>
           </tr>`;
         }).join('')}
       </tbody>
@@ -2161,7 +2162,7 @@ async function renderTrainerMotivation(){
     '<div style="color:var(--text3);font-size:13px;text-align:center;padding:1rem">Нет активных тренеров</div>'}
   </div>
   <div class="card">
-    <div class="section-title">📝 Задать мотивацию</div>
+    <div class="section-title">📝 Задать / изменить мотивацию</div>
     <div class="form-row"><label>Тренер</label>
       <select id="tm-trainer-sel" onchange="onMotivTrainerChange()">
         <option value="">— выберите тренера —</option>
@@ -2170,8 +2171,8 @@ async function renderTrainerMotivation(){
     </div>
     <div id="tm-current-info" style="display:none;background:var(--bg2);border-radius:var(--radius-sm);padding:8px 12px;font-size:12px;color:var(--text2);margin-bottom:8px"></div>
     <div class="grid2" style="margin-bottom:8px">
-      <div class="form-row"><label>Ставка (час), ₽</label><input type="number" id="tm-rate" value="0" min="0"></div>
-      <div class="form-row"><label>% с продаж</label><input type="number" id="tm-pct" value="5" min="0" max="100" step="0.5"></div>
+      <div class="form-row"><label>Ставка (час), ₽</label><input type="number" id="tm-rate" placeholder="0" min="0"></div>
+      <div class="form-row"><label>% с продаж</label><input type="number" id="tm-pct" placeholder="5" min="0" max="100" step="0.5"></div>
     </div>
     <div class="form-row"><label>Действует с</label><input type="date" id="tm-from" value="${today()}"></div>
     <button class="btn btn-primary btn-sm" onclick="saveTrainerMotivation()" style="margin-top:6px">💾 Сохранить</button>
@@ -2210,7 +2211,7 @@ function onMotivTrainerChange(){
   const id=sel.value;
   const info=document.getElementById('tm-current-info');
   if(!id){info.style.display='none';return;}
-  const m=window._trainerMotivMap&&(window._trainerMotivMap[id]||window._trainerMotivMap['global']);
+  const m=window._trainerMotivMap&&window._trainerMotivMap[id];
   if(m){
     info.style.display='block';
     info.textContent=`Текущая схема: ${fmt(m.hourly_rate)} ₽/час · ${m.sales_pct}% с продаж · с ${formatDate(m.effective_from)}`;
@@ -2218,9 +2219,18 @@ function onMotivTrainerChange(){
     document.getElementById('tm-pct').value=m.sales_pct;
   } else {
     info.style.display='block';
-    info.textContent='Мотивация ещё не задана';
-    document.getElementById('tm-rate').value=0;
-    document.getElementById('tm-pct').value=5;
+    info.textContent='⚠ Мотивация ещё не задана для этого тренера';
+    document.getElementById('tm-rate').value='';
+    document.getElementById('tm-pct').value='';
+  }
+}
+
+function editTrainerMotivFor(trainerId){
+  const sel=document.getElementById('tm-trainer-sel');
+  if(sel){
+    sel.value=trainerId;
+    onMotivTrainerChange();
+    sel.scrollIntoView({behavior:'smooth',block:'center'});
   }
 }
 
@@ -2262,31 +2272,31 @@ async function saveTrainerBonus(){
   el.style.display='none';
   document.getElementById('tm-bonus-amount').value=0;
   document.getElementById('tm-bonus-reason').value='';
-  renderTrainers();
+  renderTrainerTeam();
 }
 
 async function deleteTrainerBonus(id){
   if(!confirm('Удалить бонус?'))return;
   await sb.from('trainer_bonuses').delete().eq('id',id);
-  renderTrainers();
+  renderTrainerTeam();
 }
 
 async function approveTrainer(id,name){
   if(!confirm('Подтвердить тренера '+name+'?'))return;
   await sb.from('trainer_profiles').update({active:true}).eq('id',id);
-  renderTrainers();
+  renderTrainerTeam();
 }
 
 async function deleteTrainer(id,name){
   if(!confirm('Удалить тренера '+name+'?'))return;
   await sb.from('trainer_profiles').delete().eq('id',id);
-  renderTrainers();
+  renderTrainerTeam();
 }
 
 async function deactivateTrainer(id){
   if(!confirm('Деактивировать тренера?'))return;
   await sb.from('trainer_profiles').update({active:false}).eq('id',id);
-  renderTrainers();
+  renderTrainerTeam();
 }
 
 async function resetTrainerPin(id,name){

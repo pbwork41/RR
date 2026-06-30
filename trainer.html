@@ -459,8 +459,8 @@ async function renderProfile(){
   const bought=myShifts.reduce((a,s)=>a+(+s.clients_bought||0),0);
   const sales=myShifts.reduce((a,s)=>a+(+s.sales_amount||0),0);
   // Salary: base per shift + % from sales (example scheme - configure as needed)
-  // Fetch current motivation scheme
-  const {data:motivData}=await sb.from('trainer_motivation').select('*').order('effective_from',{ascending:false}).limit(1);
+  // Fetch current motivation scheme for THIS trainer only
+  const {data:motivData}=await sb.from('trainer_motivation').select('*').eq('trainer_id',currentUser.id).order('effective_from',{ascending:false}).limit(1);
   const curMotiv=motivData&&motivData[0]?motivData[0]:null;
   const BASE_PER_SHIFT=curMotiv?+curMotiv.hourly_rate:null;
   const SALES_PCT=curMotiv?+curMotiv.sales_pct/100:null;
