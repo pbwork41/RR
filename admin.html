@@ -717,7 +717,7 @@ function funnelHtml(fact,plan){
 
 function renderAll(){renderOverview();renderMoM();renderStudios();renderAdmins();renderMarathons();renderPlans();}
 
-function renderOverview(){
+async function renderOverview(){
   const studios=['Империал','Мечта'];
   const active=marathons.filter(m=>m.active&&m.date_start<=today()&&m.date_end>=today());
   let html='';
@@ -869,6 +869,9 @@ function renderOverview(){
       </div>`;
     }).join('')}
   </div>`;
+
+  // ===== Дашборд по тренерам =====
+  html+=await renderTrainerOverviewBlock();
 
   document.getElementById('overview-content').innerHTML=html;
 }
@@ -1903,6 +1906,54 @@ function switchTab(t){
 }
 
 // ===== TRAINERS =====
+async function renderTrainerOverviewBlock(){
+  const {trainerList,shiftList}=await trainerData();
+  const active=(trainerList||[]).filter(t=>t.active);
+  if(!active.length)return'';
+
+  const totalDone=shiftList.reduce((a,s)=>a+(+s.trainings_done||0),0);
+  const totalZero=shiftList.reduce((a,s)=>a+(+s.trainings_zero||0),0);
+  const totalNewClients=shiftList.reduce((a,s)=>a+(+s.new_clients||0),0);
+  const totalBought=shiftList.reduce((a,s)=>a+(+s.clients_bought||0),0);
+  const totalCv=totalNewClients>0?Math.round(totalBought/totalNewClients*100):0;
+
+  const rows=active.map(t=>{
+    const ts=shiftList.filter(s=>s.trainer_id===t.id);
+    const done=ts.reduce((a,s)=>a+(+s.trainings_done||0),0);
+    const zero=ts.reduce((a,s)=>a+(+s.trainings_zero||0),0);
+    const newClients=ts.reduce((a,s)=>a+(+s.new_clients||0),0);
+    const bought=ts.reduce((a,s)=>a+(+s.clients_bought||0),0);
+    const cv=newClients>0?Math.round(bought/newClients*100):null;
+    return{name:t.name,done,zero,newClients,bought,cv};
+  }).sort((a,b)=>b.done-a.done);
+
+  return`<div class="section-title" style="margin-top:16px">🏋️ Тренеры — ${monthLabel()}</div>
+  <div class="grid2" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:12px">
+    <div class="metric"><div class="metric-label">Тренировок проведено</div><div class="metric-val">${totalDone}</div></div>
+    <div class="metric"><div class="metric-label">Нулевых тренировок</div><div class="metric-val" style="color:var(--amber-text)">${totalZero}</div></div>
+    <div class="metric"><div class="metric-label">Новых клиентов</div><div class="metric-val">${totalNewClients}</div></div>
+    <div class="metric"><div class="metric-label">Продаж</div><div class="metric-val" style="color:var(--green-text)">${totalBought}</div></div>
+    <div class="metric"><div class="metric-label">Конверсия (ср. общая)</div><div class="metric-val" style="color:var(--purple-text)">${totalCv}%</div></div>
+  </div>
+  <div class="card" style="padding:0;overflow:hidden;margin-bottom:12px">
+    <div style="overflow-x:auto">
+    <table class="kpi-table" style="width:100%;min-width:520px">
+      <thead><tr><th>Тренер</th><th style="text-align:right">Провед.</th><th style="text-align:right">Нулевых</th><th style="text-align:right">Новых клиент.</th><th style="text-align:right">Продаж</th><th style="text-align:right">CV приход/продажа</th></tr></thead>
+      <tbody>
+        ${rows.map(r=>`<tr>
+          <td style="font-weight:500">${r.name}</td>
+          <td style="text-align:right">${r.done}</td>
+          <td style="text-align:right;color:var(--amber-text)">${r.zero}</td>
+          <td style="text-align:right">${r.newClients}</td>
+          <td style="text-align:right;color:var(--green-text)">${r.bought}</td>
+          <td style="text-align:right;font-weight:600;color:var(--purple-text)">${r.cv!==null?r.cv+'%':'—'}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+    </div>
+  </div>`;
+}
+
 async function trainerData(){
   const lastDay=new Date(new Date().getFullYear(),new Date().getMonth()+1,0).getDate();
   const [{data:tProfiles},{data:tShifts}]=await Promise.all([
