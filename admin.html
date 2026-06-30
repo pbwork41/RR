@@ -470,6 +470,7 @@ textarea{resize:vertical;min-height:70px}
   <div class="divider"></div>
   <div class="subsection-title">Абонемент</div>
   <div class="form-row"><label>Какой абонемент?</label><input type="text" id="rf-membership" placeholder="Лёгкий старт, 36 занятий"></div>
+  <div class="form-row"><label>Кто продавал абонемент (Фамилия)</label><input type="text" id="rf-sold-by" placeholder="Фамилия менеджера"></div>
   <div class="grid2">
     <div class="form-row"><label>Цена покупки, ₽</label><input type="number" id="rf-price" placeholder="0" oninput="calcRefund()"></div>
     <div class="form-row"><label>Всего занятий</label><input type="number" id="rf-total" placeholder="0" oninput="calcRefund()"></div>
@@ -685,6 +686,65 @@ function weakestFunnelStage(fact,plan){
   return{...worst,gap:worstGap};
 }
 
+function renderCompactFunnel(sortedStudios){
+  if(!sortedStudios||sortedStudios.length<1)return'';
+  const studios=sortedStudios.slice(0,2);
+  while(studios.length<2)studios.push(null);
+
+  const stages=[
+    {key:'leads',label:'Лиды'},
+    {key:'bookings',label:'Записи',cvKey:'cv1'},
+    {key:'visits',label:'Пришло',cvKey:'cv2'},
+    {key:'newSalesCount',label:'Продажа',cvKey:'cv3'},
+  ];
+
+  // Determine bottleneck per studio: lowest cv among cv1/cv2/cv3
+  const bottleneck=studios.map(s=>{
+    if(!s)return null;
+    const cvs=[{k:'cv1',v:s.fact.cv1},{k:'cv2',v:s.fact.cv2},{k:'cv3',v:s.fact.cv3}].filter(x=>x.v!==null&&x.v!==undefined);
+    if(!cvs.length)return null;
+    return cvs.reduce((min,x)=>x.v<min.v?x:min,cvs[0]).k;
+  });
+
+  let rows='';
+  stages.forEach((stage,i)=>{
+    rows+=`<div style="display:grid;grid-template-columns:100px 1fr 1fr${i>0?'':''};border-top:0.5px solid var(--border)">
+      <div style="padding:10px 12px;font-size:12px;color:var(--text3);display:flex;align-items:center">${stage.label}</div>
+      ${studios.map(s=>{
+        if(!s)return`<div style="padding:10px 12px;text-align:center;font-size:15px;color:var(--text3);border-left:1px solid var(--border)">—</div>`;
+        const val=s.fact[stage.key]||0;
+        return`<div style="padding:10px 12px;text-align:center;font-size:15px;font-weight:700;border-left:1px solid var(--border)">${val}</div>`;
+      }).join('')}
+    </div>`;
+    if(stage.cvKey){
+      const isBottleneckRow=bottleneck.some(b=>b===stage.cvKey);
+      rows+=`<div style="display:grid;grid-template-columns:100px 1fr 1fr;background:${isBottleneckRow?'var(--red-bg)':'var(--bg2)'}">
+        <div style="padding:4px 12px;font-size:10px;color:${isBottleneckRow?'var(--red-text)':'var(--text3)'};display:flex;align-items:center;font-weight:${isBottleneckRow?'600':'400'}">CV</div>
+        ${studios.map((s,si)=>{
+          if(!s)return`<div style="padding:4px 12px;text-align:center;font-size:11px;color:var(--text3);border-left:1px solid var(--border)">—</div>`;
+          const cv=s.fact[stage.cvKey];
+          if(cv===null||cv===undefined)return`<div style="padding:4px 12px;text-align:center;font-size:11px;color:var(--text3);border-left:1px solid var(--border)">—</div>`;
+          const isWeak=bottleneck[si]===stage.cvKey;
+          return`<div style="padding:4px 12px;text-align:center;font-size:11px;font-weight:${isWeak?'600':'400'};color:${isWeak?'var(--red-text)':'var(--text3)'};border-left:1px solid var(--border)">${cv}%</div>`;
+        }).join('')}
+      </div>`;
+    }
+  });
+
+  return`<div class="card" style="padding:0;overflow:hidden;margin-top:10px">
+    <div style="padding:10px 16px;border-bottom:0.5px solid var(--border);font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em">Воронка продаж</div>
+    <div style="display:grid;grid-template-columns:100px 1fr 1fr;border-bottom:0.5px solid var(--border)">
+      <div></div>
+      ${studios.map(s=>{
+        if(!s)return'<div style="padding:10px 12px;border-left:1px solid var(--border)"></div>';
+        const pill=s.st==='Империал'?'pill-imp':'pill-mec';
+        return`<div style="padding:10px 12px;text-align:center;border-left:1px solid var(--border)"><span class="${pill}" style="font-size:12px">${s.st}</span></div>`;
+      }).join('')}
+    </div>
+    ${rows}
+  </div>`;
+}
+
 function funnelHtml(fact,plan){
   const stages=[
     {label:'Лиды',fact:fact.leads,plan:plan.leads||0},
@@ -845,30 +905,8 @@ async function renderOverview(){
 
   </div>`;
 
-  // Воронка — отдельные карточки по студиям
-  html+=`<div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">
-    ${sortedStudios.map(({st,fact,plan})=>{
-      const pill=st==='Империал'?'pill-imp':'pill-mec';
-      const weak=weakestFunnelStage(fact,plan);
-      if(!(fact.leads>0||fact.bookings>0||fact.visits>0)){
-        return`<div class="card">
-          <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Воронка продаж</div>
-          <span class="${pill}" style="font-size:12px;margin-right:6px">${st}</span>
-          <span style="font-size:13px;color:var(--text3)">нет данных за месяц</span>
-        </div>`;
-      }
-      return`<div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-          <div>
-            <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Воронка продаж</div>
-            <span class="${pill}" style="font-size:12px">${st}</span>
-          </div>
-          ${weak?`<span style="font-size:11px;color:var(--red-text);background:var(--red-bg);padding:3px 8px;border-radius:var(--radius-sm)">⚠ узкое горлышко: ${weak.label} (${weak.cv}%)</span>`:''}
-        </div>
-        ${funnelHtml(fact,plan)}
-      </div>`;
-    }).join('')}
-  </div>`;
+  // Воронка — компактная таблица, обе студии рядом, с тонкими строками конверсии
+  html+=renderCompactFunnel(sortedStudios);
 
   // ===== Дашборд по тренерам =====
   html+=await renderTrainerOverviewBlock();
@@ -1283,9 +1321,51 @@ async function deleteMarathon(id){
 
 function closeModal(id){document.getElementById(id).style.display='none';}
 
-function renderReports(){
-  const admins=[...new Set(shifts.map(s=>s.admin))].filter(Boolean).sort();
-  if(!admins.length){document.getElementById('reports-content').innerHTML='<div style="color:var(--text3);padding:2rem;text-align:center">Нет данных за этот месяц</div>';return;}
+async function renderReports(){
+  const el=document.getElementById('reports-content');
+  const now=new Date();
+  const defFrom=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-01';
+  const lastDay=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
+  const defTo=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(lastDay).padStart(2,'0');
+  el.innerHTML=`<div class="card">
+    <div class="section-title">Период отчёта</div>
+    <div class="grid2" style="margin-bottom:12px">
+      <div class="form-row"><label>С</label><input type="date" id="rep-from" value="${defFrom}"></div>
+      <div class="form-row"><label>По</label><input type="date" id="rep-to" value="${defTo}"></div>
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="loadReportsForPeriod()">Показать</button>
+  </div>
+  <div id="reports-body"></div>`;
+  await loadReportsForPeriod();
+}
+
+async function loadReportsForPeriod(){
+  const fromEl=document.getElementById('rep-from');
+  const toEl=document.getElementById('rep-to');
+  if(!fromEl||!toEl)return;
+  const from=fromEl.value;
+  const to=toEl.value;
+  const body=document.getElementById('reports-body');
+  if(body)body.innerHTML='<div style="color:var(--text3);padding:1rem;text-align:center">Загрузка...</div>';
+  const {data:raw,error}=await sb.from('shifts').select('*').gte('date',from).lte('date',to);
+  if(error){if(body)body.innerHTML='<div class="card" style="color:var(--red-text)">Ошибка: '+error.message+'</div>';return;}
+  const parse=r=>({
+    id:r.id,date:r.date,studio:r.studio,admin:r.admin,
+    newSales:+r.new_sales||0,renew:+r.renew||0,restore:+r.restore||0,
+    certs:r.certs||[],leads:+r.leads||0,leadsBooked:+r.leads_booked||0,bookings:+r.bookings||0,visits:+r.visits||0,
+    massage:+r.massage_bookings||0,reviews:+r.reviews||0,
+    calls:+r.calls||0,tasks:+r.tasks||0,yoga:+r.yoga_bookings||0,mc:+r.masterclass_bookings||0,
+    missReason:r.miss_reason||null,missComment:r.miss_comment||null,
+    selfWeakspot:r.self_weakspot||null,selfTomorrow:r.self_tomorrow||null
+  });
+  const periodShifts=(raw||[]).map(parse);
+  const periodLabel=formatDate(from)+' — '+formatDate(to);
+  renderReportsBody(periodShifts,periodLabel);
+}
+
+function renderReportsBody(shiftsData,periodLabel){
+  const admins=[...new Set(shiftsData.map(s=>s.admin))].filter(Boolean).sort();
+  if(!admins.length){document.getElementById('reports-body').innerHTML='<div style="color:var(--text3);padding:2rem;text-align:center">Нет данных за этот период</div>';return;}
 
   const cols=[
     {key:'n',label:'Смен'},
@@ -1304,13 +1384,13 @@ function renderReports(){
   ];
 
   const adminData=admins.map(admin=>{
-    const ss=shifts.filter(s=>s.admin===admin);
+    const ss=shiftsData.filter(s=>s.admin===admin);
     const st=getStats(ss);
     return{admin,studio:ss[0]?.studio||'—',...st};
   });
 
   let html=`<div class="card">
-    <div class="section-title">Сводный отчёт — ${monthLabel()}</div>
+    <div class="section-title">Сводный отчёт — ${periodLabel}</div>
     <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
     <table class="kpi-table" style="min-width:700px">
       <thead><tr>
@@ -1332,7 +1412,7 @@ function renderReports(){
   </div>`;
 
   // Daily breakdown
-  const allDates=[...new Set(shifts.map(s=>s.date))].sort((a,b)=>b.localeCompare(a));
+  const allDates=[...new Set(shiftsData.map(s=>s.date))].sort((a,b)=>b.localeCompare(a));
   if(allDates.length){
     html+=`<div class="card">
       <div class="section-title">По дням</div>
@@ -1341,7 +1421,7 @@ function renderReports(){
         <thead><tr><th>Дата</th><th>Администратор</th><th>Выручка</th><th>Звонки</th><th>Задачи</th><th>Йога</th><th>МК</th><th>Отзывы</th><th></th></tr></thead>
         <tbody>
           ${allDates.map(date=>{
-            const ds=shifts.filter(s=>s.date===date);
+            const ds=shiftsData.filter(s=>s.date===date);
             return ds.map(s=>`<tr>
               <td>${formatDate(date)}</td>
               <td>${s.admin}</td>
@@ -1361,15 +1441,15 @@ function renderReports(){
   }
 
   // Причины невыполнения плана
-  const withReason=shifts.filter(s=>s.missReason);
+  const withReason=shiftsData.filter(s=>s.missReason);
   if(withReason.length){
     const counts={};
     withReason.forEach(s=>{counts[s.missReason]=(counts[s.missReason]||0)+1;});
     const maxCount=Math.max(...Object.values(counts));
     const sortedReasons=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
-    const withComment=shifts.filter(s=>s.missComment).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,8);
+    const withComment=shiftsData.filter(s=>s.missComment).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,8);
     html+=`<div class="card">
-      <div class="section-title">Причины невыполнения плана — ${monthLabel()}</div>
+      <div class="section-title">Причины невыполнения плана — ${periodLabel}</div>
       <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:${withComment.length?'16px':'0'}">
         ${sortedReasons.map(([reason,count])=>`
           <div style="display:flex;align-items:center;gap:10px">
@@ -1388,15 +1468,15 @@ function renderReports(){
   }
 
   // Самоанализ
-  const withWeakspot=shifts.filter(s=>s.selfWeakspot);
+  const withWeakspot=shiftsData.filter(s=>s.selfWeakspot);
   if(withWeakspot.length){
     const wsCounts={};
     withWeakspot.forEach(s=>{wsCounts[s.selfWeakspot]=(wsCounts[s.selfWeakspot]||0)+1;});
     const wsMax=Math.max(...Object.values(wsCounts));
     const sortedWs=Object.entries(wsCounts).sort((a,b)=>b[1]-a[1]);
-    const withTomorrow=shifts.filter(s=>s.selfTomorrow).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,8);
+    const withTomorrow=shiftsData.filter(s=>s.selfTomorrow).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,8);
     html+=`<div class="card">
-      <div class="section-title">Самоанализ команды — ${monthLabel()}</div>
+      <div class="section-title">Самоанализ команды — ${periodLabel}</div>
       <div style="font-size:12px;color:var(--text3);margin-bottom:10px">Где администраторы сами видят свою главную просадку</div>
       <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:${withTomorrow.length?'16px':'0'}">
         ${sortedWs.map(([spot,count])=>`
@@ -1415,7 +1495,7 @@ function renderReports(){
     </div>`;
   }
 
-  document.getElementById('reports-content').innerHTML=html;
+  document.getElementById('reports-body').innerHTML=html;
 }
 
 async function resetPin(id, name){
@@ -2727,7 +2807,8 @@ async function renderRefunds(){
 }
 function refundCard(r){
   const st=stageInfo(r.status);const next=REFUND_STAGES.filter(s=>s.key!==r.status&&s.key!=='declined');
-  return`<div class="card" style="margin-bottom:0;border-radius:0;border-left:none;border-right:none;border-top:none"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px"><div><div style="font-size:14px;font-weight:600;margin-bottom:2px">${r.full_name}</div><div style="font-size:12px;color:var(--text3)">${r.phone||'—'} · ${r.studio||'—'}</div></div><span style="font-size:11px;padding:3px 10px;border-radius:20px;background:${st.bg};color:${st.color};white-space:nowrap">${st.label}</span></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px;margin-bottom:10px"><div style="color:var(--text3)">Абонемент <span style="color:var(--text)">${r.membership_type||'—'}</span></div><div style="color:var(--text3)">Куплен за <span style="color:var(--text)">${fmt(r.membership_price||0)} ₽</span></div><div style="color:var(--text3)">Осталось <span style="color:var(--text);font-weight:500">${r.remaining_sessions||0} из ${r.total_sessions||0}</span></div><div style="color:var(--text3)">К возврату <span style="color:var(--green-text);font-weight:600">${fmt(r.refund_amount||0)} ₽</span></div>${r.payment_type==='installment'&&r.payment_schedule?`<div style="color:var(--text3);grid-column:1/-1">Разбивка: ${(r.payment_schedule||[]).map(p=>formatDate(p.date)+' — '+fmt(p.amount)+' ₽').join(', ')}</div>`:''}${r.reason?`<div style="color:var(--text3)">Причина: ${r.reason}</div>`:''}</div>${r.file_url?`<div style="margin-bottom:8px"><a href="${r.file_url}" target="_blank" style="font-size:12px;color:var(--blue-text)">📎 Заявление</a></div>`:''}<div style="display:flex;gap:6px;flex-wrap:wrap">${next.map(s=>`<button class="btn btn-sm" onclick="moveRefund(${r.id},'${s.key}')" style="font-size:11px;background:${s.bg};color:${s.color};border-color:${s.color}">${s.label} →</button>`).join('')}<button class="btn btn-sm btn-danger" onclick="moveRefund(${r.id},'declined')" style="font-size:11px">Отказ</button><button class="btn btn-sm" onclick="openRefundEdit(${r.id})" style="font-size:11px;margin-left:auto">✏️</button></div><div style="font-size:11px;color:var(--text3);margin-top:6px">${r.admin_name||'—'} · ${formatDate(r.created_at?.slice(0,10))}</div></div>`;
+  return`<div class="card" style="margin-bottom:0;border-radius:0;border-left:none;border-right:none;border-top:none"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px"><div><div style="font-size:14px;font-weight:600;margin-bottom:2px">${r.full_name}</div><div style="font-size:12px;color:var(--text3)">${r.phone||'—'} · ${r.studio||'—'}</div></div><span style="font-size:11px;padding:3px 10px;border-radius:20px;background:${st.bg};color:${st.color};white-space:nowrap">${st.label}</span></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px;margin-bottom:10px"><div style="color:var(--text3)">Абонемент <span style="color:var(--text)">${r.membership_type||'—'}</span></div>
+      <div style="color:var(--text3)">Продал <span style="color:var(--text);font-weight:500">${r.sold_by||'—'}</span></div><div style="color:var(--text3)">Куплен за <span style="color:var(--text)">${fmt(r.membership_price||0)} ₽</span></div><div style="color:var(--text3)">Осталось <span style="color:var(--text);font-weight:500">${r.remaining_sessions||0} из ${r.total_sessions||0}</span></div><div style="color:var(--text3)">К возврату <span style="color:var(--green-text);font-weight:600">${fmt(r.refund_amount||0)} ₽</span></div>${r.payment_type==='installment'&&r.payment_schedule?`<div style="color:var(--text3);grid-column:1/-1">Разбивка: ${(r.payment_schedule||[]).map(p=>formatDate(p.date)+' — '+fmt(p.amount)+' ₽').join(', ')}</div>`:''}${r.reason?`<div style="color:var(--text3)">Причина: ${r.reason}</div>`:''}</div>${r.file_url?`<div style="margin-bottom:8px"><a href="${r.file_url}" target="_blank" style="font-size:12px;color:var(--blue-text)">📎 Заявление</a></div>`:''}<div style="display:flex;gap:6px;flex-wrap:wrap">${next.map(s=>`<button class="btn btn-sm" onclick="moveRefund(${r.id},'${s.key}')" style="font-size:11px;background:${s.bg};color:${s.color};border-color:${s.color}">${s.label} →</button>`).join('')}<button class="btn btn-sm btn-danger" onclick="moveRefund(${r.id},'declined')" style="font-size:11px">Отказ</button><button class="btn btn-sm" onclick="openRefundEdit(${r.id})" style="font-size:11px;margin-left:auto">✏️</button></div><div style="font-size:11px;color:var(--text3);margin-top:6px">${r.admin_name||'—'} · ${formatDate(r.created_at?.slice(0,10))}</div></div>`;
 }
 async function moveRefund(id,status){await sb.from('refunds').update({status,updated_at:new Date().toISOString()}).eq('id',id);renderRefunds();}
 async function filterRefunds(stage){const{data:r}=await sb.from('refunds').select('*').eq('status',stage).order('created_at',{ascending:false});const el=document.getElementById('refunds-list');if(el)el.innerHTML=(r&&r.length)?r.map(x=>refundCard(x)).join(''):'<div style="text-align:center;padding:2rem;color:var(--text3);font-size:13px">Нет возвратов</div>';}
@@ -2735,7 +2816,7 @@ let editingRefundId=null;let paymentCount=0;
 function openRefundModal(prefill){
   editingRefundId=null;const f=prefill||{};
   document.getElementById('rf-name').value=f.full_name||'';document.getElementById('rf-phone').value=f.phone||'';
-  document.getElementById('rf-studio').value=f.studio||'Империал';document.getElementById('rf-membership').value=f.membership_type||'';
+  document.getElementById('rf-studio').value=f.studio||'Империал';document.getElementById('rf-membership').value=f.membership_type||'';document.getElementById('rf-sold-by').value=f.sold_by||'';
   document.getElementById('rf-price').value=f.membership_price||'';document.getElementById('rf-total').value=f.total_sessions||'';
   document.getElementById('rf-remaining').value=f.remaining_sessions||'';document.getElementById('rf-penalty').value=f.penalty||'';
   document.getElementById('rf-reason').value=f.reason||'';document.getElementById('rf-comment').value=f.comment||'';
@@ -2761,7 +2842,7 @@ async function saveRefund(){
   let fileUrl=null;
   const fileInput=document.getElementById('rf-file');
   if(fileInput&&fileInput.files&&fileInput.files[0]){const file=fileInput.files[0];const ext=file.name.split('.').pop();const fname=`refund_${Date.now()}.${ext}`;const{error:upe}=await sb.storage.from('refund-files').upload(fname,file,{upsert:true});if(!upe){const{data:pub}=sb.storage.from('refund-files').getPublicUrl(fname);fileUrl=pub.publicUrl;}}
-  const row={full_name:name,phone:document.getElementById('rf-phone').value,studio:document.getElementById('rf-studio').value,membership_type:document.getElementById('rf-membership').value,membership_price:+document.getElementById('rf-price').value||0,total_sessions:total,remaining_sessions:rem,used_sessions:Math.max(0,total-rem),penalty:+document.getElementById('rf-penalty').value||0,refund_amount:+document.getElementById('rf-refund').value||0,reason:document.getElementById('rf-reason').value,comment:document.getElementById('rf-comment').value,payment_type:payType,payment_schedule:paySchedule,updated_at:new Date().toISOString()};
+  const row={full_name:name,phone:document.getElementById('rf-phone').value,studio:document.getElementById('rf-studio').value,membership_type:document.getElementById('rf-membership').value,sold_by:document.getElementById('rf-sold-by').value,membership_price:+document.getElementById('rf-price').value||0,total_sessions:total,remaining_sessions:rem,used_sessions:Math.max(0,total-rem),penalty:+document.getElementById('rf-penalty').value||0,refund_amount:+document.getElementById('rf-refund').value||0,reason:document.getElementById('rf-reason').value,comment:document.getElementById('rf-comment').value,payment_type:payType,payment_schedule:paySchedule,updated_at:new Date().toISOString()};
   if(fileUrl)row.file_url=fileUrl;if(!editingRefundId){row.status='new';row.admin_name='admin';}
   const{error}=editingRefundId?await sb.from('refunds').update(row).eq('id',editingRefundId):await sb.from('refunds').insert(row);
   if(error){err.textContent='Ошибка: '+error.message;err.style.display='block';return;}
