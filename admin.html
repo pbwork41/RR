@@ -2234,12 +2234,13 @@ async function calcTrainerSalary(){
   if(res)res.innerHTML=active.map(t=>{
     const ts=shifts.filter(s=>s.trainer_id===t.id);
     const sales=ts.reduce((a,s)=>a+(+s.sales_amount||0),0);
+    const trainings=ts.reduce((a,s)=>a+(+s.trainings_done||0),0);
     const m=motivByTrainer[t.id]||null;
     const BASE=m?+m.hourly_rate:null;
     const PCT=m?+m.sales_pct/100:null;
     const trainerBonuses=bonuses.filter(b=>b.trainer_id===t.id);
     const bonusTotal=trainerBonuses.reduce((a,b)=>a+(+b.amount||0),0);
-    const salary=BASE!==null?ts.length*BASE+Math.round(sales*PCT)+bonusTotal:null;
+    const salary=BASE!==null?trainings*BASE+Math.round(sales*PCT)+bonusTotal:null;
     return`<div class="card">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
         <div style="font-weight:600;font-size:15px">${t.name}</div>
@@ -2248,7 +2249,8 @@ async function calcTrainerSalary(){
       ${!m?'<div style="font-size:12px;color:var(--amber-text);margin-bottom:8px">⚠ Мотивация не задана</div>':''}
       <div style="display:flex;flex-direction:column;gap:4px;font-size:13px">
         <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Смен за период</span><span>${ts.length}</span></div>
-        ${m?`<div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Оклад (${ts.length} × ${fmt(BASE)} ₽)</span><span>${fmt(ts.length*BASE)} ₽</span></div>`:''}
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Тренировок проведено</span><span>${trainings}</span></div>
+        ${m?`<div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Оклад (${trainings} × ${fmt(BASE)} ₽)</span><span>${fmt(trainings*BASE)} ₽</span></div>`:''}
         <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Продажи</span><span>${fmt(sales)} ₽</span></div>
         ${m?`<div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">% с продаж (${m.sales_pct}%)</span><span>${fmt(sales*PCT)} ₽</span></div>`:''}
         ${bonusTotal>0?`<div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Бонусы</span><span style="color:var(--green-text)">${fmt(bonusTotal)} ₽</span></div>`:''}
