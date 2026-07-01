@@ -5,6 +5,15 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
+<script>
+// Автоматический сброс кеша — добавляем версию по дате
+(function(){
+  const v='20260702';
+  if(!location.search.includes('v=')){
+    location.replace(location.href+(location.search?'&':'?')+'v='+v);
+  }
+})();
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Управленческая панель — Lady Stretch</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -131,7 +140,8 @@ textarea{resize:vertical;min-height:70px}
     <div style="font-size:32px;margin-bottom:12px">🔐</div>
     <div style="font-size:18px;font-weight:700;margin-bottom:6px">Управленческая панель</div>
     <div style="font-size:13px;color:var(--text3);margin-bottom:24px">Lady Stretch · Только для руководителей</div>
-    <input type="password" class="pin-input" id="pin-field" maxlength="4" placeholder="••••" oninput="checkPin()">
+    <input type="password" class="pin-input" id="pin-field" maxlength="4" placeholder="••••" oninput="checkPin()" onkeyup="checkPin()" onchange="checkPin()" autocomplete="off" inputmode="numeric" pattern="[0-9]*">
+    <button onclick="checkPin()" style="margin-top:12px;width:100%;padding:12px;background:var(--purple);color:#fff;border:none;border-radius:var(--radius);font-size:15px;font-weight:600;cursor:pointer;font-family:inherit">Войти</button>
     <div id="pin-err" class="alert alert-red" style="display:none;margin-top:8px">Неверный пин-код</div>
   </div>
 </div>
@@ -580,7 +590,7 @@ async function loadData(){
     newSales:+r.new_sales||0,renew:+r.renew||0,restore:+r.restore||0,
     certs:r.certs||[],leads:+r.leads||0,leadsBooked:+r.leads_booked||0,bookings:+r.bookings||0,visits:+r.visits||0,
     massage:+r.massage_bookings||0,reviews:+r.reviews||0,
-    calls:+r.calls||0,tasks:+r.tasks||0,yoga:+r.yoga_bookings||0,mc:+r.masterclass_bookings||0,
+    calls:+r.calls||0,tasks:+r.tasks||0,yoga:+r.yoga_bookings||0,mc:+r.masterclass_bookings||0,yogaSales:+r.yoga_sales||0,
     missReason:r.miss_reason||null,missComment:r.miss_comment||null,
     selfWeakspot:r.self_weakspot||null,selfTomorrow:r.self_tomorrow||null
   });
@@ -602,7 +612,7 @@ async function loadData(){
 }
 
 function getStats(ss){
-  const revenue=ss.reduce((a,s)=>a+s.newSales+s.renew+s.restore,0);
+  const revenue=ss.reduce((a,s)=>a+s.newSales+s.renew+s.restore+(+s.yogaSales||0),0);
   const leads=ss.reduce((a,s)=>a+s.leads,0);
   const bookings=ss.reduce((a,s)=>a+s.bookings,0);
   const visits=ss.reduce((a,s)=>a+s.visits,0);
@@ -619,7 +629,8 @@ function getStats(ss){
   const cv2=bookings>0?Math.round(visits/bookings*100):null;
   const cv3=visits>0?Math.round(newSalesCount/visits*100):null;
   const uniqueDays=new Set(ss.map(s=>s.date)).size;
-  return{revenue,leads,bookings,visits,newSalesCount,renewals,massage,reviews,calls,tasks,yoga,mc,rr,cv1,cv2,cv3,n:ss.length,uniqueDays};
+  const newSalesRevenue=ss.reduce((a,s)=>a+(s.newSales>0?s.newSales:0),0);
+  return{revenue,leads,bookings,visits,newSalesCount,newSalesRevenue,renewals,massage,reviews,calls,tasks,yoga,mc,rr,cv1,cv2,cv3,n:ss.length,uniqueDays};
 }
 
 function getPlan(st){return plans[monthKey()+'_'+st]||{};}
@@ -664,7 +675,7 @@ function marathonProgress(m,ss){
   const msShifts=ss.filter(s=>s.date>=m.date_start&&s.date<=m.date_end);
   const type=m.condition_type;
   let val=0;
-  if(type==='revenue') val=msShifts.reduce((a,s)=>a+s.newSales+s.renew+s.restore,0);
+  if(type==='revenue') val=msShifts.reduce((a,s)=>a+s.newSales+s.renew+s.restore+(+s.yogaSales||0),0);
   else if(type==='new_sales') val=msShifts.filter(s=>s.newSales>0).length;
   else if(type==='renewals') val=msShifts.filter(s=>s.renew>0).length;
   else if(type==='bookings') val=msShifts.reduce((a,s)=>a+s.bookings,0);
@@ -703,14 +714,14 @@ function renderCompactFunnel(sortedStudios){
   const studios=sortedStudios.slice(0,2);
   while(studios.length<2)studios.push(null);
 
+  const cvLabels={cv1:'CV заявка→запись',cv2:'CV запись→приход',cv3:'CV приход→продажа'};
   const stages=[
     {key:'leads',label:'Новых заявок'},
     {key:'bookings',label:'Записано на пробное',cvKey:'cv1'},
-    {key:'visits',label:'Пришло',cvKey:'cv2'},
-    {key:'newSalesCount',label:'Продажа',cvKey:'cv3'},
+    {key:'visits',label:'Пришло на пробное',cvKey:'cv2'},
+    {key:'newSalesCount',label:'Продажи (новые)',cvKey:'cv3'},
   ];
 
-  // Determine bottleneck per studio: lowest cv among cv1/cv2/cv3
   const bottleneck=studios.map(s=>{
     if(!s)return null;
     const cvs=[{k:'cv1',v:s.fact.cv1},{k:'cv2',v:s.fact.cv2},{k:'cv3',v:s.fact.cv3}].filter(x=>x.v!==null&&x.v!==undefined);
@@ -720,42 +731,49 @@ function renderCompactFunnel(sortedStudios){
 
   let rows='';
   stages.forEach((stage,i)=>{
-    rows+=`<div style="display:grid;grid-template-columns:100px 1fr 1fr${i>0?'':''};border-top:0.5px solid var(--border)">
-      <div style="padding:10px 12px;font-size:12px;color:var(--text3);display:flex;align-items:center">${stage.label}</div>
-      ${studios.map(s=>{
-        if(!s)return`<div style="padding:10px 12px;text-align:center;font-size:15px;color:var(--text3);border-left:1px solid var(--border)">—</div>`;
-        const val=s.fact[stage.key]||0;
-        return`<div style="padding:10px 12px;text-align:center;font-size:15px;font-weight:700;border-left:1px solid var(--border)">${val}</div>`;
-      }).join('')}
-    </div>`;
+    const cells=studios.map(s=>{
+      if(!s)return'<td style="padding:10px 12px;text-align:center;font-size:16px;font-weight:700;border-left:0.5px solid var(--border)">—</td>';
+      const val=s.fact[stage.key]||0;
+      return'<td style="padding:10px 12px;text-align:center;font-size:16px;font-weight:700;border-left:0.5px solid var(--border)">'+val+'</td>';
+    }).join('');
+    rows+='<tr style="border-top:0.5px solid var(--border)"><td style="padding:10px 12px;font-size:12px;color:var(--text2)">'+stage.label+'</td>'+cells+'</tr>';
     if(stage.cvKey){
-      const isBottleneckRow=bottleneck.some(b=>b===stage.cvKey);
-      rows+=`<div style="display:grid;grid-template-columns:100px 1fr 1fr;background:${isBottleneckRow?'var(--red-bg)':'var(--bg2)'}">
-        <div style="padding:4px 12px;font-size:10px;color:${isBottleneckRow?'var(--red-text)':'var(--text3)'};display:flex;align-items:center;font-weight:${isBottleneckRow?'600':'400'}">CV</div>
-        ${studios.map((s,si)=>{
-          if(!s)return`<div style="padding:4px 12px;text-align:center;font-size:11px;color:var(--text3);border-left:1px solid var(--border)">—</div>`;
-          const cv=s.fact[stage.cvKey];
-          if(cv===null||cv===undefined)return`<div style="padding:4px 12px;text-align:center;font-size:11px;color:var(--text3);border-left:1px solid var(--border)">—</div>`;
-          const isWeak=bottleneck[si]===stage.cvKey;
-          return`<div style="padding:4px 12px;text-align:center;font-size:11px;font-weight:${isWeak?'600':'400'};color:${isWeak?'var(--red-text)':'var(--text3)'};border-left:1px solid var(--border)">${cv}%</div>`;
-        }).join('')}
-      </div>`;
+      const cvCells=studios.map((s,si)=>{
+        if(!s)return'<td style="padding:3px 12px;text-align:center;font-size:11px;color:var(--text3);border-left:0.5px solid var(--border)">—</td>';
+        const cv=s.fact[stage.cvKey];
+        if(cv===null||cv===undefined)return'<td style="padding:3px 12px;text-align:center;font-size:11px;color:var(--text3);border-left:0.5px solid var(--border)">—</td>';
+        const isWeak=bottleneck[si]===stage.cvKey;
+        const color=isWeak?'var(--amber-text)':cv>=60?'var(--green-text)':'var(--text3)';
+        const fw=isWeak||cv>=60?'600':'400';
+        return'<td style="padding:3px 12px;text-align:center;font-size:11px;font-weight:'+fw+';color:'+color+';border-left:0.5px solid var(--border)">'+cv+'%</td>';
+      }).join('');
+      rows+='<tr style="background:var(--bg2)"><td style="padding:3px 12px;font-size:11px;color:var(--text3)">'+cvLabels[stage.cvKey]+'</td>'+cvCells+'</tr>';
     }
   });
 
-  return`<div class="card" style="padding:0;overflow:hidden;margin-top:10px">
-    <div style="padding:10px 16px;border-bottom:0.5px solid var(--border);font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em">Воронка продаж</div>
-    <div style="display:grid;grid-template-columns:100px 1fr 1fr;border-bottom:0.5px solid var(--border)">
-      <div></div>
-      ${studios.map(s=>{
-        if(!s)return'<div style="padding:10px 12px;border-left:1px solid var(--border)"></div>';
-        const pill=s.st==='Империал'?'pill-imp':'pill-mec';
-        return`<div style="padding:10px 12px;text-align:center;border-left:1px solid var(--border)"><span class="${pill}" style="font-size:12px">${s.st}</span></div>`;
-      }).join('')}
-    </div>
-    ${rows}
-  </div>`;
+  const avgCells=studios.map(s=>{
+    if(!s)return'<td style="padding:8px 12px;text-align:center;font-size:12px;color:var(--text3);border-left:0.5px solid var(--border)">—</td>';
+    const sales=s.fact.newSalesCount||0;
+    const rev=s.fact.newSalesRevenue||0;
+    const avg=sales>0?Math.round(rev/sales):0;
+    return'<td style="padding:8px 12px;text-align:center;font-size:12px;font-weight:500;color:var(--text2);border-left:0.5px solid var(--border)">'+(avg?fmt(avg)+' ₽':'—')+'</td>';
+  }).join('');
+
+  const headerCells=studios.map(s=>{
+    if(!s)return'<th style="padding:10px 12px;border-left:0.5px solid var(--border)"></th>';
+    const pill=s.st==='Империал'?'pill-imp':'pill-mec';
+    return'<th style="padding:10px 12px;text-align:center;border-left:0.5px solid var(--border)"><span class="'+pill+'" style="font-size:12px">'+s.st+'</span></th>';
+  }).join('');
+
+  return'<div class="card" style="padding:0;overflow:hidden;margin-top:10px">'+
+    '<div style="padding:10px 16px;border-bottom:0.5px solid var(--border);font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em">Воронка продаж</div>'+
+    '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;min-width:360px">'+
+    '<thead><tr><th style="width:160px;padding:10px 12px;text-align:left;font-size:12px;font-weight:500;color:var(--text2)"></th>'+headerCells+'</tr></thead>'+
+    '<tbody>'+rows+
+    '<tr style="background:var(--bg2);border-top:0.5px solid var(--border)"><td style="padding:8px 12px;font-size:11px;color:var(--text3)">Средний чек</td>'+avgCells+'</tr>'+
+    '</tbody></table></div></div>';
 }
+
 
 function funnelHtml(fact,plan){
   const stages=[
@@ -803,7 +821,7 @@ async function renderOverview(){
       const rows=adminNames.map(name=>{
         const ss=shifts.filter(s=>s.admin===name&&s.date>=m.date_start&&s.date<=m.date_end);
         let val=0;
-        if(m.condition_type==='revenue')val=ss.reduce((a,s)=>a+s.newSales+s.renew+s.restore,0);
+        if(m.condition_type==='revenue')val=ss.reduce((a,s)=>a+s.newSales+s.renew+s.restore+(+s.yogaSales||0),0);
         else if(m.condition_type==='restore')val=ss.reduce((a,s)=>a+s.restore,0);
         else if(m.condition_type==='massage')val=ss.reduce((a,s)=>a+s.massage,0);
         else if(m.condition_type==='reviews')val=ss.reduce((a,s)=>a+s.reviews,0);
@@ -863,7 +881,7 @@ async function renderOverview(){
     return{st,fact,plan,rrPct,factPct};
   });
   const sortedStudios=[...studioData].sort((a,b)=>(a.rrPct===null?-1:a.rrPct)-(b.rrPct===null?-1:b.rrPct));
-  const totalFact=shifts.reduce((a,s)=>a+s.newSales+s.renew+s.restore,0);
+  const totalFact=shifts.reduce((a,s)=>a+s.newSales+s.renew+s.restore+(+s.yogaSales||0),0);
   const totalRR=calcRR(totalFact);
 
   // Missing plan banner
@@ -1016,12 +1034,12 @@ async function renderAdmins(){
     const st=getStats(ss);
     return{admin,studio:ss[0]?.studio||'—',...st};
   });
-  let html='<div class="card"><div class="section-title">Рейтинг по выручке</div>';
-  html+='<div class="table-wrap" style="min-width:0"><table class="kpi-table" style="min-width:700px"><thead><tr><th>Администратор</th><th>Студия</th><th>Смен</th><th>Выручка</th><th>Звонки</th><th>Задачи</th><th>Йога</th><th>МК</th><th>CV→продажа</th></tr></thead><tbody>';
+  let html='<div class="card"><div class="section-title">Рейтинг менеджеров по продажам</div>';
+  html+='<div class="table-wrap" style="min-width:0"><table class="kpi-table" style="min-width:780px"><thead><tr><th>Администратор</th><th>Студия</th><th>Смен</th><th>Выручка</th><th>Звонки</th><th>Отзывы</th><th>Задачи</th><th>МК</th><th>CV→продажа</th></tr></thead><tbody>';
   [...computed].sort((a,b)=>b.revenue-a.revenue).forEach((d,i)=>{
     const pill=d.studio==='Империал'?'pill-imp':'pill-mec';
     const cvCls=d.cv3===null?'delta-neu':d.cv3>=55?'delta-pos':d.cv3>=40?'':'delta-neg';
-    html+=`<tr><td><b>${i+1}. ${d.admin}</b></td><td><span class="${pill}">${d.studio}</span></td><td>${d.n}</td><td><b>${fmt(d.revenue)} ₽</b></td><td>${d.calls||'—'}</td><td>${d.tasks||'—'}</td><td>${d.yoga||'—'}</td><td>${d.mc||'—'}</td><td class="${cvCls}">${d.cv3!==null?d.cv3+'%':'—'}</td></tr>`;
+    html+=`<tr><td><b>${i+1}. ${d.admin}</b></td><td><span class="${pill}">${d.studio}</span></td><td>${d.n}</td><td><b>${fmt(d.revenue)} ₽</b></td><td>${d.calls||'—'}</td><td>${d.reviews||'—'}</td><td>${d.tasks||'—'}</td><td>${d.mc||'—'}</td><td class="${cvCls}">${d.cv3!==null?d.cv3+'%':'—'}</td></tr>`;
   });
   html+='</tbody></table></div></div>';
 
@@ -1433,7 +1451,7 @@ async function loadReportsForPeriod(){
     newSales:+r.new_sales||0,renew:+r.renew||0,restore:+r.restore||0,
     certs:r.certs||[],leads:+r.leads||0,leadsBooked:+r.leads_booked||0,bookings:+r.bookings||0,visits:+r.visits||0,
     massage:+r.massage_bookings||0,reviews:+r.reviews||0,
-    calls:+r.calls||0,tasks:+r.tasks||0,yoga:+r.yoga_bookings||0,mc:+r.masterclass_bookings||0,
+    calls:+r.calls||0,tasks:+r.tasks||0,yoga:+r.yoga_bookings||0,mc:+r.masterclass_bookings||0,yogaSales:+r.yoga_sales||0,
     missReason:r.miss_reason||null,missComment:r.miss_comment||null,
     selfWeakspot:r.self_weakspot||null,selfTomorrow:r.self_tomorrow||null
   });
@@ -1800,7 +1818,7 @@ async function loadSalaryData(){
     const ss=periodShifts.filter(s=>s.admin===admin);
     const studio=ss[0]?.studio||'—';
     const n=ss.length;
-    const revenue=ss.reduce((a,s)=>a+s.newSales+s.renew+s.restore,0);
+    const revenue=ss.reduce((a,s)=>a+s.newSales+s.renew+s.restore+(+s.yogaSales||0),0);
     let fix=0,pNew=0,pRenew=0,pRestore=0,bonus=0;
     ss.forEach(s=>{
       const sal=calcShift(s);
@@ -2889,8 +2907,42 @@ async function renderRefunds(){
 function refundCard(r){
   const st=stageInfo(r.status);const next=REFUND_STAGES.filter(s=>s.key!==r.status&&s.key!=='declined');
   return`<div class="card" style="margin-bottom:0;border-radius:0;border-left:none;border-right:none;border-top:none"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px"><div><div style="font-size:14px;font-weight:600;margin-bottom:2px">${r.full_name}</div><div style="font-size:12px;color:var(--text3)">${r.phone||'—'} · ${r.studio||'—'}</div></div><span style="font-size:11px;padding:3px 10px;border-radius:20px;background:${st.bg};color:${st.color};white-space:nowrap">${st.label}</span></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px;margin-bottom:10px"><div style="color:var(--text3)">Абонемент <span style="color:var(--text)">${r.membership_type||'—'}</span></div>
-      <div style="color:var(--text3)">Продал <span style="color:var(--text);font-weight:500">${r.sold_by||'—'}</span></div><div style="color:var(--text3)">Куплен за <span style="color:var(--text)">${fmt(r.membership_price||0)} ₽</span></div><div style="color:var(--text3)">Осталось <span style="color:var(--text);font-weight:500">${r.remaining_sessions||0} из ${r.total_sessions||0}</span></div><div style="color:var(--text3)">К возврату <span style="color:var(--green-text);font-weight:600">${fmt(r.refund_amount||0)} ₽</span></div>${r.payment_type==='installment'&&r.payment_schedule?`<div style="color:var(--text3);grid-column:1/-1">Разбивка: ${(r.payment_schedule||[]).map(p=>formatDate(p.date)+' — '+fmt(p.amount)+' ₽').join(', ')}</div>`:''}${r.reason?`<div style="color:var(--text3)">Причина: ${r.reason}</div>`:''}</div>${r.file_url?`<div style="margin-bottom:8px"><a href="${r.file_url}" target="_blank" style="font-size:12px;color:var(--blue-text)">📎 Заявление</a></div>`:''}<div style="display:flex;gap:6px;flex-wrap:wrap">${next.map(s=>`<button class="btn btn-sm" onclick="moveRefund(${r.id},'${s.key}')" style="font-size:11px;background:${s.bg};color:${s.color};border-color:${s.color}">${s.label} →</button>`).join('')}<button class="btn btn-sm btn-danger" onclick="moveRefund(${r.id},'declined')" style="font-size:11px">Отказ</button><button class="btn btn-sm" onclick="openRefundEdit(${r.id})" style="font-size:11px;margin-left:auto">✏️</button></div><div style="font-size:11px;color:var(--text3);margin-top:6px">${r.admin_name||'—'} · ${formatDate(r.created_at?.slice(0,10))}</div></div>`;
+      <div style="color:var(--text3)">Продал <span style="color:var(--text);font-weight:500">${r.sold_by||'—'}</span></div><div style="color:var(--text3)">Куплен за <span style="color:var(--text)">${fmt(r.membership_price||0)} ₽</span></div><div style="color:var(--text3)">Осталось <span style="color:var(--text);font-weight:500">${r.remaining_sessions||0} из ${r.total_sessions||0}</span></div><div style="color:var(--text3)">К возврату <span style="color:var(--green-text);font-weight:600">${fmt(r.refund_amount||0)} ₽</span></div>${r.payment_type==='installment'&&r.payment_schedule&&r.payment_schedule.length?`
+      <div style="color:var(--text3);grid-column:1/-1">
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;color:var(--text3)">📅 Календарь платежей</div>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          ${(r.payment_schedule||[]).map((p,i)=>{
+            const isPaid=p.paid===true;
+            const isToday=p.date&&p.date===today();
+            const bg=isPaid?'var(--green-bg)':isToday?'var(--blue-bg)':'var(--bg2)';
+            const color=isPaid?'var(--green-text)':isToday?'var(--blue-text)':'var(--text2)';
+            return`<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;border-radius:6px;background:${bg}">
+              <div style="display:flex;align-items:center;gap:8px">
+                <div onclick="togglePayment(${r.id},${i})" style="width:20px;height:20px;border-radius:50%;border:2px solid ${isPaid?'var(--green-text)':isToday?'var(--blue-text)':'var(--border2)'};background:${isPaid?'var(--green-text)':'transparent'};cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                  ${isPaid?'<svg width="11" height="11" viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>':''}
+                </div>
+                <span style="font-size:12px;color:${color}${isPaid?';text-decoration:line-through':''}">Платёж ${i+1} · ${formatDate(p.date)}</span>
+              </div>
+              <span style="font-size:13px;font-weight:600;color:${color}">${fmt(p.amount)} ₽</span>
+            </div>`;
+          }).join('')}
+          <div style="display:flex;justify-content:space-between;padding:5px 8px;border-top:0.5px solid var(--border);margin-top:2px">
+            <span style="font-size:11px;color:var(--text3)">Итого по графику</span>
+            <span style="font-size:12px;font-weight:600;color:var(--text2)">${fmt((r.payment_schedule||[]).reduce((a,p)=>a+(+p.amount||0),0))} ₽</span>
+          </div>
+        </div>
+      </div>`:''}
+      ${r.reason?`<div style="color:var(--text3)">Причина: ${r.reason}</div>`:''}</div>${r.file_url?`<div style="margin-bottom:8px"><a href="${r.file_url}" target="_blank" style="font-size:12px;color:var(--blue-text)">📎 Заявление</a></div>`:''}<div style="display:flex;gap:6px;flex-wrap:wrap">${next.map(s=>`<button class="btn btn-sm" onclick="moveRefund(${r.id},'${s.key}')" style="font-size:11px;background:${s.bg};color:${s.color};border-color:${s.color}">${s.label} →</button>`).join('')}<button class="btn btn-sm btn-danger" onclick="moveRefund(${r.id},'declined')" style="font-size:11px">Отказ</button><button class="btn btn-sm" onclick="openRefundEdit(${r.id})" style="font-size:11px;margin-left:auto">✏️</button></div><div style="font-size:11px;color:var(--text3);margin-top:6px">${r.admin_name||'—'} · ${formatDate(r.created_at?.slice(0,10))}</div></div>`;
 }
+async function togglePayment(refundId, paymentIndex){
+  const {data:r}=await sb.from('refunds').select('payment_schedule').eq('id',refundId).single();
+  if(!r||!r.payment_schedule)return;
+  const schedule=r.payment_schedule;
+  schedule[paymentIndex].paid=!schedule[paymentIndex].paid;
+  await sb.from('refunds').update({payment_schedule:schedule,updated_at:new Date().toISOString()}).eq('id',refundId);
+  renderRefunds();
+}
+
 async function moveRefund(id,status){await sb.from('refunds').update({status,updated_at:new Date().toISOString()}).eq('id',id);renderRefunds();}
 async function filterRefunds(stage){const{data:r}=await sb.from('refunds').select('*').eq('status',stage).order('created_at',{ascending:false});const el=document.getElementById('refunds-list');if(el)el.innerHTML=(r&&r.length)?r.map(x=>refundCard(x)).join(''):'<div style="text-align:center;padding:2rem;color:var(--text3);font-size:13px">Нет возвратов</div>';}
 let editingRefundId=null;let paymentCount=0;
