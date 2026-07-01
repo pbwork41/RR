@@ -213,40 +213,52 @@ textarea{resize:vertical;min-height:70px}
   <div class="divider"></div>
   <div style="font-size:13px;font-weight:600;margin-bottom:10px">🏢 Империал</div>
   <div class="grid2">
-    <div class="form-row"><label>Выручка, ₽</label><input type="number" id="imp-revenue"></div>
-    <div class="form-row"><label>Новые абонементы, шт</label><input type="number" id="imp-new"></div>
+    <div class="form-row"><label>Выручка, ₽</label><input type="number" id="imp-revenue" oninput="calcPlanForecast('imp')"></div>
+    <div class="form-row"><label>Новые абонементы, шт</label><input type="number" id="imp-new" oninput="calcPlanForecast('imp')"></div>
   </div>
   <div class="grid2">
-    <div class="form-row"><label>Лиды, шт</label><input type="number" id="imp-leads"></div>
-    <div class="form-row"><label>Записи на пробное, шт</label><input type="number" id="imp-bookings"></div>
+    <div class="form-row"><label>Лиды, шт</label><input type="number" id="imp-leads" oninput="calcPlanForecast('imp')"></div>
+    <div class="form-row"><label>Записи на пробное, шт</label><input type="number" id="imp-bookings" oninput="calcPlanForecast('imp')"></div>
   </div>
   <div class="grid2">
-    <div class="form-row"><label>Доходимость, чел</label><input type="number" id="imp-visits"></div>
-    <div class="form-row"><label>Продления, шт</label><input type="number" id="imp-renewals"></div>
+    <div class="form-row"><label>Доходимость, чел</label><input type="number" id="imp-visits" oninput="calcPlanForecast('imp')"></div>
+    <div class="form-row"><label>Продления, шт</label><input type="number" id="imp-renewals" oninput="calcPlanForecast('imp')"></div>
   </div>
   <div class="grid3">
-    <div class="form-row"><label>CV лид→запись, %</label><input type="number" id="imp-cv1"></div>
-    <div class="form-row"><label>CV запись→приход, %</label><input type="number" id="imp-cv2"></div>
-    <div class="form-row"><label>CV приход→продажа, %</label><input type="number" id="imp-cv3"></div>
+    <div class="form-row"><label>CV лид→запись, %</label><input type="number" id="imp-cv1" oninput="calcPlanForecast('imp')"></div>
+    <div class="form-row"><label>CV запись→приход, %</label><input type="number" id="imp-cv2" oninput="calcPlanForecast('imp')"></div>
+    <div class="form-row"><label>CV приход→продажа, %</label><input type="number" id="imp-cv3" oninput="calcPlanForecast('imp')"></div>
+  </div>
+  <div class="form-row"><label>Средний чек, ₽</label><input type="number" id="imp-avg-check" placeholder="0" oninput="calcPlanForecast('imp')"></div>
+  <div id="imp-forecast" style="display:none;background:var(--blue-bg);border-radius:var(--radius-sm);padding:10px 14px;margin-top:8px">
+    <div style="font-size:11px;color:var(--blue-text);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Прогноз выручки</div>
+    <div style="font-size:22px;font-weight:700;color:var(--blue-text)" id="imp-forecast-revenue">—</div>
+    <div style="font-size:12px;color:var(--blue-text);opacity:.8;margin-top:4px" id="imp-forecast-chain"></div>
   </div>
   <div class="divider"></div>
   <div style="font-size:13px;font-weight:600;margin-bottom:10px">🏢 Мечта</div>
   <div class="grid2">
-    <div class="form-row"><label>Выручка, ₽</label><input type="number" id="mec-revenue"></div>
-    <div class="form-row"><label>Новые абонементы, шт</label><input type="number" id="mec-new"></div>
+    <div class="form-row"><label>Выручка, ₽</label><input type="number" id="mec-revenue" oninput="calcPlanForecast('mec')"></div>
+    <div class="form-row"><label>Новые абонементы, шт</label><input type="number" id="mec-new" oninput="calcPlanForecast('mec')"></div>
   </div>
   <div class="grid2">
-    <div class="form-row"><label>Лиды, шт</label><input type="number" id="mec-leads"></div>
-    <div class="form-row"><label>Записи на пробное, шт</label><input type="number" id="mec-bookings"></div>
+    <div class="form-row"><label>Лиды, шт</label><input type="number" id="mec-leads" oninput="calcPlanForecast('mec')"></div>
+    <div class="form-row"><label>Записи на пробное, шт</label><input type="number" id="mec-bookings" oninput="calcPlanForecast('mec')"></div>
   </div>
   <div class="grid2">
-    <div class="form-row"><label>Доходимость, чел</label><input type="number" id="mec-visits"></div>
-    <div class="form-row"><label>Продления, шт</label><input type="number" id="mec-renewals"></div>
+    <div class="form-row"><label>Доходимость, чел</label><input type="number" id="mec-visits" oninput="calcPlanForecast('mec')"></div>
+    <div class="form-row"><label>Продления, шт</label><input type="number" id="mec-renewals" oninput="calcPlanForecast('mec')"></div>
   </div>
   <div class="grid3">
-    <div class="form-row"><label>CV лид→запись, %</label><input type="number" id="mec-cv1"></div>
-    <div class="form-row"><label>CV запись→приход, %</label><input type="number" id="mec-cv2"></div>
-    <div class="form-row"><label>CV приход→продажа, %</label><input type="number" id="mec-cv3"></div>
+    <div class="form-row"><label>CV лид→запись, %</label><input type="number" id="mec-cv1" oninput="calcPlanForecast('mec')"></div>
+    <div class="form-row"><label>CV запись→приход, %</label><input type="number" id="mec-cv2" oninput="calcPlanForecast('mec')"></div>
+    <div class="form-row"><label>CV приход→продажа, %</label><input type="number" id="mec-cv3" oninput="calcPlanForecast('mec')"></div>
+  </div>
+  <div class="form-row"><label>Средний чек, ₽</label><input type="number" id="mec-avg-check" placeholder="0" oninput="calcPlanForecast('mec')"></div>
+  <div id="mec-forecast" style="display:none;background:var(--blue-bg);border-radius:var(--radius-sm);padding:10px 14px;margin-top:8px">
+    <div style="font-size:11px;color:var(--blue-text);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Прогноз выручки</div>
+    <div style="font-size:22px;font-weight:700;color:var(--blue-text)" id="mec-forecast-revenue">—</div>
+    <div style="font-size:12px;color:var(--blue-text);opacity:.8;margin-top:4px" id="mec-forecast-chain"></div>
   </div>
   <div class="divider"></div>
   <div id="plan-msg" style="display:none" class="alert alert-green">✓ План сохранён</div>
@@ -1158,7 +1170,7 @@ function renderPlans(){
   document.getElementById('plans-content').innerHTML=html;
 }
 
-function openPlanModal(){
+async function openPlanModal(){
   document.getElementById('plan-month').value=monthKey();
   ['Империал','Мечта'].forEach(st=>{
     const plan=getPlan(st);const pfx=st==='Империал'?'imp':'mec';
@@ -1171,9 +1183,75 @@ function openPlanModal(){
     document.getElementById(pfx+'-cv1').value=plan.cv1||'';
     document.getElementById(pfx+'-cv2').value=plan.cv2||'';
     document.getElementById(pfx+'-cv3').value=plan.cv3||'';
+    document.getElementById(pfx+'-avg-check').value=plan.avg_check||'';
   });
   document.getElementById('plan-msg').style.display='none';
   document.getElementById('plan-modal').style.display='flex';
+
+  // Подгружаем факт прошлого месяца
+  const now=new Date();
+  const prevDate=new Date(now.getFullYear(),now.getMonth()-1,1);
+  const prevKey=prevDate.getFullYear()+'-'+String(prevDate.getMonth()+1).padStart(2,'0');
+  const prevLabel=prevDate.toLocaleString('ru-RU',{month:'long',year:'numeric'});
+  const lastDay=new Date(prevDate.getFullYear(),prevDate.getMonth()+1,0).getDate();
+  const {data:prevShifts}=await sb.from('shifts').select('*')
+    .gte('date',prevKey+'-01').lte('date',prevKey+'-'+lastDay);
+  if(!prevShifts||!prevShifts.length)return;
+
+  ['Империал','Мечта'].forEach(st=>{
+    const pfx=st==='Империал'?'imp':'mec';
+    const ss=prevShifts.filter(s=>s.studio===st);
+    if(!ss.length)return;
+    const revenue=ss.reduce((a,s)=>a+(+s.new_sales||0)+(+s.renew||0)+(+s.restore||0),0);
+    const newSales=ss.reduce((a,s)=>a+(+s.new_sales>0?1:0),0);
+    const leads=ss.reduce((a,s)=>a+(+s.leads||0),0);
+    const bookings=ss.reduce((a,s)=>a+(+s.bookings||0),0);
+    const visits=ss.reduce((a,s)=>a+(+s.visits||0),0);
+    const renewals=ss.reduce((a,s)=>a+(+s.renew>0?1:0),0);
+    const cv1=leads>0?Math.round(bookings/leads*100):null;
+    const cv2=bookings>0?Math.round(visits/bookings*100):null;
+    const cv3=visits>0?Math.round(newSales/visits*100):null;
+
+    const hints={
+      [pfx+'-revenue']:`${fmt(revenue)} ₽`,
+      [pfx+'-new']:`${newSales} шт`,
+      [pfx+'-leads']:`${leads} шт`,
+      [pfx+'-bookings']:`${bookings} шт`,
+      [pfx+'-visits']:`${visits} чел`,
+      [pfx+'-renewals']:`${renewals} шт`,
+      [pfx+'-cv1']:cv1!==null?`${cv1}%`:null,
+      [pfx+'-cv2']:cv2!==null?`${cv2}%`:null,
+      [pfx+'-cv3']:cv3!==null?`${cv3}%`:null,
+      [pfx+'-avg-check']:newSales>0?`${fmt(Math.round(revenue/newSales))} ₽`:null,
+    };
+    Object.entries(hints).forEach(([id,val])=>{
+      if(!val)return;
+      const input=document.getElementById(id);
+      if(!input)return;
+      let hint=input.parentElement.querySelector('.plan-hint');
+      if(!hint){hint=document.createElement('div');hint.className='plan-hint';hint.style.cssText='font-size:11px;color:var(--text3);margin-top:3px';input.parentElement.appendChild(hint);}
+      hint.textContent=`факт за ${prevLabel}: ${val}`;
+    });
+  });
+}
+
+
+function calcPlanForecast(pfx){
+  const newSales=+document.getElementById(pfx+'-new')?.value||0;
+  const renewals=+document.getElementById(pfx+'-renewals')?.value||0;
+  const avgCheck=+document.getElementById(pfx+'-avg-check')?.value||0;
+  const forecastEl=document.getElementById(pfx+'-forecast');
+  if(!forecastEl)return;
+  if((!newSales&&!renewals)||!avgCheck){forecastEl.style.display='none';return;}
+  const newRevenue=newSales*avgCheck;
+  const renewRevenue=renewals*avgCheck;
+  const totalRevenue=newRevenue+renewRevenue;
+  forecastEl.style.display='block';
+  document.getElementById(pfx+'-forecast-revenue').textContent=fmt(totalRevenue)+' ₽';
+  document.getElementById(pfx+'-forecast-chain').textContent=
+    'Новых: '+newSales+' × '+fmt(avgCheck)+' ₽ = '+fmt(newRevenue)+' ₽  +  Продления: '+renewals+' × '+fmt(avgCheck)+' ₽ = '+fmt(renewRevenue)+' ₽';
+  const revEl=document.getElementById(pfx+'-revenue');
+  if(revEl)revEl.value=totalRevenue;
 }
 
 async function savePlan(){
@@ -1194,6 +1272,7 @@ async function savePlan(){
       cv1:+document.getElementById(pfx+'-cv1').value||0,
       cv2:+document.getElementById(pfx+'-cv2').value||0,
       cv3:+document.getElementById(pfx+'-cv3').value||0,
+      avg_check:+document.getElementById(pfx+'-avg-check').value||0,
     };
     // Delete existing then insert fresh to guarantee update
     await sb.from('plans').delete().eq('month',m).eq('studio',st);
