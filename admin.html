@@ -217,11 +217,11 @@ textarea{resize:vertical;min-height:70px}
     <div class="form-row"><label>Новые абонементы, шт</label><input type="number" id="imp-new" oninput="calcPlanForecast('imp')"></div>
   </div>
   <div class="grid2">
-    <div class="form-row"><label>Лиды, шт</label><input type="number" id="imp-leads" oninput="calcPlanForecast('imp')"></div>
+    <div class="form-row"><label>Новых заявок, шт</label><input type="number" id="imp-leads" oninput="calcPlanForecast('imp')"></div>
     <div class="form-row"><label>Записи на пробное, шт</label><input type="number" id="imp-bookings" oninput="calcPlanForecast('imp')"></div>
   </div>
   <div class="grid2">
-    <div class="form-row"><label>Доходимость, чел</label><input type="number" id="imp-visits" oninput="calcPlanForecast('imp')"></div>
+    <div class="form-row"><label>Дошло на пробное, чел</label><input type="number" id="imp-visits" oninput="calcPlanForecast('imp')"></div>
     <div class="form-row"><label>Продления, шт</label><input type="number" id="imp-renewals" oninput="calcPlanForecast('imp')"></div>
   </div>
   <div class="grid3">
@@ -242,11 +242,11 @@ textarea{resize:vertical;min-height:70px}
     <div class="form-row"><label>Новые абонементы, шт</label><input type="number" id="mec-new" oninput="calcPlanForecast('mec')"></div>
   </div>
   <div class="grid2">
-    <div class="form-row"><label>Лиды, шт</label><input type="number" id="mec-leads" oninput="calcPlanForecast('mec')"></div>
+    <div class="form-row"><label>Новых заявок, шт</label><input type="number" id="mec-leads" oninput="calcPlanForecast('mec')"></div>
     <div class="form-row"><label>Записи на пробное, шт</label><input type="number" id="mec-bookings" oninput="calcPlanForecast('mec')"></div>
   </div>
   <div class="grid2">
-    <div class="form-row"><label>Доходимость, чел</label><input type="number" id="mec-visits" oninput="calcPlanForecast('mec')"></div>
+    <div class="form-row"><label>Дошло на пробное, чел</label><input type="number" id="mec-visits" oninput="calcPlanForecast('mec')"></div>
     <div class="form-row"><label>Продления, шт</label><input type="number" id="mec-renewals" oninput="calcPlanForecast('mec')"></div>
   </div>
   <div class="grid3">
@@ -286,8 +286,8 @@ textarea{resize:vertical;min-height:70px}
       <option value="revenue">Выручка, ₽</option>
       <option value="new_sales">Новых продаж, шт</option>
       <option value="renewals">Продлений, шт</option>
-      <option value="bookings">Записей на пробное, шт</option>
-      <option value="visits">Доходимость, чел</option>
+      <option value="bookings">Записано на пробное, шт</option>
+      <option value="visits">Дошло на пробное, чел</option>
       <option value="massage">Записей на массаж, шт</option>
       <option value="reviews">Отзывов, шт</option>
       <option value="restore">Возврат клиентов, ₽</option>
@@ -368,8 +368,8 @@ textarea{resize:vertical;min-height:70px}
   <div class="divider"></div>
   <div class="subsection-title">Воронка</div>
   <div class="grid2">
-    <div class="form-row"><label>Лиды</label><input type="number" id="aes-leads" value="0" min="0"></div>
-    <div class="form-row"><label>Записей на пробное</label><input type="number" id="aes-bookings" value="0" min="0"></div>
+    <div class="form-row"><label>Новых заявок</label><input type="number" id="aes-leads" value="0" min="0"></div>
+    <div class="form-row"><label>Записано на пробное</label><input type="number" id="aes-bookings" value="0" min="0"></div>
   </div>
   <div class="form-row"><label>Пришло на пробное</label><input type="number" id="aes-visits" value="0" min="0"></div>
   <div class="divider"></div>
@@ -379,7 +379,7 @@ textarea{resize:vertical;min-height:70px}
     <div class="form-row"><label>Продления, ₽</label><input type="number" id="aes-renew" value="0" min="0"></div>
   </div>
   <div class="grid2">
-    <div class="form-row"><label>Возврат клиента, ₽</label><input type="number" id="aes-restore" value="0" min="0"></div>
+    <div class="form-row"><label>Возврат недействующего клиента, ₽</label><input type="number" id="aes-restore" value="0" min="0"></div>
     <div class="form-row"><label>Массаж (записей)</label><input type="number" id="aes-massage" value="0" min="0"></div>
   </div>
   <div class="divider"></div>
@@ -641,7 +641,7 @@ function delta(cur,prev){
 
 const CONDITION_LABELS={
   revenue:'Выручка',new_sales:'Новых продаж',renewals:'Продлений',restore:'Возврат клиентов',
-  bookings:'Записей на пробное',visits:'Доходимость',
+  bookings:'Записано на пробное',visits:'Дошло на пробное',
   massage:'Записей на массаж',reviews:'Отзывов',conv_cv3:'CV приход→продажа'
 };
 const CONDITION_UNITS={
@@ -686,7 +686,7 @@ function weakestFunnelStage(fact,plan){
   const stages=[
     {label:'Лид → запись',cv:fact.cv1,cvPlan:plan.cv1||0},
     {label:'Запись → приход',cv:fact.cv2,cvPlan:plan.cv2||0},
-    {label:'Приход → продажа',cv:fact.cv3,cvPlan:plan.cv3||0},
+    {label:'Дошло → продажа',cv:fact.cv3,cvPlan:plan.cv3||0},
   ].filter(s=>s.cv!==null&&s.cvPlan>0);
   if(!stages.length)return null;
   let worst=null,worstGap=-Infinity;
@@ -704,8 +704,8 @@ function renderCompactFunnel(sortedStudios){
   while(studios.length<2)studios.push(null);
 
   const stages=[
-    {key:'leads',label:'Лиды'},
-    {key:'bookings',label:'Записи',cvKey:'cv1'},
+    {key:'leads',label:'Новых заявок'},
+    {key:'bookings',label:'Записано на пробное',cvKey:'cv1'},
     {key:'visits',label:'Пришло',cvKey:'cv2'},
     {key:'newSalesCount',label:'Продажа',cvKey:'cv3'},
   ];
@@ -759,8 +759,8 @@ function renderCompactFunnel(sortedStudios){
 
 function funnelHtml(fact,plan){
   const stages=[
-    {label:'Лиды',fact:fact.leads,plan:plan.leads||0},
-    {label:'Записей на пробное',fact:fact.bookings,plan:plan.bookings||0,cv:fact.cv1,cvPlan:plan.cv1||0,cvLabel:'Лид → запись'},
+    {label:'Новых заявок',fact:fact.leads,plan:plan.leads||0},
+    {label:'Записано на пробное',fact:fact.bookings,plan:plan.bookings||0,cv:fact.cv1,cvPlan:plan.cv1||0,cvLabel:'Лид → запись'},
     {label:'Пришло на пробное',fact:fact.visits,plan:plan.visits||0,cv:fact.cv2,cvPlan:plan.cv2||0,cvLabel:'Запись → приход'},
     {label:'Новые продажи',fact:fact.newSalesCount,plan:plan.new_clients||0,cv:fact.cv3,cvPlan:plan.cv3||0,cvLabel:'Приход → продажа'},
   ];
@@ -936,9 +936,9 @@ function renderMoM(){
     const rows=[
       {label:'Выручка',cur:fmt(cur.revenue)+' ₽',prev:fmt(prev.revenue)+' ₽',d:delta(cur.revenue,prev.revenue)},
       {label:'Ран рейт',cur:fmt(cur.rr)+' ₽',prev:fmt(prev.rr)+' ₽',d:delta(cur.rr,prev.rr)},
-      {label:'Лиды',cur:cur.leads,prev:prev.leads,d:delta(cur.leads,prev.leads)},
-      {label:'Записи на пробное',cur:cur.bookings,prev:prev.bookings,d:delta(cur.bookings,prev.bookings)},
-      {label:'Доходимость',cur:cur.visits,prev:prev.visits,d:delta(cur.visits,prev.visits)},
+      {label:'Новых заявок',cur:cur.leads,prev:prev.leads,d:delta(cur.leads,prev.leads)},
+      {label:'Записано на пробное',cur:cur.bookings,prev:prev.bookings,d:delta(cur.bookings,prev.bookings)},
+      {label:'Дошло на пробное',cur:cur.visits,prev:prev.visits,d:delta(cur.visits,prev.visits)},
       {label:'Новые абонементы',cur:cur.newSalesCount,prev:prev.newSalesCount,d:delta(cur.newSalesCount,prev.newSalesCount)},
       {label:'Продления',cur:cur.renewals,prev:prev.renewals,d:delta(cur.renewals,prev.renewals)},
       {label:'Записи на массаж',cur:cur.massage,prev:prev.massage,d:delta(cur.massage,prev.massage)},
@@ -977,9 +977,9 @@ function renderStudios(){
     const kpis=[
       {label:'Выручка',fact:fmt(fact.revenue)+' ₽',plan:plan.revenue?fmt(plan.revenue)+' ₽':'—',pv:plan.revenue?Math.round(fact.revenue/plan.revenue*100):null},
       {label:'Ран рейт',fact:fmt(fact.rr)+' ₽',plan:plan.revenue?fmt(plan.revenue)+' ₽':'—',pv:plan.revenue?Math.round(fact.rr/plan.revenue*100):null},
-      {label:'Лиды',fact:fact.leads,plan:plan.leads||'—',pv:plan.leads?Math.round(fact.leads/plan.leads*100):null},
-      {label:'Записи на пробное',fact:fact.bookings,plan:plan.bookings||'—',pv:plan.bookings?Math.round(fact.bookings/plan.bookings*100):null},
-      {label:'Доходимость',fact:fact.visits,plan:plan.visits||'—',pv:plan.visits?Math.round(fact.visits/plan.visits*100):null},
+      {label:'Новых заявок',fact:fact.leads,plan:plan.leads||'—',pv:plan.leads?Math.round(fact.leads/plan.leads*100):null},
+      {label:'Записано на пробное',fact:fact.bookings,plan:plan.bookings||'—',pv:plan.bookings?Math.round(fact.bookings/plan.bookings*100):null},
+      {label:'Дошло на пробное',fact:fact.visits,plan:plan.visits||'—',pv:plan.visits?Math.round(fact.visits/plan.visits*100):null},
       {label:'Новые абонементы',fact:fact.newSalesCount,plan:plan.new_clients||'—',pv:plan.new_clients?Math.round(fact.newSalesCount/plan.new_clients*100):null},
       {label:'Продления',fact:fact.renewals,plan:plan.renewals||'—',pv:plan.renewals?Math.round(fact.renewals/plan.renewals*100):null},
       {label:'⟳ CV лид→запись',fact:fact.cv1!==null?fact.cv1+'%':'—',plan:plan.cv1?plan.cv1+'%':'—',pv:plan.cv1&&fact.cv1!==null?Math.round(fact.cv1/plan.cv1*100):null},
@@ -1156,9 +1156,9 @@ function renderPlans(){
         <div class="metric"><div class="metric-label">Продления</div><div class="metric-val">${plan.renewals||'—'}</div></div>
       </div>
       <div class="grid3" style="margin-bottom:10px">
-        <div class="metric"><div class="metric-label">Лиды</div><div class="metric-val">${plan.leads||'—'}</div></div>
+        <div class="metric"><div class="metric-label">Новых заявок</div><div class="metric-val">${plan.leads||'—'}</div></div>
         <div class="metric"><div class="metric-label">Записи</div><div class="metric-val">${plan.bookings||'—'}</div></div>
-        <div class="metric"><div class="metric-label">Доходимость</div><div class="metric-val">${plan.visits||'—'}</div></div>
+        <div class="metric"><div class="metric-label">Дошло на пробное</div><div class="metric-val">${plan.visits||'—'}</div></div>
       </div>
       <div class="grid3">
         <div class="metric"><div class="metric-label">CV лид→запись</div><div class="metric-val">${plan.cv1||'—'}${plan.cv1?'%':''}</div></div>
@@ -1449,9 +1449,9 @@ function renderReportsBody(shiftsData,periodLabel){
   const cols=[
     {key:'n',label:'Смен'},
     {key:'revenue',label:'Выручка',fmt:true},
-    {key:'leads',label:'Лиды'},
-    {key:'bookings',label:'Записи'},
-    {key:'visits',label:'Приход'},
+    {key:'leads',label:'Новых заявок'},
+    {key:'bookings',label:'Записано на пробное'},
+    {key:'visits',label:'Дошло на пробное'},
     {key:'newSalesCount',label:'Новые'},
     {key:'renewals',label:'Продления'},
     {key:'massage',label:'Массаж'},
