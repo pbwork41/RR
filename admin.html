@@ -415,6 +415,24 @@ textarea{resize:vertical;min-height:70px}
 </div>
 
 <!-- EDIT TRAINER REPORT MODAL -->
+<!-- ADD SALE MODAL -->
+<div id="add-sale-modal" style="display:none" class="modal-bg">
+<div class="modal">
+  <div class="modal-header">
+    <div class="modal-title">+ Продажа тренеру</div>
+    <button class="btn btn-sm" onclick="document.getElementById('add-sale-modal').style.display='none'">✕</button>
+  </div>
+  <div id="add-sale-info" style="font-size:13px;color:var(--text2);margin-bottom:12px"></div>
+  <div class="form-row"><label>Сумма продажи, ₽</label><input type="number" id="as-amount" placeholder="0" min="0"></div>
+  <div class="form-row"><label>Комментарий</label><input type="text" id="as-comment" placeholder="Клиент пришёл на следующий день"></div>
+  <div id="as-err" class="alert alert-red" style="display:none"></div>
+  <div style="display:flex;gap:8px;margin-top:1rem">
+    <button class="btn btn-block" onclick="document.getElementById('add-sale-modal').style.display='none'">Отмена</button>
+    <button class="btn btn-primary btn-block" onclick="saveAddSale()">✓ Добавить</button>
+  </div>
+</div>
+</div>
+
 <div id="admin-edit-trainer-modal" style="display:none" class="modal-bg">
 <div class="modal">
   <div class="modal-header">
@@ -2089,13 +2107,12 @@ function switchTab(t){
 function renderRevenueSources(sortedStudios){
   if(!sortedStudios||!sortedStudios.length)return'';
 
-  // Aggregate all studios
-  const all=sortedStudios.map(s=>s.fact);
-  const newSales=all.reduce((a,f)=>a+(f.newSales||0),0);
-  const renew=all.reduce((a,f)=>a+(f.renew||0),0);
-  const restore=all.reduce((a,f)=>a+(f.restore||0),0);
-  const yoga=all.reduce((a,f)=>a+(f.yogaSales||0),0);
-  const mc=all.reduce((a,f)=>a+(f.mcSales||0),0);
+  // Aggregate from global shifts array directly
+  const newSales=shifts.reduce((a,s)=>a+(s.newSales||0),0);
+  const renew=shifts.reduce((a,s)=>a+(s.renew||0),0);
+  const restore=shifts.reduce((a,s)=>a+(s.restore||0),0);
+  const yoga=shifts.reduce((a,s)=>a+(s.yogaSales||0),0);
+  const mc=shifts.reduce((a,s)=>a+(s.mcSales||0),0);
   const total=newSales+renew+restore+yoga+mc;
 
   const pct=v=>total>0?Math.round(v/total*100)+'%':'—';
@@ -2224,7 +2241,10 @@ async function renderTrainerTeam(){
           ${ts.map(s=>`<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:4px 8px;background:var(--bg2);border-radius:var(--radius-sm)">
             <span style="color:var(--text2)">${formatDate(s.date)} · ${s.studio}</span>
             <span>тренировок: ${s.trainings_done||0} · продажи: ${fmt(s.sales_amount||0)} ₽</span>
-            <button class="btn btn-sm" onclick="openAdminEditTrainer(${s.id})" style="padding:2px 8px;font-size:11px">✏️</button>
+            <div style="display:flex;gap:4px">
+              <button class="btn btn-sm" onclick="openAddSale(${s.id},'${s.trainer_name||t.name}','${s.date}')" style="padding:2px 8px;font-size:11px;background:var(--green-bg);color:var(--green-text);border-color:var(--green)">+ Продажа</button>
+              <button class="btn btn-sm" onclick="openAdminEditTrainer(${s.id})" style="padding:2px 8px;font-size:11px">✏️</button>
+            </div>
           </div>`).join('')}
         </div>`:''}
       </div>`;
@@ -2357,15 +2377,17 @@ async function calcTrainerSalary(){
   const to=toEl.value;
   const res=document.getElementById('trainer-salary-result');
   if(res)res.innerHTML='<div style="color:var(--text3);padding:1rem;text-align:center">Расчёт...</div>';
-  const [{data:tProfiles},{data:shiftData},{data:motivAll},{data:bonusData}]=await Promise.all([
+  const [{data:tProfiles},{data:shiftData},{data:motivAll},{data:bonusData},{data:penaltyData}]=await Promise.all([
     sb.from('trainer_profiles').select('*').eq('active',true).order('created_at',{ascending:false}),
     sb.from('trainer_shifts').select('*').gte('date',from).lte('date',to),
     sb.from('trainer_motivation').select('*').order('effective_from',{ascending:false}),
-    sb.from('trainer_bonuses').select('*').gte('month',from.slice(0,7)).lte('month',to.slice(0,7))
+    sb.from('trainer_bonuses').select('*').gte('month',from.slice(0,7)).lte('month',to.slice(0,7)),
+    sb.from('trainer_penalties').select('*').gte('month',from.slice(0,7)).lte('month',to.slice(0,7))
   ]);
   const active=tProfiles||[];
   const shifts=shiftData||[];
   const bonuses=bonusData||[];
+  const penalties=penaltyData||[];
   const motivByTrainer={};
   (motivAll||[]).forEach(m=>{
     if(!m.trainer_id)return;
@@ -2381,7 +2403,9 @@ async function calcTrainerSalary(){
     const PCT=m?+m.sales_pct/100:null;
     const trainerBonuses=bonuses.filter(b=>b.trainer_id===t.id);
     const bonusTotal=trainerBonuses.reduce((a,b)=>a+(+b.amount||0),0);
-    const salary=BASE!==null?trainings*BASE+Math.round(sales*PCT)+bonusTotal:null;
+    const trainerPenalties=penalties.filter(p=>p.trainer_id===t.id);
+    const penaltyTotal=trainerPenalties.reduce((a,p)=>a+(+p.amount||0),0);
+    const salary=BASE!==null?trainings*BASE+Math.round(sales*PCT)+bonusTotal-penaltyTotal:null;
     return`<div class="card">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
         <div style="font-weight:600;font-size:15px">${t.name}</div>
@@ -2395,6 +2419,8 @@ async function calcTrainerSalary(){
         <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Продажи</span><span>${fmt(sales)} ₽</span></div>
         ${m?`<div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">% с продаж (${m.sales_pct}%)</span><span>${fmt(sales*PCT)} ₽</span></div>`:''}
         ${bonusTotal>0?`<div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Бонусы</span><span style="color:var(--green-text)">${fmt(bonusTotal)} ₽</span></div>`:''}
+        ${penaltyTotal>0?`<div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Штрафы</span><span style="color:var(--red-text)">-${fmt(penaltyTotal)} ₽</span></div>`:''}
+        ${trainerPenalties.length?`<div style="margin-top:4px;padding-top:4px;border-top:0.5px solid var(--border)">${trainerPenalties.map(p=>`<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3)"><span>↳ ${p.reason||'Штраф'}</span><span style="color:var(--red-text)">-${fmt(p.amount)} ₽</span></div>`).join('')}</div>`:''}
       </div>
     </div>`;
   }).join('');
@@ -2407,7 +2433,9 @@ async function renderTrainerMotivation(){
   const active=trainerList.filter(t=>t.active);
   const {data:motivAll}=await sb.from('trainer_motivation').select('*').order('effective_from',{ascending:false});
   const {data:bonusData}=await sb.from('trainer_bonuses').select('*').eq('month',monthKey()).order('created_at',{ascending:false});
+  const {data:penaltyData}=await sb.from('trainer_penalties').select('*').eq('month',monthKey()).order('created_at',{ascending:false});
   const bonuses=bonusData||[];
+  const penalties=penaltyData||[];
 
   // Build current scheme per trainer (latest record per trainer_id) — no fallback to global/old records
   const motivByTrainer={};
@@ -2474,6 +2502,34 @@ async function renderTrainerMotivation(){
           <button class="btn btn-sm btn-danger" onclick="deleteTrainerBonus(${b.id})">🗑</button>
         </div>
       </div>`).join('')}
+    </div>`:''}
+  </div>
+  <div class="card"><div class="section-title">🔻 Начислить штраф</div>
+    <div class="form-row"><label>Тренер</label>
+      <select id="tm-penalty-trainer">
+        ${active.map(t=>`<option value="${t.id}" data-name="${t.name}">${t.name}</option>`).join('')}
+        ${!active.length?'<option disabled>Нет активных тренеров</option>':''}
+      </select>
+    </div>
+    <div class="grid2" style="margin-bottom:8px">
+      <div class="form-row"><label>Сумма штрафа, ₽</label><input type="number" id="tm-penalty-amount" placeholder="0" min="0"></div>
+      <div class="form-row"><label>За что</label><input type="text" id="tm-penalty-reason" placeholder="Например: опоздание"></div>
+    </div>
+    <button class="btn btn-danger btn-sm" onclick="saveTrainerPenalty()">🔻 Начислить штраф</button>
+    <div id="tm-penalty-err" class="alert alert-red" style="display:none;margin-top:8px"></div>
+    ${penalties.length?`<div style="margin-top:14px;border-top:1px solid var(--border);padding-top:12px">
+      <div style="font-size:12px;color:var(--text3);margin-bottom:8px">Штрафы за ${monthLabel()}</div>
+      ${penalties.map(p=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">
+        <div><b>${p.trainer_name}</b>${p.reason?' — '+p.reason:''}</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-weight:600;color:var(--red-text)">-${fmt(p.amount)} ₽</span>
+          <button class="btn btn-sm btn-danger" onclick="deleteTrainerPenalty(${p.id})">🗑</button>
+        </div>
+      </div>`).join('')}
+      <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:13px;font-weight:600">
+        <span>Итого штрафов</span>
+        <span style="color:var(--red-text)">-${fmt(penalties.reduce((a,p)=>a+(+p.amount||0),0))} ₽</span>
+      </div>
     </div>`:''}
   </div>`;
   el.innerHTML=html;
@@ -2547,6 +2603,30 @@ async function saveTrainerBonus(){
   document.getElementById('tm-bonus-amount').value=0;
   document.getElementById('tm-bonus-reason').value='';
   renderTrainerTeam();
+}
+
+async function saveTrainerPenalty(){
+  const sel=document.getElementById('tm-penalty-trainer');
+  const trainerId=+sel?.value;
+  const trainerName=sel?.options[sel.selectedIndex]?.dataset?.name||sel?.options[sel.selectedIndex]?.text||'';
+  const amount=+document.getElementById('tm-penalty-amount')?.value||0;
+  const reason=document.getElementById('tm-penalty-reason')?.value?.trim();
+  const err=document.getElementById('tm-penalty-err');
+  if(!trainerId){err.textContent='Выберите тренера';err.style.display='block';return;}
+  if(amount<=0){err.textContent='Укажите сумму';err.style.display='block';return;}
+  if(!reason){err.textContent='Укажите причину';err.style.display='block';return;}
+  const {error}=await sb.from('trainer_penalties').insert({trainer_id:trainerId,trainer_name:trainerName,amount,reason,month:monthKey(),created_by:'admin'});
+  if(error){err.textContent='Ошибка: '+error.message;err.style.display='block';return;}
+  err.style.display='none';
+  document.getElementById('tm-penalty-amount').value='';
+  document.getElementById('tm-penalty-reason').value='';
+  renderTrainerMotivation();
+}
+
+async function deleteTrainerPenalty(id){
+  if(!confirm('Удалить штраф?'))return;
+  await sb.from('trainer_penalties').delete().eq('id',id);
+  renderTrainerMotivation();
 }
 
 async function deleteTrainerBonus(id){
@@ -2646,6 +2726,32 @@ async function deleteAdminShift(){
 // ===== ADMIN EDIT TRAINER REPORT =====
 let adminEditingTrainerReportId=null;
 let adminTrainerReports=[];
+
+let addSaleShiftId=null;
+function openAddSale(shiftId, trainerName, date){
+  addSaleShiftId=shiftId;
+  document.getElementById('add-sale-info').textContent=trainerName+' · '+formatDate(date);
+  document.getElementById('as-amount').value='';
+  document.getElementById('as-comment').value='';
+  document.getElementById('as-err').style.display='none';
+  document.getElementById('add-sale-modal').style.display='flex';
+}
+async function saveAddSale(){
+  const amount=+document.getElementById('as-amount').value||0;
+  const comment=document.getElementById('as-comment').value.trim();
+  const err=document.getElementById('as-err');
+  if(!amount){err.textContent='Введите сумму';err.style.display='block';return;}
+  // Get current sales_amount and add to it
+  const {data:cur}=await sb.from('trainer_shifts').select('sales_amount').eq('id',addSaleShiftId).single();
+  const newAmount=(+cur?.sales_amount||0)+amount;
+  const {error}=await sb.from('trainer_shifts').update({
+    sales_amount:newAmount,
+    updated_at:new Date().toISOString()
+  }).eq('id',addSaleShiftId);
+  if(error){err.textContent='Ошибка: '+error.message;err.style.display='block';return;}
+  document.getElementById('add-sale-modal').style.display='none';
+  renderTrainerTeam();
+}
 
 async function openAdminEditTrainer(id){
   let s=adminTrainerReports.find(x=>x.id===id);
