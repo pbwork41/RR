@@ -303,6 +303,7 @@ input:focus,select:focus{outline:none;border-color:var(--blue)}
   <div id="f-quick-sales-note" class="card-muted" style="display:none;font-size:13px;color:var(--blue-text);margin-bottom:10px"></div>
   <div class="grid2">
     <div class="form-row"><label>Новые абонементы, ₽</label><input type="number" id="f-new" placeholder="0" min="0"></div>
+    <div class="form-row"><label>Кол-во (нов. аб)</label><input type="number" id="f-new-count" placeholder="0" min="0"></div>
     <div class="form-row"><label>Продления, ₽</label><input type="number" id="f-renew" placeholder="0" min="0"></div>
   </div>
   <div class="grid2">
@@ -422,6 +423,7 @@ input:focus,select:focus{outline:none;border-color:var(--blue)}
   <div class="subsection-title">Продажи</div>
   <div class="grid2">
     <div class="form-row"><label>Новые абонементы, ₽</label><input type="number" id="e-new" value="0" min="0"></div>
+    <div class="form-row"><label>Кол-во (нов. аб)</label><input type="number" id="e-new-count" value="0" min="0"></div>
     <div class="form-row"><label>Продления, ₽</label><input type="number" id="e-renew" value="0" min="0"></div>
   </div>
   <div class="grid2">
@@ -548,7 +550,7 @@ function calcShift(s){
 
 function parseShift(r){
   return{id:r.id,date:r.date,studio:r.studio,admin:r.admin,
-    newSales:+r.new_sales||0,renew:+r.renew||0,restore:+r.restore||0,
+    newSales:+r.new_sales||0,newClientsCount:+r.new_clients_count||0,renew:+r.renew||0,restore:+r.restore||0,
     leads:+r.leads||0,leadsBooked:+r.leads_booked||0,bookings:+r.bookings||0,visits:+r.visits||0,
     massage:+r.massage_bookings||0,reviews:+r.reviews||0,
     calls:+r.calls||0,tasks:+r.tasks||0,yoga:+r.yoga_bookings||0,mc:+r.masterclass_bookings||0,yogaSales:+r.yoga_sales||0,mcSales:+r.mc_sales||0,
@@ -1205,7 +1207,7 @@ async function openAddShift(){
   document.getElementById('f-date').value=dateVal;
   const myLast=shifts.filter(s=>s.admin===currentUser.name).sort((a,b)=>b.date.localeCompare(a.date));
   document.getElementById('f-studio').value=myLast.length?myLast[0].studio:'Империал';
-  ['f-leads','f-bookings','f-visits','f-new','f-renew','f-restore','f-yoga-sales','f-massage','f-reviews','f-calls','f-tasks','f-mc-sales'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['f-leads','f-bookings','f-visits','f-new','f-new-count','f-renew','f-restore','f-yoga-sales','f-massage','f-reviews','f-calls','f-tasks','f-mc-sales'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('f-miss-comment').value='';
   document.getElementById('f-miss-trainer-detail').value='';
   document.getElementById('f-self-weakspot').value='';
@@ -1241,6 +1243,7 @@ async function saveShift(){
     studio:document.getElementById('f-studio').value,
     admin:currentUser.name,
     new_sales:Math.round(+document.getElementById('f-new').value||0),
+    new_clients_count:Math.round(+document.getElementById('f-new-count').value||0),
     renew:Math.round(+document.getElementById('f-renew').value||0),
     restore:Math.round(+document.getElementById('f-restore').value||0),
     leads:Math.round(+document.getElementById('f-leads').value||0),
@@ -1300,6 +1303,7 @@ async function updateShift(){
     date:document.getElementById('e-date').value,
     studio:document.getElementById('e-studio').value,
     new_sales:Math.round(+document.getElementById('e-new').value||0),
+    new_clients_count:Math.round(+document.getElementById('e-new-count').value||0),
     renew:Math.round(+document.getElementById('e-renew').value||0),
     restore:Math.round(+document.getElementById('e-restore').value||0),
     leads:Math.round(+document.getElementById('e-leads').value||0),

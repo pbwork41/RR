@@ -605,7 +605,7 @@ async function loadData(){
   ]);
   const parse=r=>({
     id:r.id,date:r.date,studio:r.studio,admin:r.admin,
-    newSales:+r.new_sales||0,renew:+r.renew||0,restore:+r.restore||0,
+    newSales:+r.new_sales||0,newClientsCount:+r.new_clients_count||0,renew:+r.renew||0,restore:+r.restore||0,
     certs:r.certs||[],leads:+r.leads||0,leadsBooked:+r.leads_booked||0,bookings:+r.bookings||0,visits:+r.visits||0,
     massage:+r.massage_bookings||0,reviews:+r.reviews||0,
     calls:+r.calls||0,tasks:+r.tasks||0,yoga:+r.yoga_bookings||0,mc:+r.masterclass_bookings||0,yogaSales:+r.yoga_sales||0,mcSales:+r.mc_sales||0,
@@ -634,7 +634,7 @@ function getStats(ss){
   const leads=ss.reduce((a,s)=>a+s.leads,0);
   const bookings=ss.reduce((a,s)=>a+s.bookings,0);
   const visits=ss.reduce((a,s)=>a+s.visits,0);
-  const newSalesCount=visits>0&&cv3!==null?Math.round(visits*cv3/100):ss.filter(s=>s.newSales>0).length;
+  const newSalesRevenue=ss.reduce((a,s)=>a+(+s.newSales||0),0);
   const renewals=ss.filter(s=>s.renew>0).length;
   const massage=ss.reduce((a,s)=>a+s.massage,0);
   const reviews=ss.reduce((a,s)=>a+s.reviews,0);
@@ -645,9 +645,10 @@ function getStats(ss){
   const rr=calcRR(revenue);
   const cv1=leads>0?Math.round(bookings/leads*100):null;
   const cv2=bookings>0?Math.round(visits/bookings*100):null;
+  // newSalesCount = реальное кол-во проданных абонементов из поля new_clients_count
+  const newSalesCount=ss.reduce((a,s)=>a+(+s.newClientsCount||0),0)||ss.filter(s=>s.newSales>0).length;
   const cv3=visits>0?Math.round(newSalesCount/visits*100):null;
   const uniqueDays=new Set(ss.map(s=>s.date)).size;
-  const newSalesRevenue=ss.reduce((a,s)=>a+(+s.newSales||0),0);
   return{revenue,leads,bookings,visits,newSalesCount,newSalesRevenue,renewals,massage,reviews,calls,tasks,yoga,mc,rr,cv1,cv2,cv3,n:ss.length,uniqueDays};
 }
 
@@ -1475,7 +1476,7 @@ async function loadReportsForPeriod(){
   if(error){if(body)body.innerHTML='<div class="card" style="color:var(--red-text)">Ошибка: '+error.message+'</div>';return;}
   const parse=r=>({
     id:r.id,date:r.date,studio:r.studio,admin:r.admin,
-    newSales:+r.new_sales||0,renew:+r.renew||0,restore:+r.restore||0,
+    newSales:+r.new_sales||0,newClientsCount:+r.new_clients_count||0,renew:+r.renew||0,restore:+r.restore||0,
     certs:r.certs||[],leads:+r.leads||0,leadsBooked:+r.leads_booked||0,bookings:+r.bookings||0,visits:+r.visits||0,
     massage:+r.massage_bookings||0,reviews:+r.reviews||0,
     calls:+r.calls||0,tasks:+r.tasks||0,yoga:+r.yoga_bookings||0,mc:+r.masterclass_bookings||0,yogaSales:+r.yoga_sales||0,mcSales:+r.mc_sales||0,
@@ -1828,7 +1829,7 @@ async function loadSalaryData(){
   
   const periodShifts=(sd||[]).map(r=>({
     id:r.id,date:r.date,studio:r.studio,admin:r.admin,
-    newSales:+r.new_sales||0,renew:+r.renew||0,restore:+r.restore||0,
+    newSales:+r.new_sales||0,newClientsCount:+r.new_clients_count||0,renew:+r.renew||0,restore:+r.restore||0,
     leads:+r.leads||0,bookings:+r.bookings||0,visits:+r.visits||0,
     massage:+r.massage_bookings||0,reviews:+r.reviews||0,
     calls:+r.calls||0,tasks:+r.tasks||0,yoga:+r.yoga_bookings||0,mc:+r.masterclass_bookings||0
