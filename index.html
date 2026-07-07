@@ -707,14 +707,14 @@ async function loadData(){
     sb.from('shifts').select('*').gte('date',m+'-01').lte('date',m+'-31').order('date',{ascending:false}),
     sb.from('marathons').select('*').eq('active',true).gte('date_end',today()),
     currentUser?sb.from('shifts').select('*').eq('admin',currentUser.name).order('date',{ascending:false}):Promise.resolve({data:[]}),
-    currentUser?sb.from('daily_plans').select('*').eq('profile_id',currentUser.id).eq('date',today()).single():Promise.resolve({data:null}),
+    currentUser?sb.from('daily_plans').select('*').eq('profile_id',currentUser.id).eq('date',today()).limit(1):Promise.resolve({data:[]}),
     sb.from('plans').select('*').eq('month',m),
     currentUser?sb.from('quick_sales').select('*').eq('admin',currentUser.name).gte('date',m+'-01').lte('date',m+'-'+new Date(new Date().getFullYear(),new Date().getMonth()+1,0).getDate()).order('date',{ascending:false}):Promise.resolve({data:[]}),
   ]);
   shifts=(r1.data||[]).map(parseShift);
   marathons=r2.data||[];
   allMyShifts=(r3.data||[]).map(parseShift);
-  todayPlan=r4.data||null;
+  todayPlan=(r4.data&&r4.data[0])||null;
   myQuickSales=r6.data||[];
   (r5.data||[]).forEach(p=>{
     if(p.studio==='Империал'&&p.revenue)IMP_PLAN=p.revenue;
