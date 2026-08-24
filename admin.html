@@ -180,6 +180,7 @@ textarea{resize:vertical;min-height:70px}
     <button class="tab" onclick="switchTab('salary')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M14.8 9A2 2 0 0 0 13 8h-2a2 2 0 0 0 0 4h2a2 2 0 0 1 0 4h-2a2 2 0 0 1-1.8-1"/><path d="M12 7v1m0 8v1"/></svg> <span>Зарплаты</span></button>
     <button class="tab" onclick="switchTab('plans')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg> <span>Планы</span></button>
     <button class="tab" onclick="switchTab('motivation')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> <span>Мотивация</span></button>
+    <button class="tab" onclick="switchTab('nps')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> <span>NPS</span></button>
     <button class="tab" onclick="switchTab('staff')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M4.22 4.22l2.12 2.12m11.32 11.32l2.12 2.12M2 12h3m14 0h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg> <span>Сотрудники</span></button>
 
     <div class="nav-divider">
@@ -205,6 +206,7 @@ textarea{resize:vertical;min-height:70px}
   <div id="tab-plans" class="section"><div id="plans-content"></div></div>
   <div id="tab-salary" class="section"><div id="salary-content"></div></div>
   <div id="tab-motivation" class="section"><div id="motivation-content"></div></div>
+  <div id="tab-nps" class="section"><div id="nps-content"></div></div>
   <div id="tab-schedule" class="section"><div id="schedule-content"></div></div>
   <div id="tab-refunds" class="section"><div id="refunds-content"></div></div>
   <div id="tab-trainers-team" class="section"><div id="trainers-team-content"></div></div>
@@ -824,7 +826,7 @@ function funnelHtml(fact,plan){
   }).join('')}</div>`;
 }
 
-function renderAll(){renderOverview();renderMoM();renderStudios();renderAdmins();renderMarathons();renderPlans();}
+function renderAll(){renderOverview();renderMoM();renderStudios();renderAdmins();renderMarathons();renderPlans();renderNPS();}
 
 async function renderOverview(){
   const studios=['Империал','Мечта'];
@@ -963,6 +965,43 @@ async function renderOverview(){
   // ===== Дашборд по тренерам =====
   html+=await renderTrainerOverviewBlock();
 
+  // NPS виджет в сводке
+  const {data:npsData}=await sb.from('nps_responses').select('score').order('created_at',{ascending:false}).limit(30);
+  if(npsData&&npsData.length){
+    const nr=npsData;
+    const tot=nr.length;
+    const avg=+(nr.reduce((a,r)=>a+r.score,0)/tot).toFixed(1);
+    const prom=nr.filter(r=>r.score>=9).length;
+    const neut=nr.filter(r=>r.score>=7&&r.score<=8).length;
+    const detr=nr.filter(r=>r.score<=6).length;
+    const npsIdx=Math.round((prom-detr)/tot*100);
+    const avgCol=avg>=9?'var(--green-text)':avg>=7?'var(--amber-text)':'var(--red-text)';
+    html+=`<div class="card" style="margin-top:12px">
+      <div style="font-size:13px;font-weight:600;margin-bottom:10px">💜 NPS — последние ${tot} оценок</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+        <div style="background:var(--bg2);border-radius:var(--radius-sm);padding:10px;text-align:center">
+          <div style="font-size:20px;font-weight:800;color:${avgCol}">${avg}</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px">Средний балл</div>
+        </div>
+        <div style="background:var(--green-bg);border-radius:var(--radius-sm);padding:10px;text-align:center">
+          <div style="font-size:20px;font-weight:800;color:var(--green-text)">${prom}</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px">Промоутеры</div>
+        </div>
+        <div style="background:var(--amber-bg);border-radius:var(--radius-sm);padding:10px;text-align:center">
+          <div style="font-size:20px;font-weight:800;color:var(--amber-text)">${neut}</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px">Нейтралы</div>
+        </div>
+        <div style="background:var(--red-bg);border-radius:var(--radius-sm);padding:10px;text-align:center">
+          <div style="font-size:20px;font-weight:800;color:var(--red-text)">${detr}</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px">Детракторы</div>
+        </div>
+      </div>
+      <div style="margin-top:10px;text-align:center;font-size:12px;color:var(--text3)">
+        Индекс NPS: <span style="font-weight:700;font-size:14px;color:${npsIdx>=50?'var(--green-text)':npsIdx>=0?'var(--amber-text)':'var(--red-text)'}">${npsIdx>0?'+':''}${npsIdx}</span>
+        &nbsp;·&nbsp;<button class="btn btn-sm" onclick="switchTab('nps')" style="font-size:11px">Подробнее →</button>
+      </div>
+    </div>`;
+  }
   document.getElementById('overview-content').innerHTML=html;
 }
 
@@ -2094,6 +2133,84 @@ async function updateMotivation(id){
   renderMotivation();
 }
 
+async function renderNPS(){
+  const el=document.getElementById('nps-content');
+  if(!el)return;
+  const {data}=await sb.from('nps_responses').select('*').order('created_at',{ascending:false});
+  const rows=data||[];
+  const total=rows.length;
+  const avg=total?+(rows.reduce((a,r)=>a+r.score,0)/total).toFixed(1):null;
+  const promoters=rows.filter(r=>r.score>=9).length;
+  const neutrals=rows.filter(r=>r.score>=7&&r.score<=8).length;
+  const detractors=rows.filter(r=>r.score<=6).length;
+  const npsScore=total?Math.round((promoters-detractors)/total*100):null;
+  el.innerHTML=`
+  <div class="card" style="margin-bottom:12px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+      <div style="font-size:15px;font-weight:700">💜 NPS — обратная связь клиентов</div>
+      <button class="btn btn-primary btn-sm" onclick="openNpsForm()">+ Добавить оценку</button>
+    </div>
+    ${total?`
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px">
+      <div style="background:var(--bg2);border-radius:var(--radius-sm);padding:12px;text-align:center">
+        <div style="font-size:22px;font-weight:800;color:var(--purple)">${avg??'—'}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">Средний балл</div>
+      </div>
+      <div style="background:var(--green-bg);border-radius:var(--radius-sm);padding:12px;text-align:center">
+        <div style="font-size:22px;font-weight:800;color:var(--green-text)">${promoters}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">Промоутеры 9–10</div>
+      </div>
+      <div style="background:var(--amber-bg);border-radius:var(--radius-sm);padding:12px;text-align:center">
+        <div style="font-size:22px;font-weight:800;color:var(--amber-text)">${neutrals}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">Нейтралы 7–8</div>
+      </div>
+      <div style="background:var(--red-bg);border-radius:var(--radius-sm);padding:12px;text-align:center">
+        <div style="font-size:22px;font-weight:800;color:var(--red-text)">${detractors}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">Детракторы 0–6</div>
+      </div>
+    </div>
+    <div style="overflow-x:auto">
+    <table class="kpi-table">
+      <thead><tr><th>Дата</th><th>Клиент</th><th>Телефон</th><th>Оценка</th><th>Комментарий</th><th>Менеджер</th></tr></thead>
+      <tbody>${rows.map(r=>{
+        const col=r.score>=9?'var(--green-text)':r.score>=7?'var(--amber-text)':'var(--red-text)';
+        const bg=r.score>=9?'var(--green-bg)':r.score>=7?'var(--amber-bg)':'var(--red-bg)';
+        return`<tr>
+          <td style="font-size:12px;white-space:nowrap">${r.survey_date||r.created_at?.slice(0,10)||''}</td>
+          <td style="font-weight:500">${r.client_name}</td>
+          <td style="font-size:12px">${r.client_phone}</td>
+          <td><span style="background:${bg};color:${col};padding:2px 10px;border-radius:20px;font-weight:700;font-size:13px">${r.score}</span></td>
+          <td style="font-size:12px;color:var(--text2)">${r.comment||'—'}</td>
+          <td style="font-size:12px;color:var(--text3)">${r.manager_name||'—'}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table></div>`:`<div style="text-align:center;padding:32px;color:var(--text3)">Оценок пока нет. Добавьте первую!</div>`}
+  </div>`;
+}
+
+function openNpsForm(){
+  document.getElementById('nps-modal').style.display='flex';
+}
+
+async function saveNPS(){
+  const name=document.getElementById('nps-name').value.trim();
+  const phone=document.getElementById('nps-phone').value.trim();
+  const score=parseInt(document.getElementById('nps-score').value);
+  const comment=document.getElementById('nps-comment').value.trim();
+  const manager=document.getElementById('nps-manager').value.trim();
+  const studio=document.getElementById('nps-studio').value;
+  if(!name||!phone||isNaN(score)){alert('Заполните имя, телефон и оценку');return;}
+  const btn=document.getElementById('nps-save-btn');
+  btn.disabled=true;btn.textContent='Сохраняем...';
+  const {error}=await sb.from('nps_responses').insert({client_name:name,client_phone:phone,score,comment,manager_name:manager,studio,survey_date:new Date().toISOString().slice(0,10)});
+  if(error){btn.disabled=false;btn.textContent='Сохранить';alert('Ошибка: '+error.message);return;}
+  document.getElementById('nps-modal').style.display='none';
+  ['nps-name','nps-phone','nps-score','nps-comment','nps-manager'].forEach(id=>document.getElementById(id).value='');
+  btn.disabled=false;btn.textContent='Сохранить';
+  renderNPS();
+  renderOverview();
+}
+
 function switchTab(t){
   document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['schedule','refunds','overview','mom','studios','admins','marathons','reports','salary','plans','motivation','staff','trainers-team','trainers-marathons','trainers-salary','trainers-motivation'][i]===t));
   document.querySelectorAll('.section').forEach(el=>el.classList.remove('active'));
@@ -3141,6 +3258,65 @@ async function saveRefund(){
 async function deleteRefund(){if(!confirm('Удалить этот возврат?'))return;if(editingRefundId)await sb.from('refunds').delete().eq('id',editingRefundId);document.getElementById('refund-modal').style.display='none';renderRefunds();}
 
 
+</script>
+<div id="nps-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center;padding:16px">
+  <div style="background:#fff;border-radius:12px;width:100%;max-width:420px;padding:20px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div style="font-size:15px;font-weight:700">💜 Добавить NPS оценку</div>
+      <button class="btn btn-sm" onclick="document.getElementById('nps-modal').style.display='none'">✕</button>
+    </div>
+    <div style="display:grid;gap:10px">
+      <div>
+        <label style="font-size:12px;font-weight:500;color:var(--text2);display:block;margin-bottom:4px">Имя клиента *</label>
+        <input id="nps-name" type="text" placeholder="Иванова Анна" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit">
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:500;color:var(--text2);display:block;margin-bottom:4px">Телефон *</label>
+        <input id="nps-phone" type="tel" placeholder="+7 900 000 00 00" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit">
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:500;color:var(--text2);display:block;margin-bottom:4px">Оценка от 0 до 10 *</label>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          ${[0,1,2,3,4,5,6,7,8,9,10].map(n=>`<button onclick="selectNpsScore(${n},this)" style="width:36px;height:36px;border-radius:8px;border:1px solid var(--border);background:#fff;font-size:13px;font-weight:600;cursor:pointer">${n}</button>`).join('')}
+        </div>
+        <input id="nps-score" type="hidden">
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:500;color:var(--text2);display:block;margin-bottom:4px">Комментарий</label>
+        <textarea id="nps-comment" rows="2" placeholder="Что клиент сказал..." style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-family:inherit;resize:vertical"></textarea>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div>
+          <label style="font-size:12px;font-weight:500;color:var(--text2);display:block;margin-bottom:4px">Менеджер</label>
+          <input id="nps-manager" type="text" placeholder="Имя менеджера" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-family:inherit">
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:500;color:var(--text2);display:block;margin-bottom:4px">Студия</label>
+          <select id="nps-studio" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-family:inherit">
+            <option value="">Все</option>
+            <option value="Империал">Империал</option>
+            <option value="Мечта">Мечта</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button class="btn" onclick="document.getElementById('nps-modal').style.display='none'" style="flex:1">Отмена</button>
+      <button class="btn btn-primary" id="nps-save-btn" onclick="saveNPS()" style="flex:1">Сохранить</button>
+    </div>
+  </div>
+</div>
+<script>
+function selectNpsScore(n,el){
+  document.getElementById('nps-score').value=n;
+  document.querySelectorAll('#nps-modal button[onclick^="selectNpsScore"]').forEach(b=>{
+    const score=parseInt(b.textContent);
+    const col=score>=9?'var(--green)':score>=7?'var(--amber)':'var(--red)';
+    b.style.background=b===el?col:'#fff';
+    b.style.color=b===el?'#fff':'inherit';
+    b.style.borderColor=b===el?col:'var(--border)';
+  });
+}
 </script>
 </body>
 </html>
