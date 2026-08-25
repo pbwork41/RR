@@ -1036,6 +1036,31 @@ async function renderOverview(){
       </div>
     </div>`;
   }
+  // Виджет причин не-продления
+  const {data:churnData} = await sb.from('churn_reasons').select('reasons').order('created_at',{ascending:false}).limit(100);
+  if (churnData && churnData.length) {
+    const counts = {};
+    churnData.forEach(r => { (r.reasons||[]).forEach(reason => { counts[reason] = (counts[reason]||0)+1; }); });
+    const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+    const total = churnData.length;
+    html += `<div class="card" style="margin-top:12px">
+      <div style="font-size:13px;font-weight:600;margin-bottom:10px">🔍 Причины не-продления абонемента (последние ${total})</div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        ${sorted.map(([reason,cnt])=>{
+          const pct = Math.round(cnt/total*100);
+          return `<div>
+            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">
+              <span>${reason}</span>
+              <span style="font-weight:600">${cnt} (${pct}%)</span>
+            </div>
+            <div style="height:6px;background:var(--bg2);border-radius:3px;overflow:hidden">
+              <div style="height:100%;width:${pct}%;background:var(--amber);border-radius:3px"></div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }
   document.getElementById('overview-content').innerHTML=html;
 }
 
