@@ -257,19 +257,34 @@ input:focus,select:focus{outline:none;border-color:var(--blue)}
     <button class="btn btn-sm" id="close-quick-sale-modal">✕</button>
   </div>
   <div class="card-muted" style="margin-bottom:12px;font-size:13px;color:var(--text2)">
-    Для записи продажи до закрытия смены. Учитывается только за вами — другой администратор её не увидит как свою.
+    Зафиксируется на тебя · не упадёт в отчёт смены
   </div>
-  <div class="grid2">
-    <div class="form-row"><label>Дата</label><input type="date" id="qs-date"></div>
-    <div class="form-row"><label>Студия</label>
+
+  <div class="form-row" style="margin-bottom:12px">
+    <label>Тип продажи</label>
+    <div style="display:flex;gap:6px;margin-top:4px">
+      <button id="qs-type-new" onclick="setQsType('new')" class="btn btn-sm" style="flex:1;border:1.5px solid var(--purple);background:var(--purple-bg);color:var(--purple-text)">🆕 Новая</button>
+      <button id="qs-type-renew" onclick="setQsType('renew')" class="btn btn-sm" style="flex:1">🔄 Продление</button>
+      <button id="qs-type-restore" onclick="setQsType('restore')" class="btn btn-sm" style="flex:1">🔙 Возврат клиента</button>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+    <div class="form-row" style="margin:0"><label>Дата</label><input type="date" id="qs-date"></div>
+    <div class="form-row" style="margin:0"><label>Студия</label>
       <select id="qs-studio"><option>Империал</option><option>Мечта</option></select>
     </div>
   </div>
-  <div class="divider"></div>
-  <div class="grid2">
-    <div class="form-row"><label>Новый абонемент, ₽</label><input type="number" id="qs-new" value="0" min="0"></div>
-    <div class="form-row"><label>Архив, ₽</label><input type="number" id="qs-renew" value="0" min="0"></div>
+
+  <div class="form-row">
+    <label>Сумма, ₽</label>
+    <input type="number" id="qs-amount" placeholder="0" min="0" style="font-size:16px;font-weight:600">
   </div>
+  <div class="form-row">
+    <label>Комментарий (необязательно)</label>
+    <input type="text" id="qs-comment" placeholder="Иванова А.А.">
+  </div>
+
   <div id="qs-error" class="alert alert-red" style="display:none"></div>
   <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:1rem">
     <button class="btn" id="cancel-quick-sale-btn">Отмена</button>
@@ -1300,11 +1315,32 @@ async function openInterimReport(){
 
 // ===== OPEN SHIFT =====
 // ===== QUICK SALE =====
+let qsType='new';
+function setQsType(type){
+  qsType=type;
+  ['new','renew','restore'].forEach(t=>{
+    const btn=document.getElementById('qs-type-'+t);
+    if(!btn)return;
+    if(t===type){
+      btn.style.border='1.5px solid var(--purple)';
+      btn.style.background='var(--purple-bg)';
+      btn.style.color='var(--purple-text)';
+    } else {
+      btn.style.border='0.5px solid var(--border)';
+      btn.style.background='';
+      btn.style.color='';
+    }
+  });
+}
+
 function openQuickSale(){
+  qsType='new';
+  setQsType('new');
   document.getElementById('qs-date').value=today();
   const myLast=shifts.filter(s=>s.admin===currentUser.name).sort((a,b)=>b.date.localeCompare(a.date));
   document.getElementById('qs-studio').value=myLast.length?myLast[0].studio:'Империал';
-  ['qs-new','qs-renew'].forEach(id=>document.getElementById(id).value=0);
+  document.getElementById('qs-amount').value='';
+  document.getElementById('qs-comment').value='';
   document.getElementById('qs-error').style.display='none';
   document.getElementById('quick-sale-modal').style.display='flex';lockScroll();
 }
@@ -1314,21 +1350,26 @@ async function saveQuickSale(){
   btn.disabled=true;btn.textContent='Сохранение...';
   const date=document.getElementById('qs-date').value;
   const studio=document.getElementById('qs-studio').value;
-  const newSales=+document.getElementById('qs-new').value||0;
-  const archive=+document.getElementById('qs-renew').value||0;
+  const amount=+document.getElementById('qs-amount').value||0;
+  const comment=document.getElementById('qs-comment').value.trim();
 
-  if(newSales<=0&&archive<=0){
+  if(amount<=0){
     const el=document.getElementById('qs-error');
-    el.textContent='Укажите сумму хотя бы по одному полю';el.style.display='block';
+    el.textContent='Укажите сумму';el.style.display='block';
     btn.disabled=false;btn.textContent='💾 Сохранить';
     return;
   }
 
-  const {error}=await sb.from('quick_sales').insert({
+  const row={
     date,studio,admin:currentUser.name,
-    new_sales:newSales+archive,
-    renew:0,
-  });
+    new_sales: qsType==='new'?amount:0,
+    renew: qsType==='renew'?amount:0,
+    restore: qsType==='restore'?amount:0,
+    sale_type: qsType,
+    comment: comment||null,
+  };
+
+  const {error}=await sb.from('quick_sales').insert(row);
 
   btn.disabled=false;btn.textContent='💾 Сохранить';
   if(error){const el=document.getElementById('qs-error');el.textContent='Ошибка: '+error.message;el.style.display='block';return;}
