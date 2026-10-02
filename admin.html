@@ -184,6 +184,7 @@ textarea{resize:vertical;min-height:70px}
     <button class="tab" onclick="switchTab('salary')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M14.8 9A2 2 0 0 0 13 8h-2a2 2 0 0 0 0 4h2a2 2 0 0 1 0 4h-2a2 2 0 0 1-1.8-1"/><path d="M12 7v1m0 8v1"/></svg> <span>Зарплаты</span></button>
     <button class="tab" onclick="switchTab('plans')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg> <span>Планы</span></button>
     <button class="tab" onclick="switchTab('motivation')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> <span>Мотивация</span></button>
+    <button class="tab" onclick="switchTab('service')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> <span>Сервис</span></button>
     <button class="tab" onclick="switchTab('staff')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M4.22 4.22l2.12 2.12m11.32 11.32l2.12 2.12M2 12h3m14 0h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg> <span>Сотрудники</span></button>
 
     <div class="nav-divider">
@@ -206,6 +207,7 @@ textarea{resize:vertical;min-height:70px}
   <div id="tab-admins" class="section"><div id="admins-content"></div></div>
   <div id="tab-marathons" class="section"><div id="marathons-content"></div></div>
   <div id="tab-reports" class="section"><div id="reports-content"></div></div>
+  <div id="tab-service" class="section"><div id="service-content"></div></div>
   <div id="tab-staff" class="section"><div id="staff-content"></div></div>
   <div id="tab-plans" class="section"><div id="plans-content"></div></div>
   <div id="tab-salary" class="section"><div id="salary-content"></div></div>
@@ -945,6 +947,31 @@ async function renderOverview(){
       <div style="margin-top:10px;text-align:center;font-size:12px;color:var(--text3)">
         Индекс NPS: <span style="font-weight:700;font-size:14px;color:${npsIdx>=50?'var(--green-text)':npsIdx>=0?'var(--amber-text)':'var(--red-text)'}">${npsIdx>0?'+':''}${npsIdx}</span>
         &nbsp;·&nbsp;<button class="btn btn-sm" onclick="switchTab('studios')" style="font-size:11px">Подробнее →</button>
+      </div>
+    </div>`;
+  }
+
+  // Виджет сервис-менеджера в сводке
+  const curMonth=new Date().toISOString().slice(0,7);
+  const {data:smReports}=await sb.from('service_manager_reports').select('*').gte('report_date',curMonth+'-01');
+  const {data:smTgts}=await sb.from('service_manager_targets').select('*').order('effective_from',{ascending:false}).limit(1);
+  if(smReports&&smReports.length){
+    const smT=(smTgts||[])[0]||{shift_rate:1500,nps_target:100,nps_bonus:7000,calls_target:200,calls_bonus:10000,returned_client_bonus:500,massage_bonus:500};
+    const smNps=smReports.reduce((a,r)=>a+(+r.nps_count||0),0);
+    const smCalls=smReports.reduce((a,r)=>a+(+r.calls_count||0),0);
+    const smRet=smReports.reduce((a,r)=>a+(+r.returned_clients||0),0);
+    const smMas=smReports.reduce((a,r)=>a+(+r.massage_bookings||0),0);
+    const smSal=smReports.length*smT.shift_rate+(smNps>=smT.nps_target?smT.nps_bonus:0)+(smCalls>=smT.calls_target?smT.calls_bonus:0)+smRet*smT.returned_client_bonus+smMas*smT.massage_bonus;
+    html+=`<div class="card" style="background:linear-gradient(135deg,#fdf4ff,#f3e8ff);border-color:#d8b4fe">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+        <div style="font-size:13px;font-weight:700;color:#7c3aed">💜 Сервис-менеджер — ${monthLabel()}</div>
+        <button class="btn btn-sm" onclick="switchTab('service')" style="font-size:11px">Подробнее →</button>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
+        <div style="text-align:center"><div style="font-size:18px;font-weight:800;color:#7c3aed">${smNps}<span style="font-size:11px;color:#a78bfa">/${smT.nps_target}</span></div><div style="font-size:10px;color:var(--text3)">NPS</div></div>
+        <div style="text-align:center"><div style="font-size:18px;font-weight:800;color:#7c3aed">${smCalls}<span style="font-size:11px;color:#a78bfa">/${smT.calls_target}</span></div><div style="font-size:10px;color:var(--text3)">Звонков</div></div>
+        <div style="text-align:center"><div style="font-size:18px;font-weight:800;color:#7c3aed">${smRet}</div><div style="font-size:10px;color:var(--text3)">Возвратов</div></div>
+        <div style="text-align:center"><div style="font-size:18px;font-weight:800;color:#7c3aed">${fmt(smSal)}</div><div style="font-size:10px;color:var(--text3)">₽ зарплата</div></div>
       </div>
     </div>`;
   }
@@ -1713,13 +1740,34 @@ async function renderStaff(){
   }
   
   if(active.length){
+    const roleLabels={admin:'Администратор',service_manager:'Сервис-менеджер'};
+    const motLabels={standard:'Стандартная (оклад + %)',sales_pct:'% от продаж (шкала)'};
     html+=`<div class="card">
       <div style="font-size:14px;font-weight:600;margin-bottom:12px">✅ Активные сотрудники (${active.length})</div>
-      ${active.map(p=>`<div style="padding:10px 0;border-bottom:1px solid var(--border)">
+      ${active.map(p=>`<div style="padding:12px 0;border-bottom:1px solid var(--border)">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
           <div>
             <div style="font-weight:600;font-size:14px">${p.name}</div>
             <div style="font-size:12px;color:var(--text3);margin-top:2px">${p.telegram_chat_id?`✈️ ${p.telegram_username?'@'+p.telegram_username:'Telegram привязан'}`:'Telegram не привязан'}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
+          <div class="form-row" style="margin:0;flex:1;min-width:160px">
+            <label style="font-size:11px">Роль</label>
+            <select style="font-size:12px;padding:4px 6px" onchange="updateProfile(${p.id},'role',this.value)">
+              <option value="admin" ${(p.role||'admin')==='admin'?'selected':''}>Администратор</option>
+              <option value="service_manager" ${p.role==='service_manager'?'selected':''}>Сервис-менеджер</option>
+            </select>
+          </div>
+          <div class="form-row" style="margin:0;flex:1;min-width:200px">
+            <label style="font-size:11px">Тип мотивации</label>
+            <select style="font-size:12px;padding:4px 6px" onchange="updateProfile(${p.id},'motivation_type',this.value);this.nextElementSibling.style.display=this.value==='sales_pct'?'block':'none'">
+              <option value="standard" ${(p.motivation_type||'standard')==='standard'?'selected':''}>Оклад + % от продаж</option>
+              <option value="sales_pct" ${p.motivation_type==='sales_pct'?'selected':''}>% от объёма продаж (шкала)</option>
+            </select>
+            <div style="display:${p.motivation_type==='sales_pct'?'block':'none'};font-size:11px;color:var(--purple-text);margin-top:3px">
+              📊 Шкала настраивается в разделе <b onclick="switchTab('motivation')" style="cursor:pointer;text-decoration:underline">Мотивация → Шкала продаж</b>
+            </div>
           </div>
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
@@ -1763,11 +1811,41 @@ async function deleteStaff(id,name){
   renderStaff();
 }
 
+async function updateProfile(id,field,value){
+  await sb.from('profiles').update({[field]:value}).eq('id',id);
+}
+
 function calcShift(s){
   const cash=(+s.newSales||0)+(+s.renew||0)+(+s.restore||0);
   const fix=1500,pNew=Math.round((+s.newSales||0)*0.05),pRenew=Math.round((+s.renew||0)*0.08),pRestore=Math.round((+s.restore||0)*0.10);
   const bonus=cashBonus(s.studio,cash);
   return{fix,pNew,pRenew,pRestore,bonus,cash,total:fix+pNew+pRenew+pRestore+bonus};
+}
+
+// Расчёт зарплаты по шкале продаж
+function calcSalesSalary(revenue, scheme){
+  if(!scheme)return{base:0,extra:0,tierLabel:'—'};
+  const tiers=[
+    {thr:+scheme.tier1_threshold,sal:+scheme.tier1_salary},
+    {thr:+scheme.tier2_threshold,sal:+scheme.tier2_salary},
+    {thr:+scheme.tier3_threshold,sal:+scheme.tier3_salary},
+    {thr:+scheme.tier4_threshold,sal:+scheme.tier4_salary},
+  ].sort((a,b)=>a.thr-b.thr);
+
+  let base=0,extra=0,tierLabel='Ниже минимума';
+  for(let i=0;i<tiers.length;i++){
+    if(revenue>=tiers[i].thr){
+      base=tiers[i].sal;
+      tierLabel=`${fmt(tiers[i].thr)} → ${fmt(tiers[i].sal)} ₽`;
+    }
+  }
+  // Сверх последнего порога — % от превышения
+  const lastTier=tiers[tiers.length-1];
+  const pctOver=+(scheme.pct_over||10)/100;
+  if(revenue>lastTier.thr){
+    extra=Math.round((revenue-lastTier.thr)*pctOver);
+  }
+  return{base,extra,tierLabel};
 }
 function cashBonus(studio,cash){
   if(studio==='Империал'){if(cash>=100000)return 2500;if(cash>=80000)return 1500;if(cash>=60000)return 1000;return 0;}
@@ -1806,13 +1884,23 @@ async function loadSalaryData(){
   const btn=document.getElementById('sal-load-btn');
   btn.disabled=true;btn.textContent='Загрузка...';
   
-  const {data:sd,error:sErr}=await sb.from('shifts').select('*').gte('date',from).lte('date',to);
-  const fromMonth=from.slice(0,7);
-  const toMonth=to.slice(0,7);
-  const {data:bonusData}=await sb.from('admin_bonuses').select('*').gte('month',fromMonth).lte('month',toMonth);
-  
+  const [
+    {data:sd},
+    {data:bonusData},
+    {data:profilesData},
+    {data:salesSchemes}
+  ] = await Promise.all([
+    sb.from('shifts').select('*').gte('date',from).lte('date',to),
+    sb.from('admin_bonuses').select('*').gte('month',from.slice(0,7)).lte('month',to.slice(0,7)),
+    sb.from('profiles').select('id,name,motivation_type,role').eq('active',true),
+    sb.from('sales_motivation_schemes').select('*').order('effective_from',{ascending:false}).limit(1)
+  ]);
+
   btn.disabled=false;btn.textContent='Загрузить';
-  
+
+  const profileMap={};(profilesData||[]).forEach(p=>{profileMap[p.name]=p;});
+  const salesScheme=(salesSchemes||[])[0];
+
   const periodShifts=(sd||[]).map(r=>({
     id:r.id,date:r.date,studio:r.studio,admin:r.admin,
     newSales:+r.new_sales||0,newClientsCount:+r.new_clients_count||0,renew:+r.renew||0,restore:+r.restore||0,
@@ -1820,28 +1908,40 @@ async function loadSalaryData(){
     massage:+r.massage_bookings||0,reviews:+r.reviews||0,
     calls:+r.calls||0,tasks:+r.tasks||0,yoga:+r.yoga_bookings||0,mc:+r.masterclass_bookings||0
   }));
-  
+
   const admins=[...new Set(periodShifts.map(s=>s.admin))].filter(Boolean).sort();
-  
+
   if(!admins.length){
     document.getElementById('sal-result').innerHTML='<div style="color:var(--text3);text-align:center;padding:2rem">Нет данных за выбранный период</div>';
     return;
   }
-  
+
   const adminData=admins.map(admin=>{
     const ss=periodShifts.filter(s=>s.admin===admin);
     const studio=ss[0]?.studio||'—';
     const n=ss.length;
-    const revenue=ss.reduce((a,s)=>a+s.newSales+s.renew+s.restore+(+s.yogaSales||0)+(+s.mcSales||0),0);
-    let fix=0,pNew=0,pRenew=0,pRestore=0,bonus=0;
-    ss.forEach(s=>{
-      const sal=calcShift(s);
-      fix+=sal.fix;pNew+=sal.pNew;pRenew+=sal.pRenew;pRestore+=sal.pRestore;bonus+=sal.bonus;
-    });
-    const total=fix+pNew+pRenew+pRestore+bonus;
+    const profile=profileMap[admin]||{};
+    const motType=profile.motivation_type||'standard';
+    const revenue=ss.reduce((a,s)=>a+s.newSales+s.renew+s.restore,0);
+
+    let fix=0,pNew=0,pRenew=0,pRestore=0,bonus=0,salaryByRevenue=0;
+
+    if(motType==='sales_pct'&&salesScheme){
+      // Мотивация по объёму продаж: шкала порогов
+      fix=ss.length*+salesScheme.fix_per_shift||0; // нет оклада за смену в этом типе
+      const sal=calcSalesSalary(revenue,salesScheme);
+      salaryByRevenue=sal.base;
+      bonus=sal.extra;
+    } else {
+      ss.forEach(s=>{
+        const sal=calcShift(s);
+        fix+=sal.fix;pNew+=sal.pNew;pRenew+=sal.pRenew;pRestore+=sal.pRestore;bonus+=sal.bonus;
+      });
+    }
+    const total=(motType==='sales_pct'?salaryByRevenue+bonus:fix+pNew+pRenew+pRestore+bonus);
     const adminBonusList=(bonusData||[]).filter(b=>b.admin_name===admin);
     const bonusManual=adminBonusList.reduce((a,b)=>a+(+b.amount||0),0);
-    return{admin,studio,n,revenue,fix,pNew,pRenew,pRestore,bonus,bonusManual,adminBonusList,total:total+bonusManual};
+    return{admin,studio,n,revenue,fix,pNew,pRenew,pRestore,bonus,salaryByRevenue,bonusManual,adminBonusList,total:total+bonusManual,motType};
   }).sort((a,b)=>b.total-a.total);
   
   const grandTotal=adminData.reduce((a,d)=>a+d.total,0);
@@ -1869,14 +1969,18 @@ async function loadSalaryData(){
         </div>
       </div>
       <div style="background:var(--bg2);border-radius:var(--radius-sm);padding:.75rem">
-        ${[
+        ${(d.motType==='sales_pct'?[
+          {label:`База по объёму продаж (${fmt(d.revenue)} ₽)`,val:d.salaryByRevenue},
+          {label:'Сверхплановые (10%)',val:d.bonus},
+          {label:'Бонусы руководителя',val:d.bonusManual},
+        ]:[
           {label:`Оклад (${d.n} × 1 500 ₽)`,val:d.fix},
           {label:'Новые абонементы (5%)',val:d.pNew},
           {label:'Продления (8%)',val:d.pRenew},
           {label:'Восстановление (10%)',val:d.pRestore},
           {label:'Бонус за кассу',val:d.bonus},
           {label:'Бонусы руководителя',val:d.bonusManual},
-        ].filter(i=>i.val>0).map(i=>`
+        ]).filter(i=>i.val>0).map(i=>`
           <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);font-size:13px">
             <span style="color:var(--text2)">${i.label}</span>
             <span style="font-weight:600">${fmt(i.val)} ₽</span>
@@ -1980,7 +2084,59 @@ async function renderMotivation(){
     </div>`:''}
   </div>`;
 
+  // Блок шкалы продаж
+  const {data:salesSchemes}=await sb.from('sales_motivation_schemes').select('*').order('effective_from',{ascending:false});
+  const ss=(salesSchemes||[])[0]||{};
+  const tiers=[
+    {thrField:'tier1_threshold',salField:'tier1_salary',label:'Порог 1'},
+    {thrField:'tier2_threshold',salField:'tier2_salary',label:'Порог 2'},
+    {thrField:'tier3_threshold',salField:'tier3_salary',label:'Порог 3'},
+    {thrField:'tier4_threshold',salField:'tier4_salary',label:'Порог 4'},
+  ];
+  html+=`
+  <div class="section-title" style="margin-top:20px;margin-bottom:8px">💹 Мотивация по объёму продаж (шкала)</div>
+  <div class="card">
+    <div style="font-size:13px;color:var(--text2);margin-bottom:12px">Для сотрудников с типом мотивации <b>«% от объёма продаж»</b>. Засчитывается лучший достигнутый порог + % от превышения.</div>
+    <div class="grid2" style="gap:8px;margin-bottom:8px">
+      ${tiers.map(t=>`<div style="background:var(--bg2);border-radius:var(--radius-sm);padding:10px">
+        <div style="font-size:11px;color:var(--text3);font-weight:600;margin-bottom:6px">${t.label}</div>
+        <div class="grid2" style="gap:6px">
+          <div class="form-row" style="margin:0"><label style="font-size:11px">Порог, ₽</label><input type="number" id="sms-${t.thrField}" value="${ss[t.thrField]||''}" min="0" placeholder="0"></div>
+          <div class="form-row" style="margin:0"><label style="font-size:11px">Зарплата, ₽</label><input type="number" id="sms-${t.salField}" value="${ss[t.salField]||''}" min="0" placeholder="0"></div>
+        </div>
+      </div>`).join('')}
+    </div>
+    <div class="grid2" style="gap:8px;margin-bottom:12px">
+      <div class="form-row"><label>% от превышения последнего порога</label><input type="number" id="sms-pct-over" value="${ss.pct_over||5}" min="0" step="0.1"></div>
+      <div class="form-row"><label>Действует с</label><input type="date" id="sms-eff-from" value="${ss.effective_from||today()}"></div>
+    </div>
+    <div style="font-size:12px;color:var(--text3);background:var(--bg2);border-radius:var(--radius-sm);padding:10px;margin-bottom:10px">
+      <b>Пример:</b> Продала на 900 000 ₽ → база ${fmt(ss.tier3_salary||70000)} ₽ (порог ${fmt(ss.tier3_threshold||700000)}) + ${ss.pct_over||5}% от ${fmt(900000-(ss.tier3_threshold||700000))} = <b>${fmt((ss.tier3_salary||70000)+Math.round((900000-(ss.tier3_threshold||700000))*(ss.pct_over||5)/100))} ₽</b>
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="saveSalesMotSchemeFromMot(${ss.id||0})">💾 Сохранить шкалу</button>
+  </div>`;
+
   el.innerHTML = html;
+}
+
+async function saveSalesMotSchemeFromMot(id){
+  const row={
+    effective_from:document.getElementById('sms-eff-from').value||today(),
+    tier1_threshold:+document.getElementById('sms-tier1_threshold').value||300000,
+    tier1_salary:+document.getElementById('sms-tier1_salary').value||30000,
+    tier2_threshold:+document.getElementById('sms-tier2_threshold').value||500000,
+    tier2_salary:+document.getElementById('sms-tier2_salary').value||50000,
+    tier3_threshold:+document.getElementById('sms-tier3_threshold').value||700000,
+    tier3_salary:+document.getElementById('sms-tier3_salary').value||70000,
+    tier4_threshold:+document.getElementById('sms-tier4_threshold').value||1000000,
+    tier4_salary:+document.getElementById('sms-tier4_salary').value||100000,
+    pct_over:+document.getElementById('sms-pct-over').value||5,
+  };
+  let error;
+  if(id){({error}=await sb.from('sales_motivation_schemes').update(row).eq('id',id));}
+  else{({error}=await sb.from('sales_motivation_schemes').insert(row));}
+  if(error){alert('Ошибка: '+error.message);return;}
+  renderMotivation();
 }
 
 function motivationFormHTML(s){
@@ -2080,12 +2236,264 @@ async function updateMotivation(id){
   renderMotivation();
 }
 
+// ===== МОТИВАЦИЯ ПО ПРОДАЖАМ — ШКАЛА =====
+let salesMotScheme=null;
+let smTargets=null;
+
+async function renderSalesMotivationBlock(container){
+  const {data:schemes}=await sb.from('sales_motivation_schemes').select('*').order('effective_from',{ascending:false});
+  salesMotScheme=(schemes||[])[0];
+  const s=salesMotScheme||{};
+
+  const tiers=[
+    {thrField:'tier1_threshold',salField:'tier1_salary',label:'Порог 1'},
+    {thrField:'tier2_threshold',salField:'tier2_salary',label:'Порог 2'},
+    {thrField:'tier3_threshold',salField:'tier3_salary',label:'Порог 3'},
+    {thrField:'tier4_threshold',salField:'tier4_salary',label:'Порог 4'},
+  ];
+
+  container.innerHTML+=`
+  <div class="section-title" style="margin-top:20px;margin-bottom:8px">💹 Мотивация по объёму продаж (шкала)</div>
+  <div class="card" id="sales-mot-card">
+    <div style="font-size:13px;color:var(--text2);margin-bottom:12px">Назначается сотрудникам с типом мотивации <b>«% от объёма продаж»</b>. Фиксируется лучший порог достигнутого объёма + % от превышения последнего.</div>
+    <div id="sales-mot-form">
+      <div class="grid2" style="gap:8px;margin-bottom:8px">
+        ${tiers.map(t=>`
+        <div style="background:var(--bg2);border-radius:var(--radius-sm);padding:10px">
+          <div style="font-size:11px;color:var(--text3);font-weight:600;margin-bottom:6px">${t.label}</div>
+          <div class="grid2" style="gap:6px">
+            <div class="form-row" style="margin:0"><label style="font-size:11px">Порог, ₽</label><input type="number" id="sm-${t.thrField}" value="${s[t.thrField]||''}" min="0" placeholder="0"></div>
+            <div class="form-row" style="margin:0"><label style="font-size:11px">Зарплата, ₽</label><input type="number" id="sm-${t.salField}" value="${s[t.salField]||''}" min="0" placeholder="0"></div>
+          </div>
+        </div>`).join('')}
+      </div>
+      <div class="grid2" style="gap:8px;margin-bottom:12px">
+        <div class="form-row"><label>% от превышения последнего порога</label><input type="number" id="sm-pct-over" value="${s.pct_over||5}" min="0" step="0.1"></div>
+        <div class="form-row"><label>Действует с</label><input type="date" id="sm-eff-from" value="${s.effective_from||today()}"></div>
+      </div>
+      <div style="font-size:12px;color:var(--text3);background:var(--bg2);border-radius:var(--radius-sm);padding:10px;margin-bottom:10px">
+        <b>Пример:</b> Продала на 900 000 ₽ → база 70 000 ₽ (порог 700к) + 5% от 200 000 = 80 000 ₽ итого
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="saveSalesMotScheme(${s.id||0})">💾 Сохранить шкалу</button>
+    </div>
+  </div>`;
+}
+
+async function saveSalesMotScheme(id){
+  const row={
+    effective_from:document.getElementById('sm-eff-from').value,
+    tier1_threshold:+document.getElementById('sm-tier1_threshold').value||300000,
+    tier1_salary:+document.getElementById('sm-tier1_salary').value||30000,
+    tier2_threshold:+document.getElementById('sm-tier2_threshold').value||500000,
+    tier2_salary:+document.getElementById('sm-tier2_salary').value||50000,
+    tier3_threshold:+document.getElementById('sm-tier3_threshold').value||700000,
+    tier3_salary:+document.getElementById('sm-tier3_salary').value||70000,
+    tier4_threshold:+document.getElementById('sm-tier4_threshold').value||1000000,
+    tier4_salary:+document.getElementById('sm-tier4_salary').value||100000,
+    pct_over:+document.getElementById('sm-pct-over').value||5,
+  };
+  let error;
+  if(id){({error}=await sb.from('sales_motivation_schemes').update(row).eq('id',id));}
+  else{({error}=await sb.from('sales_motivation_schemes').insert(row));}
+  if(error){alert('Ошибка: '+error.message);return;}
+  renderMotivation();
+}
+
+// ===== СЕРВИС-МЕНЕДЖЕР =====
+async function renderService(){
+  const el=document.getElementById('service-content');
+  el.innerHTML='<div style="color:var(--text3);text-align:center;padding:2rem">Загрузка...</div>';
+
+  const now=new Date();
+  const curMonth=now.toISOString().slice(0,7);
+
+  const [{data:reports},{data:targets},{data:smProfiles},{data:npsData}]=await Promise.all([
+    sb.from('service_manager_reports').select('*').gte('report_date',curMonth+'-01').order('report_date',{ascending:false}),
+    sb.from('service_manager_targets').select('*').order('effective_from',{ascending:false}).limit(1),
+    sb.from('profiles').select('id,name').eq('active',true).eq('role','service_manager'),
+    sb.from('nps_responses').select('id,collected_by').gte('survey_date',curMonth+'-01'),
+  ]);
+
+  smTargets=(targets||[])[0]||{shift_rate:1500,nps_target:100,nps_bonus:7000,calls_target:200,calls_bonus:10000,returned_client_bonus:500,massage_bonus:500};
+  const t=smTargets;
+  const reps=reports||[];
+  const smIds=new Set((smProfiles||[]).map(p=>p.id));
+
+  // NPS считаем автоматически из nps_responses по сервис-менеджерам
+  const totalNps=(npsData||[]).filter(r=>smIds.has(r.collected_by)).length;
+  const totalCalls=reps.reduce((a,r)=>a+(+r.calls_count||0),0);
+  const totalReturned=reps.reduce((a,r)=>a+(+r.returned_clients||0),0);
+  const totalMassage=reps.reduce((a,r)=>a+(+r.massage_bookings||0),0);
+  const totalShifts=reps.length;
+
+  // Расчёт зарплаты за текущий месяц
+  const salShifts=totalShifts*t.shift_rate;
+  const salNps=totalNps>=t.nps_target?t.nps_bonus:0;
+  const salCalls=totalCalls>=t.calls_target?t.calls_bonus:0;
+  const salReturned=totalReturned*t.returned_client_bonus;
+  const salMassage=totalMassage*t.massage_bonus;
+  const salTotal=salShifts+salNps+salCalls+salReturned+salMassage;
+
+  let html=`
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <div class="section-title" style="margin:0">💜 Сервис-менеджер — ${monthLabel()}</div>
+    <button class="btn btn-primary btn-sm" onclick="openServiceReport()">+ Добавить отчёт</button>
+  </div>
+
+  <!-- Зарплата месяца -->
+  <div class="card" style="background:linear-gradient(135deg,var(--purple-bg),#f0f4ff);border-color:#c4b5fd;margin-bottom:12px">
+    <div style="font-size:11px;color:var(--purple-text);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Зарплата за ${monthLabel()}</div>
+    <div style="font-size:28px;font-weight:800;color:var(--purple-text)">${fmt(salTotal)} ₽</div>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:10px">
+      ${[
+        {label:'Выходы ('+totalShifts+')',val:salShifts},
+        {label:`NPS автоматически (${totalNps}/${t.nps_target})`,val:salNps,tip:totalNps<t.nps_target?`не хватает ${t.nps_target-totalNps}`:'✓'},
+        {label:`Звонки (${totalCalls}/${t.calls_target})`,val:salCalls,tip:totalCalls<t.calls_target?`не хватает ${t.calls_target-totalCalls}`:'✓'},
+        {label:`Возврат (${totalReturned} кл.)`,val:salReturned},
+        {label:`Массажи (${totalMassage})`,val:salMassage},
+      ].map(i=>`<div style="background:rgba(255,255,255,.6);border-radius:var(--radius-sm);padding:8px">
+        <div style="font-size:11px;color:var(--purple-text);margin-bottom:2px">${i.label}${i.tip?` <span style="color:${i.val>0?'var(--green-text)':'var(--amber-text)'}">${i.tip}</span>`:''}</div>
+        <div style="font-size:14px;font-weight:700;color:var(--purple-text)">${fmt(i.val)} ₽</div>
+      </div>`).join('')}
+    </div>
+  </div>
+
+  <!-- Таргеты -->
+  <div class="card" style="margin-bottom:12px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div style="font-size:14px;font-weight:600">⚙️ Таргеты сервис-менеджера</div>
+      <button class="btn btn-sm" onclick="openServiceTargets()">✏️ Изменить</button>
+    </div>
+    <div class="grid3">
+      <div class="metric"><div class="metric-label">Выход</div><div class="metric-val" style="font-size:15px">${fmt(t.shift_rate)} ₽</div></div>
+      <div class="metric"><div class="metric-label">NPS бонус (${t.nps_target}+)</div><div class="metric-val" style="font-size:15px">${fmt(t.nps_bonus)} ₽</div></div>
+      <div class="metric"><div class="metric-label">Звонки бонус (${t.calls_target}+)</div><div class="metric-val" style="font-size:15px">${fmt(t.calls_bonus)} ₽</div></div>
+      <div class="metric"><div class="metric-label">За возврат (1 клиент)</div><div class="metric-val" style="font-size:15px">${fmt(t.returned_client_bonus)} ₽</div></div>
+      <div class="metric"><div class="metric-label">За массаж</div><div class="metric-val" style="font-size:15px">${fmt(t.massage_bonus)} ₽</div></div>
+    </div>
+  </div>
+
+  <!-- Отчёты -->
+  <div class="section-title" style="margin-bottom:8px">📋 Отчёты за ${monthLabel()}</div>
+  ${reps.length?`<div class="card">
+    <div style="overflow-x:auto"><table class="data-table">
+      <thead><tr>
+        <th>Дата</th><th>Менеджер</th><th>Студия</th><th>NPS</th><th>Звонки</th><th>Возвраты</th><th>Массажи</th><th>Комментарий</th><th></th>
+      </tr></thead>
+      <tbody>
+        ${reps.map(r=>`<tr>
+          <td>${formatDate(r.report_date)}</td>
+          <td>${r.manager_name}</td>
+          <td>${r.studio||'—'}</td>
+          <td>${r.nps_count||0}</td>
+          <td>${r.calls_count||0}</td>
+          <td>${r.returned_clients||0}</td>
+          <td>${r.massage_bookings||0}</td>
+          <td style="font-size:12px;color:var(--text2);max-width:180px">${r.comment||'—'}</td>
+          <td><button class="btn btn-sm btn-danger" onclick="deleteServiceReport(${r.id})">🗑</button></td>
+        </tr>`).join('')}
+      </tbody>
+    </table></div>
+  </div>`:`<div class="card-muted" style="text-align:center;color:var(--text3)">Отчётов за ${monthLabel()} ещё нет</div>`}`;
+
+  el.innerHTML=html;
+}
+
+// Модалка добавления отчёта СМ
+function openServiceReport(){
+  // Используем временный inline-form
+  const el=document.getElementById('service-content');
+  const formDiv=document.createElement('div');
+  formDiv.id='service-report-inline';
+  formDiv.className='card';
+  formDiv.style.cssText='position:sticky;top:8px;z-index:10;margin-bottom:12px;border-color:var(--purple-text)';
+  formDiv.innerHTML=`
+    <div style="font-size:14px;font-weight:600;margin-bottom:12px">+ Новый отчёт</div>
+    <div class="grid2">
+      <div class="form-row"><label>Дата</label><input type="date" id="sr-date" value="${today()}"></div>
+      <div class="form-row"><label>Студия</label>
+        <select id="sr-studio"><option>Мечта</option><option>Империал</option></select>
+      </div>
+      <div class="form-row"><label>Имя менеджера</label><input type="text" id="sr-name" placeholder="Имя"></div>
+      <div class="form-row"><label>Звонков</label><input type="number" id="sr-calls" value="0" min="0"></div>
+      <div class="form-row"><label>Возвращено клиентов</label><input type="number" id="sr-returned" value="0" min="0"></div>
+      <div class="form-row"><label>Записей на массаж</label><input type="number" id="sr-massage" value="0" min="0"></div>
+    </div>
+    <div class="form-row"><label>Комментарий</label><input type="text" id="sr-comment" placeholder="Необязательно"></div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn btn-primary" onclick="saveServiceReport()">💾 Сохранить</button>
+      <button class="btn" onclick="document.getElementById('service-report-inline').remove()">Отмена</button>
+    </div>`;
+  el.prepend(formDiv);
+}
+
+async function saveServiceReport(){
+  const row={
+    report_date:document.getElementById('sr-date').value,
+    studio:document.getElementById('sr-studio').value,
+    manager_name:document.getElementById('sr-name').value||'Сервис-менеджер',
+    calls_count:+document.getElementById('sr-calls').value||0,
+    returned_clients:+document.getElementById('sr-returned').value||0,
+    massage_bookings:+document.getElementById('sr-massage').value||0,
+    comment:document.getElementById('sr-comment').value||null,
+  };
+  const {error}=await sb.from('service_manager_reports').insert(row);
+  if(error){alert('Ошибка: '+error.message);return;}
+  renderService();
+}
+
+async function deleteServiceReport(id){
+  if(!confirm('Удалить отчёт?'))return;
+  await sb.from('service_manager_reports').delete().eq('id',id);
+  renderService();
+}
+
+function openServiceTargets(){
+  if(!smTargets)return;
+  const t=smTargets;
+  // Inline edit в карточке таргетов
+  const card=document.querySelector('#service-content .card:nth-child(3)');
+  if(!card)return;
+  card.innerHTML=`
+    <div style="font-size:14px;font-weight:600;margin-bottom:10px">⚙️ Редактировать таргеты</div>
+    <div class="grid2">
+      <div class="form-row"><label>Ставка за выход, ₽</label><input type="number" id="st-shift" value="${t.shift_rate}"></div>
+      <div class="form-row"><label>NPS цель</label><input type="number" id="st-nps-target" value="${t.nps_target}"></div>
+      <div class="form-row"><label>NPS бонус, ₽</label><input type="number" id="st-nps-bonus" value="${t.nps_bonus}"></div>
+      <div class="form-row"><label>Цель звонков</label><input type="number" id="st-calls-target" value="${t.calls_target}"></div>
+      <div class="form-row"><label>Бонус за звонки, ₽</label><input type="number" id="st-calls-bonus" value="${t.calls_bonus}"></div>
+      <div class="form-row"><label>Бонус за возврат клиента, ₽</label><input type="number" id="st-ret-bonus" value="${t.returned_client_bonus}"></div>
+      <div class="form-row"><label>Бонус за массаж, ₽</label><input type="number" id="st-mas-bonus" value="${t.massage_bonus}"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn btn-primary" onclick="saveServiceTargets(${t.id})">💾 Сохранить</button>
+      <button class="btn" onclick="renderService()">Отмена</button>
+    </div>`;
+}
+
+async function saveServiceTargets(id){
+  const row={
+    shift_rate:+document.getElementById('st-shift').value||1500,
+    nps_target:+document.getElementById('st-nps-target').value||100,
+    nps_bonus:+document.getElementById('st-nps-bonus').value||7000,
+    calls_target:+document.getElementById('st-calls-target').value||200,
+    calls_bonus:+document.getElementById('st-calls-bonus').value||10000,
+    returned_client_bonus:+document.getElementById('st-ret-bonus').value||500,
+    massage_bonus:+document.getElementById('st-mas-bonus').value||500,
+    effective_from:today(),
+  };
+  const {error}=await sb.from('service_manager_targets').update(row).eq('id',id);
+  if(error){alert('Ошибка: '+error.message);return;}
+  renderService();
+}
+
 function switchTab(t){
-  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['schedule','overview','mom','studios','nps','admins','marathons','reports','salary','plans','motivation','staff','trainers-team','trainers-marathons','trainers-salary','trainers-motivation'][i]===t));
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['schedule','overview','mom','studios','nps','admins','marathons','reports','salary','plans','motivation','service','staff','trainers-team','trainers-marathons','trainers-salary','trainers-motivation'][i]===t));
   document.querySelectorAll('.section').forEach(el=>el.classList.remove('active'));
   document.getElementById('tab-'+t).classList.add('active');
   if(t==='nps')renderNPS();
   if(t==='reports')renderReports();
+  if(t==='service')renderService();
   if(t==='staff')renderStaff();
   if(t==='salary')renderSalary();
   if(t==='motivation')renderMotivation();
@@ -3101,8 +3509,12 @@ async function renderNPS(){
   </div>`;
 }
 
-function openNpsForm(){
+async function openNpsForm(){
   document.getElementById('nps-modal').style.display='flex';
+  // Заполняем дропдаун сервис-менеджеров
+  const sel=document.getElementById('nps-collected-by');
+  const {data:sms}=await sb.from('profiles').select('id,name').eq('active',true).eq('role','service_manager');
+  sel.innerHTML='<option value="">— не указано —</option>'+(sms||[]).map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
 }
 
 async function saveNPS(){
@@ -3110,15 +3522,18 @@ async function saveNPS(){
   const phone=document.getElementById('nps-phone').value.trim();
   const score=parseInt(document.getElementById('nps-score').value);
   const comment=document.getElementById('nps-comment').value.trim();
-  const manager=document.getElementById('nps-manager').value.trim();
+  const collectedBy=document.getElementById('nps-collected-by').value;
   const studio=document.getElementById('nps-studio').value;
   if(!name||!phone||isNaN(score)){alert('Заполните имя, телефон и оценку');return;}
   const btn=document.getElementById('nps-save-btn');
   btn.disabled=true;btn.textContent='Сохраняем...';
-  const {error}=await sb.from('nps_responses').insert({client_name:name,client_phone:phone,score,comment,manager_name:manager,studio,survey_date:new Date().toISOString().slice(0,10)});
+  const row={client_name:name,client_phone:phone,score,comment,studio,survey_date:new Date().toISOString().slice(0,10)};
+  if(collectedBy) row.collected_by=+collectedBy;
+  const {error}=await sb.from('nps_responses').insert(row);
   if(error){btn.disabled=false;btn.textContent='Сохранить';alert('Ошибка: '+error.message);return;}
   document.getElementById('nps-modal').style.display='none';
-  ['nps-name','nps-phone','nps-score','nps-comment','nps-manager'].forEach(id=>document.getElementById(id).value='');
+  ['nps-name','nps-phone','nps-score','nps-comment'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('nps-collected-by').value='';
   btn.disabled=false;btn.textContent='Сохранить';
   renderNPS();
   renderOverview();
@@ -3165,8 +3580,10 @@ async function saveNPS(){
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
         <div>
-          <label style="font-size:12px;font-weight:500;color:var(--text2);display:block;margin-bottom:4px">Менеджер</label>
-          <input id="nps-manager" type="text" placeholder="Имя менеджера" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-family:inherit">
+          <label style="font-size:12px;font-weight:500;color:var(--text2);display:block;margin-bottom:4px">Кто собрал (сервис-менеджер)</label>
+          <select id="nps-collected-by" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-family:inherit">
+            <option value="">— не указано —</option>
+          </select>
         </div>
         <div>
           <label style="font-size:12px;font-weight:500;color:var(--text2);display:block;margin-bottom:4px">Студия</label>
