@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Lady Stretch — Сервис</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{overflow-x:hidden;max-width:100%}
+body.modal-open{overflow:hidden;position:fixed;width:100%;left:0;right:0}
+:root{
+  --bg:#fff;--bg2:#f8f9fa;--bg3:#f1f3f5;
+  --text:#1a1a2e;--text2:#555570;--text3:#888899;
+  --border:#e0e0eb;--border2:#c8c8d8;
+  --blue:#2563eb;--blue-bg:#eff6ff;--blue-text:#1d4ed8;
+  --green:#16a34a;--green-bg:#f0fdf4;--green-text:#15803d;
+  --amber:#d97706;--amber-bg:#fffbeb;--amber-text:#b45309;
+  --red:#dc2626;--red-bg:#fef2f2;--red-text:#b91c1c;
+  --purple:#7c3aed;--purple-bg:#f5f3ff;--purple-text:#6d28d9;
+  --radius:10px;--radius-sm:6px;--shadow:0 1px 3px rgba(0,0,0,.08);
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:var(--bg3);color:var(--text);font-size:15px;min-height:100vh}
+.app{max-width:600px;margin:0 auto;padding:1rem}
+
+.topbar{background:var(--purple);color:#fff;padding:12px 16px;border-radius:var(--radius);margin-bottom:1rem}
+.topbar-row1{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.topbar-title{font-size:17px;font-weight:700}
+.topbar-sub{font-size:12px;opacity:.8;margin-top:2px}
+.topbar-btn{width:100%;padding:10px 4px;font-size:13px;font-weight:600;background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:var(--radius-sm);cursor:pointer;font-family:inherit;text-align:center;-webkit-tap-highlight-color:transparent}
+.topbar-btn:active{background:rgba(255,255,255,.3)}
+
+.tabs{display:flex;gap:4px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:4px;margin-bottom:1rem}
+.tab{flex:1;padding:8px 4px;font-size:12px;font-weight:500;cursor:pointer;border:none;background:none;color:var(--text2);border-radius:var(--radius-sm);font-family:inherit;text-align:center}
+.tab.active{background:var(--purple);color:#fff}
+.section{display:none}.section.active{display:block}
+
+.card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;margin-bottom:1rem;box-shadow:var(--shadow)}
+.card-muted{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:1rem;margin-bottom:.75rem}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+@media(max-width:480px){.grid3{grid-template-columns:1fr 1fr}}
+
+.metric{background:var(--bg2);border-radius:var(--radius-sm);padding:.75rem;border:1px solid var(--border);text-align:center}
+.metric-label{font-size:11px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.03em}
+.metric-val{font-size:22px;font-weight:700}
+.metric-sub{font-size:11px;color:var(--text3);margin-top:3px}
+
+label{display:block;font-size:11px;color:var(--text2);margin-bottom:4px;font-weight:500}
+input,select,textarea{width:100%;padding:9px 12px;font-size:16px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);font-family:inherit}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--purple)}
+.form-row{margin-bottom:10px}
+.subsection-title{font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
+
+.btn{padding:9px 18px;font-size:14px;font-weight:500;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px;-webkit-tap-highlight-color:transparent}
+.btn:active{opacity:.8}
+.btn-primary{background:var(--purple);color:#fff;border-color:var(--purple)}
+.btn-danger{color:var(--red-text);border-color:#fca5a5}
+.btn-sm{padding:5px 12px;font-size:12px}
+.btn-block{width:100%;justify-content:center}
+.alert{padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;margin-bottom:12px}
+.alert-red{background:var(--red-bg);color:var(--red-text);border:1px solid #fca5a5}
+.alert-green{background:var(--green-bg);color:var(--green-text);border:1px solid #86efac}
+
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-start;justify-content:center;z-index:100;padding:1rem;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.modal{background:var(--bg);border-radius:var(--radius);padding:1.5rem;width:min(540px,100%);max-width:calc(100vw - 2rem);max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem}
+.modal-title{font-size:17px;font-weight:700}
+
+/* AUTH */
+.auth-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem;background:var(--bg3)}
+.auth-card{background:var(--bg);border-radius:var(--radius);padding:2rem;width:min(380px,100%);box-shadow:0 4px 24px rgba(0,0,0,.1)}
+.auth-logo{text-align:center;margin-bottom:1.5rem}
+.auth-logo-title{font-size:20px;font-weight:700;margin-top:8px}
+.auth-logo-sub{font-size:13px;color:var(--text3);margin-top:4px}
+.pin-dots{display:flex;justify-content:center;gap:12px;margin:16px 0}
+.pin-dot{width:14px;height:14px;border-radius:50%;background:var(--border2);transition:background .15s}
+.pin-dot.filled{background:var(--purple)}
+.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+.pin-btn{padding:14px;font-size:20px;font-weight:500;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent;text-align:center}
+.pin-btn:active{background:var(--bg2)}
+
+.history-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;gap:8px}
+.tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.tag-imp{background:#dbeafe;color:#1e40af}
+.tag-mec{background:#d1fae5;color:#065f46}
+.nps-star{color:#f59e0b}
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="auth-screen" class="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div style="font-size:40px">🌟</div>
+      <div class="auth-logo-title">Lady Stretch</div>
+      <div class="auth-logo-sub" id="auth-subtitle">Сервис-менеджер</div>
+    </div>
+
+    <!-- Переключатель -->
+    <div style="display:flex;gap:4px;background:var(--bg3);border-radius:var(--radius-sm);padding:4px;margin-bottom:16px">
+      <button id="mode-login-btn" onclick="setAuthMode('login')" style="flex:1;padding:7px;font-size:13px;font-weight:600;border:none;border-radius:4px;cursor:pointer;background:var(--purple);color:#fff;font-family:inherit">Войти</button>
+      <button id="mode-reg-btn" onclick="setAuthMode('register')" style="flex:1;padding:7px;font-size:13px;font-weight:600;border:none;border-radius:4px;cursor:pointer;background:none;color:var(--text2);font-family:inherit">Регистрация</button>
+    </div>
+
+    <div class="form-row"><label>Имя</label><input id="login-first" placeholder="Имя"></div>
+    <div class="form-row"><label>Фамилия</label><input id="login-last" placeholder="Фамилия"></div>
+
+    <!-- Только для регистрации: подтверждение пина -->
+    <div id="reg-confirm-row" style="display:none">
+      <div style="font-size:12px;color:var(--text3);text-align:center;margin-bottom:4px">Подтверждение пин-кода</div>
+      <div style="display:flex;justify-content:center;gap:12px;margin-bottom:12px">
+        <div class="pin-dot" id="cdot-0"></div>
+        <div class="pin-dot" id="cdot-1"></div>
+        <div class="pin-dot" id="cdot-2"></div>
+        <div class="pin-dot" id="cdot-3"></div>
+      </div>
+    </div>
+
+    <div style="font-size:12px;color:var(--text3);text-align:center;margin-bottom:4px" id="pin-label">Пин-код</div>
+    <div class="pin-dots">
+      <div class="pin-dot" id="dot-0"></div>
+      <div class="pin-dot" id="dot-1"></div>
+      <div class="pin-dot" id="dot-2"></div>
+      <div class="pin-dot" id="dot-3"></div>
+    </div>
+    <div class="pin-pad">
+      <button class="pin-btn" onclick="pinPress('1')">1</button>
+      <button class="pin-btn" onclick="pinPress('2')">2</button>
+      <button class="pin-btn" onclick="pinPress('3')">3</button>
+      <button class="pin-btn" onclick="pinPress('4')">4</button>
+      <button class="pin-btn" onclick="pinPress('5')">5</button>
+      <button class="pin-btn" onclick="pinPress('6')">6</button>
+      <button class="pin-btn" onclick="pinPress('7')">7</button>
+      <button class="pin-btn" onclick="pinPress('8')">8</button>
+      <button class="pin-btn" onclick="pinPress('9')">9</button>
+      <button class="pin-btn" onclick="pinClear()" style="font-size:14px">Стереть</button>
+      <button class="pin-btn" onclick="pinPress('0')">0</button>
+      <button class="pin-btn btn-primary" id="auth-action-btn" onclick="doLogin()" style="font-size:13px">Войти</button>
+    </div>
+    <div id="login-err" class="alert alert-red" style="display:none;margin-top:12px"></div>
+    <div id="login-ok" class="alert alert-green" style="display:none;margin-top:12px"></div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="main-app" style="display:none">
+<div class="app">
+  <div class="topbar">
+    <div class="topbar-row1">
+      <div>
+        <div class="topbar-title">💜 Сервис</div>
+        <div class="topbar-sub" id="user-name-label">Lady Stretch</div>
+      </div>
+      <span style="font-size:11px;opacity:.8" id="sync-text"></span>
+    </div>
+    <button class="topbar-btn" onclick="openReportModal()">📋 Сдать отчёт</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" id="tab-dashboard" onclick="switchTab('dashboard')">📊 Сводка</button>
+    <button class="tab" id="tab-history" onclick="switchTab('history')">📋 История</button>
+    <button class="tab" id="tab-salary" onclick="switchTab('salary')">💰 Мотивация</button>
+    <button class="tab" id="tab-profile" onclick="switchTab('profile')">👤 Профиль</button>
+  </div>
+
+  <div id="sec-dashboard" class="section active"><div id="dashboard-content"></div></div>
+  <div id="sec-history" class="section"><div id="history-content"></div></div>
+  <div id="sec-salary" class="section"><div id="salary-content"></div></div>
+  <div id="sec-profile" class="section"><div id="profile-content"></div></div>
+</div>
+</div>
+
+<!-- REPORT MODAL -->
+<div id="report-modal" style="display:none" class="modal-bg">
+<div class="modal">
+  <div class="modal-header">
+    <div class="modal-title" id="report-modal-title">📋 Отчёт за день</div>
+    <button class="btn btn-sm" onclick="closeReportModal()">✕</button>
+  </div>
+  <input type="hidden" id="r-id">
+
+  <div class="subsection-title">Основное</div>
+  <div class="grid2">
+    <div class="form-row"><label>Дата</label><input type="date" id="r-date"></div>
+    <div class="form-row"><label>Студия</label>
+      <select id="r-studio">
+        <option value="Империал">Империал</option>
+        <option value="Мечта">Мечта</option>
+      </select>
+    </div>
+  </div>
+
+  <hr class="divider">
+  <div class="subsection-title">📞 Звонки</div>
+  <div class="grid3">
+    <div class="form-row"><label>Всего</label><input type="number" id="r-calls" value="0" min="0"></div>
+    <div class="form-row"><label>Дозвонились ✅</label><input type="number" id="r-reached" value="0" min="0"></div>
+    <div class="form-row"><label>Не ответили ❌</label><input type="number" id="r-noanswer" value="0" min="0"></div>
+  </div>
+
+  <hr class="divider">
+  <div class="subsection-title">👥 Клиенты</div>
+  <div class="grid2">
+    <div class="form-row"><label>Возврат на второе пробное</label><input type="number" id="r-returned" value="0" min="0"></div>
+    <div class="form-row"><label>Массаж записи</label><input type="number" id="r-massage" value="0" min="0"></div>
+  </div>
+
+  <hr class="divider">
+  <div class="subsection-title">⭐ NPS и заметки</div>
+  <div class="form-row"><label>Заметки по NPS (что говорят клиенты)</label>
+    <textarea id="r-nps-notes" rows="3" placeholder="Краткие заметки о реакции клиентов, жалобах, похвале..."></textarea>
+  </div>
+  <div class="form-row"><label>Комментарий</label>
+    <input type="text" id="r-comment" placeholder="Необязательно">
+  </div>
+
+  <div id="report-err" class="alert alert-red" style="display:none"></div>
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:4px">
+    <button id="r-delete-btn" class="btn btn-danger btn-sm" style="display:none">🗑 Удалить</button>
+    <div style="display:flex;gap:8px;margin-left:auto">
+      <button class="btn btn-sm" onclick="closeReportModal()">Отмена</button>
+      <button id="r-save-btn" class="btn btn-primary" onclick="saveReport()">✓ Сохранить</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+const SUPABASE_URL='https://nhiyoilfegmmvdtqsgkm.supabase.co';
+const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oaXlvaWxmZWdtbXZkdHFzZ2ttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2MDc0MTMsImV4cCI6MjA5NjE4MzQxM30.VL7a64jalOvhGC3yLMdeR-qR1Jlffht-uYcYmwDn7oQ';
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const TG_BOT_TOKEN='8782533403:AAGeOQv7g4gqVMq8sAomDBAy1-hlJTkqfKU';
+const TG_CHAT_ID='257221278';
+
+let currentUser=null, pin='', pinConfirm='', authMode='login', myReports=[], smTargets=null;
+
+// ===== HELPERS =====
+function today(){return new Date().toISOString().slice(0,10);}
+function monthKey(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
+function fmt(n){return(+n||0).toLocaleString('ru-RU');}
+function formatDate(s){if(!s)return'';const[y,m,d]=s.split('-');return d+'.'+m+'.'+y;}
+
+function simpleHash(s){let h=0;for(let i=0;i<s.length;i++){h=(Math.imul(31,h)+s.charCodeAt(i))|0;}return h.toString(16);}
+
+async function sendTelegram(text, kind='manual'){
+  try{
+    await fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({chat_id:TG_CHAT_ID,text,parse_mode:'HTML'})
+    });
+    await sb.from('bot_notifications').insert({kind,admin:currentUser?.name||'—',message:text,chat_id:TG_CHAT_ID,status:'sent'});
+  }catch(e){console.warn('TG error',e);}
+}
+
+// ===== AUTH MODE =====
+function setAuthMode(mode){
+  authMode=mode; pin=''; pinConfirm=''; updateDots(); updateCDots();
+  document.getElementById('login-err').style.display='none';
+  document.getElementById('login-ok').style.display='none';
+  const isReg=mode==='register';
+  document.getElementById('mode-login-btn').style.background=isReg?'none':'var(--purple)';
+  document.getElementById('mode-login-btn').style.color=isReg?'var(--text2)':'#fff';
+  document.getElementById('mode-reg-btn').style.background=isReg?'var(--purple)':'none';
+  document.getElementById('mode-reg-btn').style.color=isReg?'#fff':'var(--text2)';
+  document.getElementById('reg-confirm-row').style.display=isReg?'block':'none';
+  document.getElementById('pin-label').textContent=isReg?'Придумайте пин-код':'Пин-код';
+  document.getElementById('auth-action-btn').textContent=isReg?'Отправить заявку':'Войти';
+  document.getElementById('auth-subtitle').textContent=isReg?'Новый сотрудник':'Сервис-менеджер';
+}
+
+// ===== AUTH =====
+function updateDots(){
+  for(let i=0;i<4;i++) document.getElementById('dot-'+i).classList.toggle('filled',i<pin.length);
+}
+function updateCDots(){
+  for(let i=0;i<4;i++){const el=document.getElementById('cdot-'+i);if(el)el.classList.toggle('filled',i<pinConfirm.length);}
+}
+
+function pinPress(d){
+  const err=document.getElementById('login-err');
+  err.style.display='none';
+  if(authMode==='register'){
+    // Сначала заполняем основной пин, потом подтверждение
+    if(pin.length<4){pin+=d;updateDots();}
+    else if(pinConfirm.length<4){pinConfirm+=d;updateCDots();if(pinConfirm.length===4)setTimeout(doRegister,150);}
+  } else {
+    if(pin.length<4){pin+=d;updateDots();if(pin.length===4)setTimeout(doLogin,150);}
+  }
+}
+function pinClear(){
+  if(authMode==='register'){
+    if(pinConfirm.length>0){pinConfirm=pinConfirm.slice(0,-1);updateCDots();}
+    else{pin=pin.slice(0,-1);updateDots();}
+  } else {
+    pin=pin.slice(0,-1);updateDots();
+  }
+}
+
+async function doLogin(){
+  const first=document.getElementById('login-first').value.trim();
+  const last=document.getElementById('login-last').value.trim();
+  const err=document.getElementById('login-err');
+  err.style.display='none';
+  if(!first||!last){err.textContent='Введите имя и фамилию';err.style.display='block';pin='';updateDots();return;}
+  if(pin.length<4){err.textContent='Введите пин-код';err.style.display='block';return;}
+  const fullName=first+' '+last;
+  const hash=simpleHash(fullName+pin);
+  const {data}=await sb.from('profiles').select('*').eq('name',fullName).single();
+  if(!data){err.textContent='Пользователь не найден. Пройдите регистрацию.';err.style.display='block';pin='';updateDots();return;}
+  if(data.password_hash!==hash){err.textContent='Неверный пин-код';err.style.display='block';pin='';updateDots();return;}
+  if(!data.active){err.textContent='Заявка ещё не одобрена руководителем. Ожидайте.';err.style.display='block';return;}
+  if(data.role!=='service_manager'){err.textContent='Этот вход только для сервис-менеджеров';err.style.display='block';pin='';updateDots();return;}
+  currentUser={name:fullName,id:data.id,role:data.role};
+  localStorage.setItem('sm_session',JSON.stringify({name:fullName,id:data.id}));
+  enterApp();
+}
+
+async function doRegister(){
+  const first=document.getElementById('login-first').value.trim();
+  const last=document.getElementById('login-last').value.trim();
+  const err=document.getElementById('login-err');
+  const ok=document.getElementById('login-ok');
+  err.style.display='none'; ok.style.display='none';
+  if(!first||!last){err.textContent='Введите имя и фамилию';err.style.display='block';pinConfirm='';updateCDots();return;}
+  if(pin.length<4){err.textContent='Введите пин-код';err.style.display='block';pinConfirm='';updateCDots();return;}
+  if(pin!==pinConfirm){err.textContent='Пин-коды не совпадают. Попробуйте снова.';err.style.display='block';pin='';pinConfirm='';updateDots();updateCDots();return;}
+  const fullName=first+' '+last;
+  // Проверяем, нет ли уже такого пользователя
+  const {data:existing}=await sb.from('profiles').select('id,active').eq('name',fullName).single();
+  if(existing){
+    if(existing.active){err.textContent='Пользователь с таким именем уже зарегистрирован';err.style.display='block';}
+    else{ok.textContent='Заявка уже отправлена. Ожидайте одобрения руководителя.';ok.style.display='block';}
+    pin='';pinConfirm='';updateDots();updateCDots();return;
+  }
+  const hash=simpleHash(fullName+pin);
+  const {error}=await sb.from('profiles').insert({name:fullName,password_hash:hash,role:'service_manager',active:false});
+  pin='';pinConfirm='';updateDots();updateCDots();
+  if(error){err.textContent='Ошибка: '+error.message;err.style.display='block';return;}
+  ok.textContent='✅ Заявка отправлена! Руководитель одобрит вас — после этого войдите через вкладку «Войти».';
+  ok.style.display='block';
+  // Уведомление руководителю в Telegram
+  try{await fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:TG_CHAT_ID,text:`🆕 <b>Новая заявка на регистрацию</b>\n👤 ${fullName}\n📋 Роль: сервис-менеджер\n\nОдобрите в панели администратора (вкладка «Сотрудники»).`,parse_mode:'HTML'})});}catch(e){}
+}
+
+async function checkSession(){
+  const saved=localStorage.getItem('sm_session');
+  if(!saved)return;
+  try{
+    const s=JSON.parse(saved);
+    const {data}=await sb.from('profiles').select('*').eq('id',s.id).single();
+    if(data&&data.active&&data.role==='service_manager'){
+      currentUser={name:data.name,id:data.id,role:data.role};
+      enterApp();
+    } else { localStorage.removeItem('sm_session'); }
+  }catch(e){localStorage.removeItem('sm_session');}
+}
+
+function enterApp(){
+  document.getElementById('auth-screen').style.display='none';
+  document.getElementById('main-app').style.display='block';
+  document.getElementById('user-name-label').textContent=currentUser.name;
+  loadData();
+}
+
+function doLogout(){
+  localStorage.removeItem('sm_session');
+  currentUser=null;location.reload();
+}
+
+// ===== TABS =====
+function switchTab(t){
+  ['dashboard','history','salary','profile'].forEach(id=>{
+    document.getElementById('tab-'+id).classList.toggle('active',id===t);
+    document.getElementById('sec-'+id).classList.toggle('active',id===t);
+  });
+  if(t==='history')renderHistory();
+  if(t==='salary')renderSalary();
+  if(t==='profile')renderProfile();
+}
+
+// ===== DATA =====
+async function loadData(){
+  document.getElementById('sync-text').textContent='загрузка...';
+  const m=monthKey();
+  const [{data:reports},{data:targets},{data:npsData}]=await Promise.all([
+    sb.from('service_manager_reports').select('*').eq('manager_name',currentUser.name).gte('report_date',m+'-01').order('report_date',{ascending:false}),
+    sb.from('service_manager_targets').select('*').order('effective_from',{ascending:false}).limit(1),
+    sb.from('nps_responses').select('id,score,collected_by').gte('survey_date',m+'-01'),
+  ]);
+  myReports=reports||[];
+  smTargets=targets&&targets[0]||null;
+  const myNps=(npsData||[]).filter(r=>r.collected_by===currentUser.id);
+  document.getElementById('sync-text').textContent='';
+  renderDashboard(myNps);
+}
+
+// ===== DASHBOARD =====
+function renderDashboard(myNps){
+  const m=monthKey();
+  const shifts=myReports.length;
+  const calls=myReports.reduce((s,r)=>s+(+r.calls_count||0),0);
+  const reached=myReports.reduce((s,r)=>s+(+r.calls_reached||0),0);
+  const returned=myReports.reduce((s,r)=>s+(+r.returned_clients||0),0);
+  const massage=myReports.reduce((s,r)=>s+(+r.massage_bookings||0),0);
+  const npsCount=myNps.length;
+  const npsAvg=npsCount?Math.round(myNps.reduce((s,r)=>s+(+r.score||0),0)/npsCount*10)/10:null;
+  const t=smTargets||{};
+
+  const npsOk=npsCount>=(+t.nps_target||100);
+  const callsOk=calls>=(+t.calls_target||200);
+
+  document.getElementById('dashboard-content').innerHTML=`
+    <div class="card">
+      <div style="font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px">📊 Месяц — ${new Date(m+'-01').toLocaleString('ru-RU',{month:'long',year:'numeric'})}</div>
+      <div class="grid3" style="margin-bottom:12px">
+        <div class="metric"><div class="metric-label">Выходов</div><div class="metric-val">${shifts}</div></div>
+        <div class="metric"><div class="metric-label">Звонков</div><div class="metric-val" style="color:${callsOk?'var(--green)':'var(--text)'}">${calls}</div><div class="metric-sub">цель ${+t.calls_target||200}${callsOk?' ✅':''}</div></div>
+        <div class="metric"><div class="metric-label">Дозвон</div><div class="metric-val">${calls?Math.round(reached/calls*100):0}%</div></div>
+      </div>
+      <div class="grid3">
+        <div class="metric"><div class="metric-label">Возврат 2п</div><div class="metric-val">${returned}</div></div>
+        <div class="metric"><div class="metric-label">Массажи</div><div class="metric-val">${massage}</div></div>
+        <div class="metric"><div class="metric-label">NPS</div><div class="metric-val" style="color:${npsOk?'var(--green)':'var(--text)'}">${npsCount}</div><div class="metric-sub">${npsAvg!==null?'avg '+npsAvg:'—'}${npsOk?' ✅':''}</div></div>
+      </div>
+    </div>
+    ${myReports.length?`<div class="card">
+      <div style="font-size:13px;font-weight:600;margin-bottom:10px">Последние отчёты</div>
+      ${myReports.slice(0,3).map(r=>`
+        <div class="history-row" onclick="openReportModal(${JSON.stringify(r).replace(/"/g,'&quot;')})" style="cursor:pointer">
+          <span style="color:var(--text3)">${formatDate(r.report_date)}</span>
+          <span class="tag ${r.studio==='Империал'?'tag-imp':'tag-mec'}">${r.studio}</span>
+          <span>📞 ${r.calls_count||0} · 🔄 ${r.returned_clients||0} · 💆 ${r.massage_bookings||0}</span>
+        </div>`).join('')}
+    </div>`:'<div class="card" style="text-align:center;color:var(--text3);padding:2rem">Отчётов за этот месяц пока нет</div>'}`;
+}
+
+// ===== HISTORY =====
+function renderHistory(){
+  if(!myReports.length){document.getElementById('history-content').innerHTML='<div class="card" style="text-align:center;color:var(--text3);padding:2rem">Отчётов пока нет</div>';return;}
+  document.getElementById('history-content').innerHTML=`<div class="card">
+    ${myReports.map(r=>`
+      <div class="history-row" onclick="openReportModal(${JSON.stringify(r).replace(/"/g,'&quot;')})" style="cursor:pointer">
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="color:var(--text3);font-size:12px">${formatDate(r.report_date)}</span>
+            <span class="tag ${r.studio==='Империал'?'tag-imp':'tag-mec'}">${r.studio}</span>
+          </div>
+          <div style="font-size:12px;color:var(--text2);margin-top:3px">📞 ${r.calls_count||0} (дозв. ${r.calls_reached||0}) · 🔄 2п: ${r.returned_clients||0} · 💆 ${r.massage_bookings||0}</div>
+          ${r.nps_notes?`<div style="font-size:12px;color:var(--purple-text);margin-top:2px">📝 ${r.nps_notes}</div>`:''}
+        </div>
+        <span style="font-size:18px;color:var(--text3)">›</span>
+      </div>`).join('')}
+  </div>`;
+}
+
+// ===== SALARY =====
+async function renderSalary(){
+  const t=smTargets;
+  if(!t){document.getElementById('salary-content').innerHTML='<div class="card" style="color:var(--text3)">Таргеты не заданы</div>';return;}
+  const m=monthKey();
+  const {data:npsData}=await sb.from('nps_responses').select('id,collected_by').gte('survey_date',m+'-01');
+  const npsCount=(npsData||[]).filter(r=>r.collected_by===currentUser.id).length;
+  const calls=myReports.reduce((s,r)=>s+(+r.calls_count||0),0);
+  const returned=myReports.reduce((s,r)=>s+(+r.returned_clients||0),0);
+  const massage=myReports.reduce((s,r)=>s+(+r.massage_bookings||0),0);
+  const shifts=myReports.length;
+
+  const salShifts=shifts*(+t.shift_rate||1500);
+  const salNps=npsCount>=(+t.nps_target||100)?(+t.nps_bonus||7000):0;
+  const salCalls=calls>=(+t.calls_target||200)?(+t.calls_bonus||10000):0;
+  const salReturned=returned*(+t.returned_client_bonus||500);
+  const salMassage=massage*(+t.massage_bonus||500);
+  const total=salShifts+salNps+salCalls+salReturned+salMassage;
+
+  const row=(label,val,target,bonus,current)=>{
+    const ok=current>=target;
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">
+      <div>
+        <div style="font-weight:500">${label}</div>
+        <div style="font-size:11px;color:var(--text3)">факт: ${current} / цель: ${target}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-weight:600;color:${ok?'var(--green)':'var(--text3)'}">${ok?'+'+fmt(bonus)+' ₽':'не достигнуто'}</div>
+      </div>
+    </div>`;
+  };
+
+  document.getElementById('salary-content').innerHTML=`
+    <div class="card">
+      <div style="font-size:14px;font-weight:600;margin-bottom:12px">💰 Расчёт зарплаты — ${new Date(m+'-01').toLocaleString('ru-RU',{month:'long'})}</div>
+      <div style="padding:8px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;font-size:13px">
+        <span>Выходы (${shifts} × ${fmt(t.shift_rate||1500)} ₽)</span>
+        <span style="font-weight:600">+${fmt(salShifts)} ₽</span>
+      </div>
+      ${row('Бонус за NPS',salNps,+t.nps_target||100,+t.nps_bonus||7000,npsCount)}
+      ${row('Бонус за звонки',salCalls,+t.calls_target||200,+t.calls_bonus||10000,calls)}
+      <div style="padding:8px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;font-size:13px">
+        <span>Возврат на второе пробное (${returned} × ${fmt(t.returned_client_bonus||500)} ₽)</span>
+        <span style="font-weight:600">+${fmt(salReturned)} ₽</span>
+      </div>
+      <div style="padding:8px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;font-size:13px">
+        <span>Массажи (${massage} × ${fmt(t.massage_bonus||500)} ₽)</span>
+        <span style="font-weight:600">+${fmt(salMassage)} ₽</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:12px;margin-top:4px">
+        <div style="font-size:14px;font-weight:600">Итого</div>
+        <div style="font-size:22px;font-weight:700;color:var(--purple)">${fmt(total)} ₽</div>
+      </div>
+    </div>
+    <div class="card-muted" style="font-size:12px;color:var(--text3)">
+      NPS считается автоматически по записям, которые ты добавляешь в систему. Бонусы начисляются если достигнута цель за месяц.
+    </div>`;
+}
+
+// ===== PROFILE =====
+function renderProfile(){
+  document.getElementById('profile-content').innerHTML=`
+    <div class="card">
+      <div style="font-size:16px;font-weight:700;margin-bottom:4px">${currentUser.name}</div>
+      <div style="font-size:13px;color:var(--purple-text);margin-bottom:16px">Сервис-менеджер</div>
+      <button class="btn btn-danger btn-block" onclick="doLogout()">Выйти</button>
+    </div>`;
+}
+
+// ===== REPORT MODAL =====
+function openReportModal(editData){
+  const isEdit=!!editData;
+  document.getElementById('report-modal-title').textContent=isEdit?'Редактировать отчёт':'📋 Отчёт за день';
+  document.getElementById('r-id').value=isEdit?(editData.id||''):'';
+  document.getElementById('r-date').value=isEdit?editData.report_date:today();
+  document.getElementById('r-studio').value=isEdit?(editData.studio||'Империал'):'Империал';
+  document.getElementById('r-calls').value=isEdit?(editData.calls_count||0):0;
+  document.getElementById('r-reached').value=isEdit?(editData.calls_reached||0):0;
+  document.getElementById('r-noanswer').value=isEdit?(editData.calls_no_answer||0):0;
+  document.getElementById('r-returned').value=isEdit?(editData.returned_clients||0):0;
+  document.getElementById('r-massage').value=isEdit?(editData.massage_bookings||0):0;
+  document.getElementById('r-nps-notes').value=isEdit?(editData.nps_notes||''):'';
+  document.getElementById('r-comment').value=isEdit?(editData.comment||''):'';
+  document.getElementById('report-err').style.display='none';
+  const delBtn=document.getElementById('r-delete-btn');
+  delBtn.style.display=isEdit?'inline-flex':'none';
+  if(isEdit) delBtn.onclick=()=>deleteReport(editData.id);
+  document.getElementById('report-modal').style.display='flex';
+  document.body.classList.add('modal-open');
+}
+
+function closeReportModal(){
+  document.getElementById('report-modal').style.display='none';
+  document.body.classList.remove('modal-open');
+}
+
+async function saveReport(){
+  const id=document.getElementById('r-id').value;
+  const btn=document.getElementById('r-save-btn');
+  btn.disabled=true; btn.textContent='Сохраняем...';
+  const row={
+    report_date:document.getElementById('r-date').value,
+    studio:document.getElementById('r-studio').value,
+    manager_name:currentUser.name,
+    calls_count:+document.getElementById('r-calls').value||0,
+    calls_reached:+document.getElementById('r-reached').value||0,
+    calls_no_answer:+document.getElementById('r-noanswer').value||0,
+    returned_clients:+document.getElementById('r-returned').value||0,
+    massage_bookings:+document.getElementById('r-massage').value||0,
+    nps_notes:document.getElementById('r-nps-notes').value||null,
+    comment:document.getElementById('r-comment').value||null,
+  };
+  let error;
+  if(id){({error}=await sb.from('service_manager_reports').update(row).eq('id',id));}
+  else{({error}=await sb.from('service_manager_reports').insert(row));}
+  btn.disabled=false; btn.textContent='✓ Сохранить';
+  if(error){const el=document.getElementById('report-err');el.textContent='Ошибка: '+error.message;el.style.display='block';return;}
+  closeReportModal();
+
+  // Уведомление в Telegram (только для новых отчётов)
+  if(!id){
+    const reportDate=row.report_date;
+    const {data:npsDay}=await sb.from('nps_responses').select('score,comment').eq('survey_date',reportDate).eq('collected_by',currentUser.id);
+    const npsCount=(npsDay||[]).length;
+    const npsAvg=npsCount?Math.round(npsDay.reduce((s,r)=>s+(+r.score||0),0)/npsCount*10)/10:null;
+    const comments=(npsDay||[]).filter(r=>r.comment&&r.comment.trim());
+    const goodComments=comments.filter(r=>(+r.score||0)>=8).map(r=>r.comment.trim()).slice(0,2);
+    const badComments=comments.filter(r=>(+r.score||0)<=6).map(r=>r.comment.trim()).slice(0,2);
+    const reachPct=row.calls_count?Math.round(row.calls_reached/row.calls_count*100):'—';
+    let npsBlock=npsCount
+      ?`\n📊 <b>NPS за ${formatDate(reportDate)}:</b> ${npsCount} отзывов, avg <b>${npsAvg}</b>`
+        +(badComments.length?'\n👎 '+badComments.join(' / '):'')
+        +(goodComments.length?'\n👍 '+goodComments.join(' / '):'')
+      :'\n📊 NPS за день: нет данных';
+    const msg=`📋 <b>Отчёт сервис-менеджера</b>\n`
+      +`👤 ${currentUser.name} · ${row.studio} · ${formatDate(reportDate)}\n`
+      +`📞 Звонков: ${row.calls_count} (2п ${row.returned_clients}${row.calls_count?', н/о '+row.calls_no_answer:''})\n`
+      +`🔄 Возврат 2п: ${row.returned_clients} · 💆 Массажи: ${row.massage_bookings}`
+      +npsBlock
+      +(row.nps_notes?`\n📝 ${row.nps_notes}`:'')
+      +(row.comment?`\n💬 ${row.comment}`:'');
+    sendTelegram(msg,'service_report');
+  }
+
+  loadData();
+}
+
+async function deleteReport(id){
+  if(!confirm('Удалить отчёт?'))return;
+  closeReportModal();
+  await sb.from('service_manager_reports').delete().eq('id',id);
+  loadData();
+}
+
+// ===== INIT =====
+checkSession();
+</script>
+</body>
+</html>

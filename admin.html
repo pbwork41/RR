@@ -509,7 +509,7 @@ const PIN='8387';
 const SUPABASE_URL='https://nhiyoilfegmmvdtqsgkm.supabase.co';
 const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oaXlvaWxmZWdtbXZkdHFzZ2ttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2MDc0MTMsImV4cCI6MjA5NjE4MzQxM30.VL7a64jalOvhGC3yLMdeR-qR1Jlffht-uYcYmwDn7oQ';
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-const TG_BOT_TOKEN='8208003611:AAFsyBAdLSl9zwoS5G5zIQeYDgtZWidDr4s';
+const TG_BOT_TOKEN='8782533403:AAGeOQv7g4gqVMq8sAomDBAy1-hlJTkqfKU';
 const TG_CHAT_ID='257221278';
 
 async function sendTelegram(text, kind='manual', actor=''){
@@ -1505,7 +1505,10 @@ async function loadReportsForPeriod(){
   const to=toEl.value;
   const body=document.getElementById('reports-body');
   if(body)body.innerHTML='<div style="color:var(--text3);padding:1rem;text-align:center">Загрузка...</div>';
-  const {data:raw,error}=await sb.from('shifts').select('*').gte('date',from).lte('date',to);
+  const [{data:raw,error},{data:smRaw}]=await Promise.all([
+    sb.from('shifts').select('*').gte('date',from).lte('date',to),
+    sb.from('service_manager_reports').select('*').gte('report_date',from).lte('report_date',to)
+  ]);
   if(error){if(body)body.innerHTML='<div class="card" style="color:var(--red-text)">Ошибка: '+error.message+'</div>';return;}
   const parse=r=>({
     id:r.id,date:r.date,studio:r.studio,admin:r.admin,
@@ -1517,11 +1520,12 @@ async function loadReportsForPeriod(){
     selfWeakspot:r.self_weakspot||null,selfTomorrow:r.self_tomorrow||null
   });
   const periodShifts=(raw||[]).map(parse);
+  const periodSmReports=smRaw||[];
   const periodLabel=formatDate(from)+' — '+formatDate(to);
-  renderReportsBody(periodShifts,periodLabel);
+  renderReportsBody(periodShifts,periodLabel,periodSmReports);
 }
 
-function renderReportsBody(shiftsData,periodLabel){
+function renderReportsBody(shiftsData,periodLabel,smReports=[]){
   const admins=[...new Set(shiftsData.map(s=>s.admin))].filter(Boolean).sort();
   if(!admins.length){document.getElementById('reports-body').innerHTML='<div style="color:var(--text3);padding:2rem;text-align:center">Нет данных за этот период</div>';return;}
 
@@ -1575,12 +1579,13 @@ function renderReportsBody(shiftsData,periodLabel){
     html+=`<div class="card">
       <div class="section-title">По дням</div>
       <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
-      <table class="kpi-table" style="min-width:600px">
-        <thead><tr><th>Дата</th><th>Администратор</th><th>Выручка</th><th>Звонки</th><th>Задачи</th><th>Йога</th><th>МК</th><th>Отзывы</th><th></th></tr></thead>
+      <table class="kpi-table" style="min-width:700px">
+        <thead><tr><th>Дата</th><th>Администратор</th><th>Выручка</th><th>Звонки</th><th>Задачи</th><th>Йога</th><th>МК</th><th>Отзывы</th><th style="border-left:2px solid var(--border2);color:var(--purple-text)">📞 СМ</th><th style="color:var(--purple-text)">🔄 2п</th><th style="color:var(--purple-text)">💆 Масс.</th><th></th></tr></thead>
         <tbody>
           ${allDates.map(date=>{
             const ds=shiftsData.filter(s=>s.date===date);
-            return ds.map(s=>`<tr>
+            const sm=smReports.find(r=>r.report_date===date);
+            return ds.map((s,i)=>`<tr>
               <td>${formatDate(date)}</td>
               <td>${s.admin}</td>
               <td>${fmt(s.newSales+s.renew+s.restore)} ₽</td>
@@ -1589,6 +1594,7 @@ function renderReportsBody(shiftsData,periodLabel){
               <td>${s.yoga||'—'}</td>
               <td>${s.mc||'—'}</td>
               <td>${s.reviews||'—'}</td>
+              ${i===0?`<td style="border-left:2px solid var(--border2)">${sm?sm.calls_count:'—'}</td><td>${sm?sm.returned_clients:'—'}</td><td>${sm?sm.massage_bookings:'—'}</td>`:'<td style="border-left:2px solid var(--border2)"></td><td></td><td></td>'}
               <td><button class="btn btn-sm" onclick="openAdminEditShift(${s.id})">✏️</button></td>
             </tr>`).join('');
           }).join('')}
@@ -3269,9 +3275,58 @@ async function saveAdminEditShift(){
       +`💵 Касса: ${fmt(cash)} ₽\n`
       +`☎️ Звонков: ${calls}`;
     sendTelegram(msg,'shift_report',adminName);
+
+    // Если воскресенье — отправляем ещё еженедельный дайджест
+    if(d && new Date(d).getDay()===0){
+      sendWeeklyDigest(d);
+    }
   }
 
   renderAdmins();
+}
+
+async function sendWeeklyDigest(sundayDate){
+  // Определяем диапазон текущей недели (пн–вс) и прошлой
+  const sun=new Date(sundayDate);
+  const mon=new Date(sun); mon.setDate(sun.getDate()-6);
+  const prevSun=new Date(sun); prevSun.setDate(sun.getDate()-7);
+  const prevMon=new Date(mon); prevMon.setDate(mon.getDate()-7);
+
+  const fmt8=d=>d.toISOString().slice(0,10);
+  const [thisWeek,lastWeek]=await Promise.all([
+    sb.from('shifts').select('leads,bookings,visits,new_sales,renew,restore').gte('date',fmt8(mon)).lte('date',fmt8(sun)),
+    sb.from('shifts').select('leads,bookings,visits,new_sales,renew,restore').gte('date',fmt8(prevMon)).lte('date',fmt8(prevSun)),
+  ]);
+
+  const sum=rows=>({
+    leads:(rows||[]).reduce((s,r)=>s+(+r.leads||0),0),
+    bookings:(rows||[]).reduce((s,r)=>s+(+r.bookings||0),0),
+    visits:(rows||[]).reduce((s,r)=>s+(+r.visits||0),0),
+    cash:(rows||[]).reduce((s,r)=>s+(+r.new_sales||0)+(+r.renew||0)+(+r.restore||0),0),
+    newSales:(rows||[]).reduce((s,r)=>s+(+r.new_sales||0),0),
+  });
+
+  const tw=sum(thisWeek.data);
+  const lw=sum(lastWeek.data);
+
+  const arrow=(a,b)=>a>b?'📈':a<b?'📉':'➡️';
+  const diff=(a,b)=>{
+    if(!b)return'';
+    const p=Math.round((a-b)/b*100);
+    return p>0?` <i>(+${p}%)</i>`:p<0?` <i>(${p}%)</i>`:' <i>(=)</i>';
+  };
+  const convTw=tw.leads?Math.round(tw.bookings/tw.leads*100):0;
+  const convLw=lw.leads?Math.round(lw.bookings/lw.leads*100):0;
+
+  const dateStr=`${fmt8(mon).slice(8)}.${fmt8(mon).slice(5,7)} – ${fmt8(sun).slice(8)}.${fmt8(sun).slice(5,7)}`;
+  const msg=`📅 <b>Итоги недели ${dateStr}</b>\n\n`
+    +`${arrow(tw.leads,lw.leads)} Лиды: <b>${tw.leads}</b>${diff(tw.leads,lw.leads)} (было ${lw.leads})\n`
+    +`${arrow(tw.bookings,lw.bookings)} Записей: <b>${tw.bookings}</b>${diff(tw.bookings,lw.bookings)} (было ${lw.bookings})\n`
+    +`${arrow(tw.visits,lw.visits)} Визитов: <b>${tw.visits}</b>${diff(tw.visits,lw.visits)} (было ${lw.visits})\n`
+    +`${arrow(convTw,convLw)} Конверсия лид→запись: <b>${convTw}%</b> (было ${convLw}%)\n`
+    +`${arrow(tw.cash,lw.cash)} Касса: <b>${fmt(tw.cash)} ₽</b>${diff(tw.cash,lw.cash)} (было ${fmt(lw.cash)} ₽)\n`
+    +`${arrow(tw.newSales,lw.newSales)} Новые продажи: <b>${fmt(tw.newSales)} ₽</b>${diff(tw.newSales,lw.newSales)}`;
+  sendTelegram(msg,'weekly_digest','system');
 }
 
 async function deleteAdminShift(){
