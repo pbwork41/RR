@@ -509,6 +509,25 @@ const PIN='8387';
 const SUPABASE_URL='https://nhiyoilfegmmvdtqsgkm.supabase.co';
 const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oaXlvaWxmZWdtbXZkdHFzZ2ttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2MDc0MTMsImV4cCI6MjA5NjE4MzQxM30.VL7a64jalOvhGC3yLMdeR-qR1Jlffht-uYcYmwDn7oQ';
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const TG_BOT_TOKEN='8208003611:AAFsyBAdLSl9zwoS5G5zIQeYDgtZWidDr4s';
+const TG_CHAT_ID='257221278';
+
+async function sendTelegram(text, kind='manual', actor=''){
+  try{
+    const res=await fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({chat_id:TG_CHAT_ID,text,parse_mode:'HTML'})
+    });
+    const json=await res.json();
+    await sb.from('bot_notifications').insert({
+      kind, admin:actor||'—', message:text,
+      chat_id:TG_CHAT_ID,
+      status:json.ok?'sent':'error',
+      error_message:json.ok?null:JSON.stringify(json)
+    });
+  }catch(e){console.warn('TG error',e);}
+}
 
 let shifts=[],shiftsLast=[],marathons=[],plans={};
 
@@ -2412,22 +2431,30 @@ async function renderService(){
 
   <!-- Отчёты -->
   <div class="section-title" style="margin-bottom:8px">📋 Отчёты за ${monthLabel()}</div>
-  ${reps.length?`<div class="card">
+  ${reps.length?`<div class="card" style="padding:0;overflow:hidden">
     <div style="overflow-x:auto"><table class="data-table">
       <thead><tr>
-        <th>Дата</th><th>Менеджер</th><th>Студия</th><th>NPS</th><th>Звонки</th><th>Возвраты</th><th>Массажи</th><th>Комментарий</th><th></th>
+        <th>Дата</th><th>Менеджер</th><th>Студия</th>
+        <th>Звонки</th><th>Дозв.</th><th>Н/О</th>
+        <th>Возвраты</th><th>Массажи</th>
+        <th>Заметки NPS</th><th>Комментарий</th><th></th>
       </tr></thead>
       <tbody>
         ${reps.map(r=>`<tr>
           <td>${formatDate(r.report_date)}</td>
-          <td>${r.manager_name}</td>
+          <td>${r.manager_name||'—'}</td>
           <td>${r.studio||'—'}</td>
-          <td>${r.nps_count||0}</td>
-          <td>${r.calls_count||0}</td>
-          <td>${r.returned_clients||0}</td>
-          <td>${r.massage_bookings||0}</td>
-          <td style="font-size:12px;color:var(--text2);max-width:180px">${r.comment||'—'}</td>
-          <td><button class="btn btn-sm btn-danger" onclick="deleteServiceReport(${r.id})">🗑</button></td>
+          <td style="font-weight:600">${r.calls_count||0}</td>
+          <td style="color:var(--green-text)">${r.calls_reached||0}</td>
+          <td style="color:var(--red-text)">${r.calls_no_answer||0}</td>
+          <td style="color:var(--purple-text);font-weight:600">${r.returned_clients||0}</td>
+          <td style="color:var(--purple-text);font-weight:600">${r.massage_bookings||0}</td>
+          <td style="font-size:12px;color:var(--text2);max-width:160px">${r.nps_notes||'—'}</td>
+          <td style="font-size:12px;color:var(--text2);max-width:160px">${r.comment||'—'}</td>
+          <td style="white-space:nowrap">
+            <button class="btn btn-sm" onclick='openServiceReport(${JSON.stringify(r)})' style="margin-right:4px">✏️</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteServiceReport(${r.id})">🗑</button>
+          </td>
         </tr>`).join('')}
       </tbody>
     </table></div>
@@ -2471,50 +2498,87 @@ function calcServiceSalary(){
 }
 
 // Модалка добавления отчёта СМ
-function openServiceReport(){
-  // Используем временный inline-form
-  const el=document.getElementById('service-content');
-  const formDiv=document.createElement('div');
-  formDiv.id='service-report-inline';
-  formDiv.className='card';
-  formDiv.style.cssText='position:sticky;top:8px;z-index:10;margin-bottom:12px;border-color:var(--purple-text)';
-  formDiv.innerHTML=`
-    <div style="font-size:14px;font-weight:600;margin-bottom:12px">+ Новый отчёт</div>
-    <div class="grid2">
-      <div class="form-row"><label>Дата</label><input type="date" id="sr-date" value="${today()}"></div>
-      <div class="form-row"><label>Студия</label>
-        <select id="sr-studio"><option>Мечта</option><option>Империал</option></select>
-      </div>
-      <div class="form-row"><label>Имя менеджера</label><input type="text" id="sr-name" placeholder="Имя"></div>
-      <div class="form-row"><label>Звонков</label><input type="number" id="sr-calls" value="0" min="0"></div>
-      <div class="form-row"><label>Возвращено клиентов</label><input type="number" id="sr-returned" value="0" min="0"></div>
-      <div class="form-row"><label>Записей на массаж</label><input type="number" id="sr-massage" value="0" min="0"></div>
-    </div>
-    <div class="form-row"><label>Комментарий</label><input type="text" id="sr-comment" placeholder="Необязательно"></div>
-    <div style="display:flex;gap:8px;margin-top:10px">
-      <button class="btn btn-primary" onclick="saveServiceReport()">💾 Сохранить</button>
-      <button class="btn" onclick="document.getElementById('service-report-inline').remove()">Отмена</button>
-    </div>`;
-  el.prepend(formDiv);
+function openServiceReport(editData){
+  const m=document.getElementById('sm-report-modal');
+  const isEdit=!!editData;
+  document.getElementById('sm-report-modal-title').textContent=isEdit?'Редактировать отчёт':'+ Отчёт сервис-менеджера';
+  document.getElementById('sr-id').value=isEdit?(editData.id||''):'';
+  document.getElementById('sr-date').value=isEdit?editData.report_date:today();
+  document.getElementById('sr-studio').value=isEdit?(editData.studio||'Мечта'):'Мечта';
+  document.getElementById('sr-name').value=isEdit?(editData.manager_name||''):'';
+  document.getElementById('sr-calls').value=isEdit?(editData.calls_count||0):0;
+  document.getElementById('sr-reached').value=isEdit?(editData.calls_reached||0):0;
+  document.getElementById('sr-noanswer').value=isEdit?(editData.calls_no_answer||0):0;
+  document.getElementById('sr-returned').value=isEdit?(editData.returned_clients||0):0;
+  document.getElementById('sr-massage').value=isEdit?(editData.massage_bookings||0):0;
+  document.getElementById('sr-nps-notes').value=isEdit?(editData.nps_notes||''):'';
+  document.getElementById('sr-comment').value=isEdit?(editData.comment||''):'';
+  document.getElementById('sr-delete-btn').style.display=isEdit?'inline-flex':'none';
+  if(isEdit) document.getElementById('sr-delete-btn').onclick=()=>deleteServiceReport(editData.id);
+  m.style.display='flex';
+}
+
+function closeServiceReport(){
+  document.getElementById('sm-report-modal').style.display='none';
 }
 
 async function saveServiceReport(){
+  const id=document.getElementById('sr-id').value;
+  const btn=document.getElementById('sr-save-btn');
+  btn.disabled=true; btn.textContent='Сохраняем...';
   const row={
     report_date:document.getElementById('sr-date').value,
     studio:document.getElementById('sr-studio').value,
     manager_name:document.getElementById('sr-name').value||'Сервис-менеджер',
     calls_count:+document.getElementById('sr-calls').value||0,
+    calls_reached:+document.getElementById('sr-reached').value||0,
+    calls_no_answer:+document.getElementById('sr-noanswer').value||0,
     returned_clients:+document.getElementById('sr-returned').value||0,
     massage_bookings:+document.getElementById('sr-massage').value||0,
+    nps_notes:document.getElementById('sr-nps-notes').value||null,
     comment:document.getElementById('sr-comment').value||null,
   };
-  const {error}=await sb.from('service_manager_reports').insert(row);
+  let error;
+  if(id){({error}=await sb.from('service_manager_reports').update(row).eq('id',id));}
+  else{({error}=await sb.from('service_manager_reports').insert(row));}
+  btn.disabled=false; btn.textContent='✓ Сохранить';
   if(error){alert('Ошибка: '+error.message);return;}
+  closeServiceReport();
+
+  // Уведомление в Telegram с NPS за день
+  if(!id){
+    const reportDate=row.report_date;
+    const {data:npsDay}=await sb.from('nps_responses').select('score,comment').eq('survey_date',reportDate);
+    const npsCount=(npsDay||[]).length;
+    const npsAvg=npsCount?Math.round((npsDay.reduce((s,r)=>s+(+r.score||0),0)/npsCount)*10)/10:null;
+    const comments=(npsDay||[]).filter(r=>r.comment&&r.comment.trim());
+    const goodComments=comments.filter(r=>(+r.score||0)>=8).map(r=>r.comment.trim()).slice(0,2);
+    const badComments=comments.filter(r=>(+r.score||0)<=6).map(r=>r.comment.trim()).slice(0,2);
+
+    let npsBlock=npsCount
+      ?`\n📊 <b>NPS за ${formatDate(reportDate)}:</b> ${npsCount} отзывов, средняя оценка <b>${npsAvg}</b>`
+      +`${badComments.length?'\n👎 '+badComments.join(' / '):''}`
+      +`${goodComments.length?'\n👍 '+goodComments.join(' / '):''}`
+      :'\n📊 NPS за день: нет данных';
+
+    const reachPct=row.calls_count?Math.round(row.calls_reached/row.calls_count*100):'—';
+    const msg=`📋 <b>Отчёт сервис-менеджера</b>\n`
+      +`👤 ${row.manager_name} · ${row.studio} · ${formatDate(reportDate)}\n`
+      +`📞 Звонков: ${row.calls_count} (дозвон ${reachPct}%${row.calls_count?', н/о '+row.calls_no_answer:''})\n`
+      +`🔄 Возвращено клиентов: ${row.returned_clients}\n`
+      +`💆 Массажи: ${row.massage_bookings}`
+      +npsBlock
+      +(row.nps_notes?`\n📝 ${row.nps_notes}`:'')
+      +(row.comment?`\n💬 ${row.comment}`:'');
+    sendTelegram(msg,'service_report',row.manager_name);
+  }
+
   renderService();
 }
 
 async function deleteServiceReport(id){
   if(!confirm('Удалить отчёт?'))return;
+  closeServiceReport();
   await sb.from('service_manager_reports').delete().eq('id',id);
   renderService();
 }
@@ -3182,6 +3246,31 @@ async function saveAdminEditShift(){
   if(error){const el=document.getElementById('aes-err');el.textContent='Ошибка: '+error.message;el.style.display='block';return;}
   closeAdminEditShift();
   await loadData();
+
+  // Уведомление в Telegram после сохранения смены
+  {
+    const d=document.getElementById('aes-date')?.value||'';
+    const studio=document.getElementById('aes-studio')?.value||'';
+    const s=shifts.find(x=>x.id===adminEditingShiftId)||{};
+    const adminName=s.adminName||s.admin_name||'Администратор';
+    const leads=+document.getElementById('aes-leads').value||0;
+    const bookings=+document.getElementById('aes-bookings').value||0;
+    const visits=+document.getElementById('aes-visits').value||0;
+    const newSales=+document.getElementById('aes-new').value||0;
+    const renew=+document.getElementById('aes-renew').value||0;
+    const restore=+document.getElementById('aes-restore').value||0;
+    const calls=+document.getElementById('aes-calls').value||0;
+    const conv=leads?Math.round(bookings/leads*100):0;
+    const cash=newSales+renew+restore;
+    const msg=`📊 <b>Отчёт администратора</b>\n`
+      +`👤 ${adminName} · ${studio} · ${formatDate(d)}\n`
+      +`📞 Лиды: ${leads} → записей: ${bookings} (${conv}%) → визиты: ${visits}\n`
+      +`💰 Продажи: ${fmt(newSales)} нов / ${fmt(renew)} прод / ${fmt(restore)} восст\n`
+      +`💵 Касса: ${fmt(cash)} ₽\n`
+      +`☎️ Звонков: ${calls}`;
+    sendTelegram(msg,'shift_report',adminName);
+  }
+
   renderAdmins();
 }
 
@@ -3611,6 +3700,75 @@ async function saveNPS(){
 }
 
 </script>
+
+<!-- SERVICE MANAGER REPORT MODAL -->
+<div id="sm-report-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center;padding:16px">
+  <div style="background:#fff;border-radius:14px;width:100%;max-width:520px;padding:24px;max-height:90vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+      <div id="sm-report-modal-title" style="font-size:16px;font-weight:700;color:var(--purple-text)">+ Отчёт сервис-менеджера</div>
+      <button class="btn btn-sm" onclick="closeServiceReport()">✕</button>
+    </div>
+    <input type="hidden" id="sr-id">
+
+    <!-- Основное -->
+    <div class="subsection-title" style="margin-bottom:8px">📋 Основное</div>
+    <div class="grid2" style="gap:10px;margin-bottom:14px">
+      <div class="form-row" style="margin:0"><label>Дата</label><input type="date" id="sr-date"></div>
+      <div class="form-row" style="margin:0"><label>Студия</label>
+        <select id="sr-studio"><option>Мечта</option><option>Империал</option></select>
+      </div>
+    </div>
+    <div class="form-row" style="margin-bottom:14px"><label>Имя менеджера</label><input type="text" id="sr-name" placeholder="Имя сервис-менеджера"></div>
+
+    <div class="divider"></div>
+
+    <!-- Звонки -->
+    <div class="subsection-title" style="margin-bottom:8px">📞 Звонки</div>
+    <div class="grid3" style="gap:10px;margin-bottom:14px">
+      <div class="form-row" style="margin:0"><label>Всего звонков</label><input type="number" id="sr-calls" value="0" min="0"></div>
+      <div class="form-row" style="margin:0"><label>Дозвонились ✅</label><input type="number" id="sr-reached" value="0" min="0"></div>
+      <div class="form-row" style="margin:0"><label>Не ответили ❌</label><input type="number" id="sr-noanswer" value="0" min="0"></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Клиенты -->
+    <div class="subsection-title" style="margin-bottom:8px">👥 Клиенты</div>
+    <div class="grid2" style="gap:10px;margin-bottom:14px">
+      <div class="form-row" style="margin:0">
+        <label>Возвращено пробников</label>
+        <input type="number" id="sr-returned" value="0" min="0">
+        <div style="font-size:10px;color:var(--text3);margin-top:2px">+${smTargets?fmt(smTargets.returned_client_bonus):500} ₽ за каждого</div>
+      </div>
+      <div class="form-row" style="margin:0">
+        <label>Пришли на массаж</label>
+        <input type="number" id="sr-massage" value="0" min="0">
+        <div style="font-size:10px;color:var(--text3);margin-top:2px">+${smTargets?fmt(smTargets.massage_bonus):500} ₽ за каждого</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- NPS и комментарий -->
+    <div class="subsection-title" style="margin-bottom:8px">💜 NPS и прочее</div>
+    <div class="form-row" style="margin-bottom:10px">
+      <label>Заметки по NPS <span style="font-weight:400;color:var(--text3)">(замечания клиентов, жалобы)</span></label>
+      <textarea id="sr-nps-notes" rows="2" placeholder="Клиент Иванова — недовольна расписанием..." style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-family:inherit;resize:vertical"></textarea>
+    </div>
+    <div class="form-row" style="margin-bottom:0">
+      <label>Комментарий к смене</label>
+      <textarea id="sr-comment" rows="2" placeholder="Что важного произошло..." style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-family:inherit;resize:vertical"></textarea>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px">
+      <button id="sr-delete-btn" class="btn btn-danger btn-sm" style="display:none">🗑 Удалить</button>
+      <div style="display:flex;gap:8px;margin-left:auto">
+        <button class="btn" onclick="closeServiceReport()">Отмена</button>
+        <button id="sr-save-btn" class="btn btn-primary" onclick="saveServiceReport()">✓ Сохранить</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- NPS MODAL -->
 <div id="nps-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center;padding:16px">
