@@ -2373,6 +2373,43 @@ async function renderService(){
     </div>
   </div>
 
+  <!-- Калькулятор мотивации -->
+  <div class="card" style="margin-bottom:12px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div style="font-size:14px;font-weight:600">🧮 Калькулятор мотивации</div>
+      <span style="font-size:11px;color:var(--text3)">Введи любые цифры — увидишь итог</span>
+    </div>
+    <div class="grid2" style="gap:8px;margin-bottom:10px">
+      <div class="form-row" style="margin:0">
+        <label style="font-size:11px">Выходов (смен)</label>
+        <input type="number" id="calc-shifts" value="22" min="0" oninput="calcServiceSalary()" style="font-size:13px;padding:7px 10px">
+      </div>
+      <div class="form-row" style="margin:0">
+        <label style="font-size:11px">NPS собрано</label>
+        <input type="number" id="calc-nps" value="0" min="0" oninput="calcServiceSalary()" style="font-size:13px;padding:7px 10px">
+      </div>
+      <div class="form-row" style="margin:0">
+        <label style="font-size:11px">Звонков</label>
+        <input type="number" id="calc-calls" value="0" min="0" oninput="calcServiceSalary()" style="font-size:13px;padding:7px 10px">
+      </div>
+      <div class="form-row" style="margin:0">
+        <label style="font-size:11px">Возвращено клиентов</label>
+        <input type="number" id="calc-returned" value="0" min="0" oninput="calcServiceSalary()" style="font-size:13px;padding:7px 10px">
+      </div>
+      <div class="form-row" style="margin:0">
+        <label style="font-size:11px">Записей на массаж (пришли)</label>
+        <input type="number" id="calc-massage" value="0" min="0" oninput="calcServiceSalary()" style="font-size:13px;padding:7px 10px">
+      </div>
+    </div>
+    <div id="calc-result" style="background:var(--purple-bg);border:1px solid #c4b5fd;border-radius:var(--radius-sm);padding:12px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px" id="calc-rows"></div>
+      <div style="border-top:1px solid #c4b5fd;padding-top:8px;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:13px;font-weight:600;color:var(--purple-text)">Итого</span>
+        <span id="calc-total" style="font-size:20px;font-weight:800;color:var(--purple-text)">0 ₽</span>
+      </div>
+    </div>
+  </div>
+
   <!-- Отчёты -->
   <div class="section-title" style="margin-bottom:8px">📋 Отчёты за ${monthLabel()}</div>
   ${reps.length?`<div class="card">
@@ -2397,6 +2434,40 @@ async function renderService(){
   </div>`:`<div class="card-muted" style="text-align:center;color:var(--text3)">Отчётов за ${monthLabel()} ещё нет</div>`}`;
 
   el.innerHTML=html;
+  calcServiceSalary();
+}
+
+function calcServiceSalary(){
+  if(!smTargets)return;
+  const t=smTargets;
+  const shifts=+document.getElementById('calc-shifts').value||0;
+  const nps=+document.getElementById('calc-nps').value||0;
+  const calls=+document.getElementById('calc-calls').value||0;
+  const returned=+document.getElementById('calc-returned').value||0;
+  const massage=+document.getElementById('calc-massage').value||0;
+
+  const salShifts=shifts*t.shift_rate;
+  const salNps=nps>=t.nps_target?t.nps_bonus:0;
+  const salCalls=calls>=t.calls_target?t.calls_bonus:0;
+  const salReturned=returned*t.returned_client_bonus;
+  const salMassage=massage*t.massage_bonus;
+  const total=salShifts+salNps+salCalls+salReturned+salMassage;
+
+  const rows=[
+    {label:`Выходы × ${shifts}`, val:salShifts, note:`${fmt(t.shift_rate)} ₽/смена`},
+    {label:`NPS (${nps}/${t.nps_target})`, val:salNps, note:nps>=t.nps_target?'✓ выполнено':`нужно ещё ${t.nps_target-nps}`, ok:nps>=t.nps_target},
+    {label:`Звонки (${calls}/${t.calls_target})`, val:salCalls, note:calls>=t.calls_target?'✓ выполнено':`нужно ещё ${t.calls_target-calls}`, ok:calls>=t.calls_target},
+    {label:`Возвраты × ${returned}`, val:salReturned, note:`${fmt(t.returned_client_bonus)} ₽/клиент`},
+    {label:`Массажи × ${massage}`, val:salMassage, note:`${fmt(t.massage_bonus)} ₽/запись`},
+  ];
+
+  const rowsEl=document.getElementById('calc-rows');
+  if(!rowsEl)return;
+  rowsEl.innerHTML=rows.map(r=>`
+    <div style="font-size:12px;color:var(--purple-text)">${r.label}<br><span style="font-size:10px;color:${r.ok===false?'var(--amber-text)':r.ok?'var(--green-text)':'var(--text3)'}">${r.note}</span></div>
+    <div style="font-size:13px;font-weight:700;color:var(--purple-text);text-align:right">${fmt(r.val)} ₽</div>
+  `).join('');
+  document.getElementById('calc-total').textContent=fmt(total)+' ₽';
 }
 
 // Модалка добавления отчёта СМ
