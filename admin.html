@@ -171,6 +171,7 @@ textarea{resize:vertical;min-height:70px}
     <button class="tab" onclick="switchTab('mom')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg> <span>Динамика</span></button>
     <button class="tab" onclick="switchTab('studios')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h1"/><path d="M14 9h1"/><path d="M9 14h1"/><path d="M14 14h1"/><path d="M9 19v-5h6v5"/></svg> <span>Аналитика</span></button>
     <button class="tab" onclick="switchTab('nps')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> <span>NPS</span></button>
+    <button class="tab" onclick="switchTab('marketing')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg> <span>Маркетинг</span></button>
 
     <div class="nav-divider">
       <div class="nav-divider-line"></div>
@@ -204,6 +205,7 @@ textarea{resize:vertical;min-height:70px}
   <div id="tab-mom" class="section"><div id="mom-content"></div></div>
   <div id="tab-studios" class="section"><div id="studios-content"></div></div>
   <div id="tab-nps" class="section"><div id="nps-content"></div></div>
+  <div id="tab-marketing" class="section"><div id="marketing-content"></div></div>
   <div id="tab-admins" class="section"><div id="admins-content"></div></div>
   <div id="tab-marathons" class="section"><div id="marathons-content"></div></div>
   <div id="tab-reports" class="section"><div id="reports-content"></div></div>
@@ -2629,10 +2631,11 @@ async function saveServiceTargets(id){
 }
 
 function switchTab(t){
-  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['schedule','overview','mom','studios','nps','admins','marathons','reports','salary','plans','motivation','service','staff','trainers-team','trainers-marathons','trainers-salary','trainers-motivation'][i]===t));
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['schedule','overview','mom','studios','nps','marketing','admins','marathons','reports','salary','plans','motivation','service','staff','trainers-team','trainers-marathons','trainers-salary','trainers-motivation'][i]===t));
   document.querySelectorAll('.section').forEach(el=>el.classList.remove('active'));
   document.getElementById('tab-'+t).classList.add('active');
   if(t==='nps')renderNPS();
+  if(t==='marketing')renderMarketing();
   if(t==='reports')renderReports();
   if(t==='service')renderService();
   if(t==='staff')renderStaff();
@@ -2643,6 +2646,135 @@ function switchTab(t){
   if(t==='trainers-marathons')renderTrainerMarathons();
   if(t==='trainers-salary')renderTrainerSalary();
   if(t==='trainers-motivation')renderTrainerMotivation();
+}
+
+// ===== MARKETING =====
+let mktData=null,mktLoaded=false;
+async function renderMarketing(){
+  const el=document.getElementById('marketing-content');
+  if(mktLoaded&&mktData!==null){renderMktUI(el,mktData);return;}
+  el.innerHTML='<div style="text-align:center;padding:3rem;color:var(--text3)">⏳ Загружаем данные из amoCRM…</div>';
+  try{
+    // Берём последние 12 недельных записей (все студии, без разбивки по каналам)
+    const {data,error}=await sb.from('amo_analytics')
+      .select('*')
+      .eq('period_type','week')
+      .is('channel',null)
+      .order('period_from',{ascending:false})
+      .limit(36); // 12 недель × 3 студии
+    if(error)throw error;
+    mktData=data||[];
+    mktLoaded=true;
+    renderMktUI(el,mktData);
+  }catch(e){
+    el.innerHTML=`<div class="card"><div class="alert alert-red">Ошибка загрузки: ${e.message||e}</div><p style="font-size:13px;color:var(--text3);margin-top:8px">Данные появятся после первого запуска ИИ-РОП бота с модулем supabase.php</p></div>`;
+  }
+}
+
+function renderMktUI(el,rows){
+  if(!rows||!rows.length){
+    el.innerHTML=`<div class="card" style="text-align:center;padding:2rem;color:var(--text3)">
+      <div style="font-size:2rem;margin-bottom:12px">📊</div>
+      <div style="font-size:15px;font-weight:600;margin-bottom:8px">Данных пока нет</div>
+      <div style="font-size:13px">Данные появятся после первого запуска бота @ls_rop_bot с модулем supabase.php</div>
+    </div>`;
+    return;
+  }
+
+  // Группировка по неделям (period_from) → студиям
+  const weeks={};
+  for(const r of rows){
+    const k=r.period_from;
+    if(!weeks[k])weeks[k]={};
+    weeks[k][r.studio]=r;
+  }
+  const weekKeys=Object.keys(weeks).sort((a,b)=>b.localeCompare(a)); // свежие первые
+
+  // Последняя неделя — KPI
+  const lastKey=weekKeys[0];
+  const last=weeks[lastKey];
+  const itogo=last['Итого']||last[Object.keys(last)[0]]||{};
+
+  const fmt=v=>v==null?'—':Math.round(v).toLocaleString('ru-RU');
+  const fmtPct=v=>v==null?'—':v.toFixed(1)+'%';
+  const fmtRub=v=>v==null?'—':Math.round(v).toLocaleString('ru-RU')+' ₽';
+
+  // Форматируем диапазон дат недели
+  const fmtWeek=(from,to)=>{
+    const df=new Date(from);const dt=new Date(to);
+    const m=['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
+    return `${df.getDate()} ${m[df.getMonth()]} — ${dt.getDate()} ${m[dt.getMonth()]}`;
+  };
+
+  // ---- Строим HTML ----
+  let html=`<div class="card" style="margin-bottom:1rem">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+      <div class="section-title" style="margin:0">📊 Маркетинг · amoCRM</div>
+      <div style="font-size:12px;color:var(--text3)">Неделя ${fmtWeek(lastKey,itogo.period_to||lastKey)}</div>
+    </div>
+    <div class="grid4" style="margin-bottom:16px">
+      <div class="metric"><div class="metric-label">Лидов</div><div class="metric-val">${fmt(itogo.leads)}</div></div>
+      <div class="metric"><div class="metric-label">Взяты в работу</div><div class="metric-val">${fmtPct(itogo.conv_taken)}</div><div class="metric-sub">${fmt(itogo.leads_taken)} чел.</div></div>
+      <div class="metric"><div class="metric-label">Записаны</div><div class="metric-val">${fmtPct(itogo.conv_booked)}</div><div class="metric-sub">${fmt(itogo.leads_booked)} чел.</div></div>
+      <div class="metric"><div class="metric-label">Оплатили</div><div class="metric-val">${fmtPct(itogo.conv_paid)}</div><div class="metric-sub">${fmt(itogo.leads_paid)} чел.</div></div>
+    </div>
+    <div class="grid3">
+      <div class="metric"><div class="metric-label">Расход</div><div class="metric-val">${fmtRub(itogo.ad_spend)}</div></div>
+      <div class="metric"><div class="metric-label">CPL (цена лида)</div><div class="metric-val">${fmtRub(itogo.cpl)}</div></div>
+      <div class="metric"><div class="metric-label">CAC (цена клиента)</div><div class="metric-val">${fmtRub(itogo.cac)}</div></div>
+    </div>
+  </div>`;
+
+  // Воронка по студиям
+  const studios=Object.keys(last).filter(s=>s!=='Итого');
+  if(studios.length){
+    html+=`<div class="card" style="margin-bottom:1rem">
+      <div class="section-title">Воронка по студиям</div>
+      <div class="table-wrap"><table class="kpi-table"><thead><tr>
+        <th>Студия</th><th>Лидов</th><th>Взяты</th><th>Записаны</th><th>Пришли</th><th>Оплатили</th><th>CPL</th><th>CAC</th>
+      </tr></thead><tbody>`;
+    for(const s of studios){
+      const r=last[s];
+      html+=`<tr>
+        <td><span class="${s==='Империал'?'pill-imp':'pill-mec'}">${s}</span></td>
+        <td>${fmt(r.leads)}</td>
+        <td>${fmtPct(r.conv_taken)}</td>
+        <td>${fmtPct(r.conv_booked)}</td>
+        <td>${fmtPct(r.conv_attended)}</td>
+        <td style="font-weight:700">${fmtPct(r.conv_paid)}</td>
+        <td>${fmtRub(r.cpl)}</td>
+        <td>${fmtRub(r.cac)}</td>
+      </tr>`;
+    }
+    html+=`</tbody></table></div></div>`;
+  }
+
+  // История по неделям (таблица)
+  if(weekKeys.length>1){
+    html+=`<div class="card">
+      <div class="section-title">История по неделям</div>
+      <div class="table-wrap"><table class="kpi-table"><thead><tr>
+        <th>Неделя</th><th>Лидов</th><th>Взяты</th><th>Оплатили</th><th>CPL</th><th>CAC</th><th>Расход</th>
+      </tr></thead><tbody>`;
+    for(const wk of weekKeys){
+      const r=weeks[wk]['Итого']||weeks[wk][Object.keys(weeks[wk])[0]]||{};
+      const isLast=wk===lastKey;
+      html+=`<tr style="${isLast?'font-weight:600;background:var(--purple-bg)':''}">
+        <td>${fmtWeek(wk,r.period_to||wk)}</td>
+        <td>${fmt(r.leads)}</td>
+        <td>${fmtPct(r.conv_taken)}</td>
+        <td>${fmtPct(r.conv_paid)}</td>
+        <td>${fmtRub(r.cpl)}</td>
+        <td>${fmtRub(r.cac)}</td>
+        <td>${fmtRub(r.ad_spend)}</td>
+      </tr>`;
+    }
+    html+=`</tbody></table></div>
+      <div style="font-size:11px;color:var(--text3);margin-top:8px">* Данные обновляются каждый понедельник после еженедельного отчёта бота @ls_rop_bot</div>
+    </div>`;
+  }
+
+  el.innerHTML=html;
 }
 
 // ===== TRAINERS =====
