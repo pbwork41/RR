@@ -2649,22 +2649,29 @@ function switchTab(t){
 }
 
 // ===== MARKETING =====
-let mktData=null,mktLoaded=false;
+let mktData=null,mktLoaded=false,mktPeriod=null,mktFrom='',mktTo='';
 async function renderMarketing(){
   const el=document.getElementById('marketing-content');
   if(mktLoaded&&mktData!==null){renderMktUI(el,mktData);return;}
   el.innerHTML='<div style="text-align:center;padding:3rem;color:var(--text3)">⏳ Загружаем данные из amoCRM…</div>';
   try{
-    // Берём последние 12 недельных записей (все студии, без разбивки по каналам)
     const {data,error}=await sb.from('amo_analytics')
       .select('*')
       .eq('period_type','week')
       .is('channel',null)
       .order('period_from',{ascending:false})
-      .limit(36); // 12 недель × 3 студии
+      .limit(60);
     if(error)throw error;
     mktData=data||[];
     mktLoaded=true;
+    // По умолчанию — последний период
+    const periods=[...new Set(mktData.map(r=>r.period_from))].sort().reverse();
+    mktPeriod=periods[0]||null;
+    if(mktPeriod){
+      const row=mktData.find(r=>r.period_from===mktPeriod);
+      mktFrom=mktPeriod;
+      mktTo=row?.period_to||mktPeriod;
+    }
     renderMktUI(el,mktData);
   }catch(e){
     el.innerHTML=`<div class="card"><div class="alert alert-red">Ошибка загрузки: ${e.message||e}</div><p style="font-size:13px;color:var(--text3);margin-top:8px">Данные появятся после первого запуска ИИ-РОП бота с модулем supabase.php</p></div>`;
@@ -2688,10 +2695,20 @@ function renderMktUI(el,rows){
     if(!weeks[k])weeks[k]={};
     weeks[k][r.studio]=r;
   }
-  const weekKeys=Object.keys(weeks).sort((a,b)=>b.localeCompare(a)); // свежие первые
+  const weekKeys=Object.keys(weeks).sort((a,b)=>b.localeCompare(a));
 
-  // Последняя неделя — KPI
-  const lastKey=weekKeys[0];
+  // Выбранный период — по дате или по ключу недели
+  let lastKey;
+  if(mktPeriod&&weeks[mktPeriod]){
+    lastKey=mktPeriod;
+  } else if(mktFrom||mktTo){
+    // Найти недели, попадающие в диапазон
+    const matching=weekKeys.filter(wk=>(!mktFrom||wk>=mktFrom)&&(!mktTo||(weeks[wk]['Итого']||weeks[wk][Object.keys(weeks[wk])[0]]||{}).period_to<=mktTo||wk<=mktTo));
+    lastKey=matching[0]||weekKeys[0];
+  } else {
+    lastKey=weekKeys[0];
+  }
+  if(!weeks[lastKey])lastKey=weekKeys[0];
   const last=weeks[lastKey];
   const itogo=last['Итого']||last[Object.keys(last)[0]]||{};
 
@@ -2699,19 +2716,38 @@ function renderMktUI(el,rows){
   const fmtPct=v=>v==null?'—':v.toFixed(1)+'%';
   const fmtRub=v=>v==null?'—':Math.round(v).toLocaleString('ru-RU')+' ₽';
 
-  // Форматируем диапазон дат недели
   const fmtWeek=(from,to)=>{
     const df=new Date(from);const dt=new Date(to);
     const m=['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
     return `${df.getDate()} ${m[df.getMonth()]} — ${dt.getDate()} ${m[dt.getMonth()]}`;
   };
 
+  // Переключатель периодов — date picker
+  const periodPicker=`
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+      <span style="font-size:12px;color:var(--text3)">Период:</span>
+      <input type="date" id="mkt-from" value="${mktFrom}" onchange="mktFrom=this.value;mktPeriod=null;renderMktUI(document.getElementById('marketing-content'),mktData)"
+        style="width:140px;padding:4px 8px;font-size:13px;border:1px solid var(--border2);border-radius:var(--radius-sm)">
+      <span style="font-size:12px;color:var(--text3)">—</span>
+      <input type="date" id="mkt-to" value="${mktTo}" onchange="mktTo=this.value;mktPeriod=null;renderMktUI(document.getElementById('marketing-content'),mktData)"
+        style="width:140px;padding:4px 8px;font-size:13px;border:1px solid var(--border2);border-radius:var(--radius-sm)">
+      ${weekKeys.length>1?weekKeys.map(wk=>{
+        const r=weeks[wk]['Итого']||weeks[wk][Object.keys(weeks[wk])[0]]||{};
+        const label=fmtWeek(wk,r.period_to||wk);
+        const active=wk===lastKey;
+        return `<button onclick="mktPeriod='${wk}';mktFrom='${wk}';mktTo='${r.period_to||wk}';renderMktUI(document.getElementById('marketing-content'),mktData)"
+          style="padding:3px 10px;font-size:11px;border-radius:20px;border:1px solid ${active?'var(--purple)':'var(--border)'};
+          background:${active?'var(--purple)':'var(--bg)'};color:${active?'#fff':'var(--text2)'};cursor:pointer;font-family:inherit;white-space:nowrap"
+        >${label}</button>`;
+      }).join(''):''}
+    </div>`;
+
   // ---- Строим HTML ----
   let html=`<div class="card" style="margin-bottom:1rem">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
       <div class="section-title" style="margin:0">📊 Маркетинг · amoCRM</div>
-      <div style="font-size:12px;color:var(--text3)">Неделя ${fmtWeek(lastKey,itogo.period_to||lastKey)}</div>
     </div>
+    ${periodPicker}
     <div class="grid4" style="margin-bottom:16px">
       <div class="metric"><div class="metric-label">Лидов</div><div class="metric-val">${fmt(itogo.leads)}</div></div>
       <div class="metric"><div class="metric-label">Взяты в работу</div><div class="metric-val">${fmtPct(itogo.conv_taken)}</div><div class="metric-sub">${fmt(itogo.leads_taken)} чел.</div></div>
@@ -2758,8 +2794,8 @@ function renderMktUI(el,rows){
       </tr></thead><tbody>`;
     for(const wk of weekKeys){
       const r=weeks[wk]['Итого']||weeks[wk][Object.keys(weeks[wk])[0]]||{};
-      const isLast=wk===lastKey;
-      html+=`<tr style="${isLast?'font-weight:600;background:var(--purple-bg)':''}">
+      const isActive=wk===mktPeriod;
+      html+=`<tr style="${isActive?'font-weight:600;background:var(--purple-bg)':''}" onclick="mktPeriod='${wk}';renderMktUI(document.getElementById('marketing-content'),mktData)" style="cursor:pointer">
         <td>${fmtWeek(wk,r.period_to||wk)}</td>
         <td>${fmt(r.leads)}</td>
         <td>${fmtPct(r.conv_taken)}</td>
@@ -3801,22 +3837,47 @@ function formatNpsComment(text){
   }).join('');
 }
 
+let npsAllRows=null,npsPeriodFrom='',npsPeriodTo='';
 async function renderNPS(){
   const el=document.getElementById('nps-content');
   if(!el)return;
-  const {data}=await sb.from('nps_responses').select('*').order('created_at',{ascending:false});
-  const rows=data||[];
+  if(!npsAllRows){
+    const {data}=await sb.from('nps_responses').select('*').order('created_at',{ascending:false});
+    npsAllRows=data||[];
+    // Дефолт: текущий месяц
+    const now=new Date();
+    npsPeriodFrom=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-01';
+    const last=new Date(now.getFullYear(),now.getMonth()+1,0);
+    npsPeriodTo=last.toISOString().slice(0,10);
+  }
+  renderNpsUI(el);
+}
+
+function renderNpsUI(el){
+  const rows=(npsAllRows||[]).filter(r=>{
+    const d=r.survey_date||r.created_at?.slice(0,10)||'';
+    return(!npsPeriodFrom||d>=npsPeriodFrom)&&(!npsPeriodTo||d<=npsPeriodTo);
+  });
   const total=rows.length;
   const avg=total?+(rows.reduce((a,r)=>a+r.score,0)/total).toFixed(1):null;
   const promoters=rows.filter(r=>r.score>=9).length;
   const neutrals=rows.filter(r=>r.score>=7&&r.score<=8).length;
   const detractors=rows.filter(r=>r.score<=6).length;
-  const npsScore=total?Math.round((promoters-detractors)/total*100):null;
+
   el.innerHTML=`
   <div class="card" style="margin-bottom:12px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
       <div style="font-size:15px;font-weight:700">💜 NPS — обратная связь клиентов</div>
       <button class="btn btn-primary btn-sm" onclick="openNpsForm()">+ Добавить оценку</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+      <span style="font-size:12px;color:var(--text3)">Период:</span>
+      <input type="date" id="nps-from" value="${npsPeriodFrom}" onchange="npsPeriodFrom=this.value;renderNpsUI(document.getElementById('nps-content'))"
+        style="width:140px;padding:4px 8px;font-size:13px;border:1px solid var(--border2);border-radius:var(--radius-sm)">
+      <span style="font-size:12px;color:var(--text3)">—</span>
+      <input type="date" id="nps-to" value="${npsPeriodTo}" onchange="npsPeriodTo=this.value;renderNpsUI(document.getElementById('nps-content'))"
+        style="width:140px;padding:4px 8px;font-size:13px;border:1px solid var(--border2);border-radius:var(--radius-sm)">
+      <button class="btn btn-sm" onclick="npsPeriodFrom='';npsPeriodTo='';renderNpsUI(document.getElementById('nps-content'))">Все</button>
     </div>
     ${total?`
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px">
@@ -3852,7 +3913,7 @@ async function renderNPS(){
           <td style="font-size:12px;color:var(--text3)">${r.manager_name||'—'}</td>
         </tr>`;
       }).join('')}</tbody>
-    </table></div>`:`<div style="text-align:center;padding:32px;color:var(--text3)">Оценок пока нет. Добавьте первую!</div>`}
+    </table></div>`:`<div style="text-align:center;padding:32px;color:var(--text3)">Оценок за выбранный период нет.</div>`}
   </div>`;
 }
 
