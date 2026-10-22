@@ -3610,8 +3610,31 @@ document.getElementById('pin-field').focus();
 // ===== РАСПИСАНИЕ =====
 let scheduleData={};
 let scheduleAdmins=[];
-let schedulePendingChanges={};  // {date: {name, studio} | null}  null = удалить
+let schedulePendingChanges={};  // {date: [{name, studio}, ...] | null}  null = удалить всё
 let scheduleCurrentStudio='Империал';
+
+// Цвета для каждого администратора (по имени)
+const ADMIN_COLORS=[
+  {bg:'#FDE8D8',text:'#8B3A0E'},  // оранжевый
+  {bg:'#E8D5F5',text:'#5C1F8A'},  // фиолетовый
+  {bg:'#D5EEF5',text:'#0A5C77'},  // голубой
+  {bg:'#F5D5E8',text:'#7A0F4E'},  // розовый
+  {bg:'#D8F5D8',text:'#1A6B1A'},  // зелёный
+  {bg:'#F5F0D5',text:'#7A6B0F'},  // жёлтый
+  {bg:'#D5D8F5',text:'#1A2880'},  // синий
+  {bg:'#F5D5D5',text:'#8B0000'},  // красный
+  {bg:'#D5F5EE',text:'#0A6B4E'},  // бирюзовый
+  {bg:'#EEF5D5',text:'#4E6B0A'},  // лаймовый
+];
+const _adminColorMap={};
+function getAdminColor(name){
+  if(!_adminColorMap[name]){
+    // Назначаем цвет по порядку появления
+    const idx=Object.keys(_adminColorMap).length%ADMIN_COLORS.length;
+    _adminColorMap[name]=ADMIN_COLORS[idx];
+  }
+  return _adminColorMap[name];
+}
 let scheduleYear=new Date().getFullYear();
 let scheduleMonth=new Date().getMonth();
 function onSchSelChange(){
@@ -3636,9 +3659,17 @@ async function renderSchedule(){
   scheduleAdmins=(profiles||[]).filter(p=>p.name);
   scheduleData={};
   schedulePendingChanges={};
+  // Назначаем цвета по порядку появления в loaded данных (стабильный порядок)
+  Object.keys(_adminColorMap).forEach(k=>delete _adminColorMap[k]);
+  const seenAdmins=[];
   (sched||[]).forEach(s=>{
     if(!scheduleData[s.date])scheduleData[s.date]=[];
     scheduleData[s.date].push({name:s.admin_name,studio:s.studio});
+    if(!seenAdmins.includes(s.admin_name))seenAdmins.push(s.admin_name);
+  });
+  (profiles||[]).filter(p=>p.name).forEach(p=>{
+    if(!seenAdmins.includes(p.name))seenAdmins.push(p.name);
+    getAdminColor(p.name);
   });
   renderScheduleGrid(y,m,daysInMonth,monthStr);
 }
@@ -3654,15 +3685,15 @@ function renderScheduleGrid(y,m,daysInMonth,monthStr){
   const dayNames=['пн','вт','ср','чт','пт','сб','вс'];
   const studio=scheduleCurrentStudio;
 
-  // Merge: base data + pending changes
+  // Merge: base data + pending changes → {date: [{name,studio},...]}
   const merged={};
   Object.entries(scheduleData).forEach(([date,list])=>{
-    const entry=list.find(x=>x.studio===studio);
-    if(entry)merged[date]=entry.name;
+    const entries=list.filter(x=>x.studio===studio);
+    if(entries.length)merged[date]=entries.map(x=>x.name);
   });
   Object.entries(schedulePendingChanges).forEach(([date,val])=>{
     if(val===null)delete merged[date];
-    else merged[date]=val.name;
+    else merged[date]=val.map(x=>x.name);
   });
 
   // Count pending
@@ -3676,15 +3707,19 @@ function renderScheduleGrid(y,m,daysInMonth,monthStr){
     const day=i-offset+1;
     if(day<1||day>daysInMonth)return'<div style="min-height:52px;border-right:0.5px solid var(--border);border-bottom:0.5px solid var(--border);background:var(--bg3)"></div>';
     const ds=monthStr+'-'+String(day).padStart(2,'0');
-    const assignedName=merged[ds]||null;
+    const assignedNames=merged[ds]||null; // array or null
     const isPending=ds in schedulePendingChanges;
     const isToday=ds===(now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0'));
-    const bgColor=assignedName?(studio==='Империал'?'#E6F1FB':'#E1F5EE'):(isToday?'var(--blue-bg)':'transparent');
-    const textColor=assignedName?(studio==='Империал'?'#0C447C':'#085041'):'var(--text3)';
-    const borderColor=isPending?'2px solid var(--amber)':'0.5px solid var(--border)';
-    return`<div onclick="openSchDayPicker('${ds}','${monthStr}')" style="min-height:52px;padding:4px;border-right:0.5px solid var(--border);border-bottom:0.5px solid var(--border);cursor:pointer;background:${bgColor};box-sizing:border-box;${isPending?'outline:2px solid var(--amber);outline-offset:-2px;':''}">
-      <div style="font-size:10px;font-weight:500;color:${isToday?'var(--blue-text)':assignedName?textColor:'var(--text2)'};margin-bottom:2px;pointer-events:none">${day}</div>
-      ${assignedName?`<div style="font-size:9px;font-weight:600;color:${textColor};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.3;pointer-events:none">${assignedName.split(' ')[0]}</div><div style="font-size:9px;color:${textColor};opacity:.8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;pointer-events:none">${assignedName.split(' ')[1]||''}</div>`:''}
+    const cellBg=assignedNames?'transparent':(isToday?'var(--blue-bg)':'transparent');
+    const dayColor=isToday?'var(--blue-text)':assignedNames?'var(--text2)':'var(--text2)';
+    const namesHtml=(assignedNames||[]).map(nm=>{
+      const c=getAdminColor(nm);
+      const parts=nm.split(' ');
+      return`<div style="margin-top:2px;padding:1px 4px;border-radius:3px;background:${c.bg};pointer-events:none"><div style="font-size:9px;font-weight:600;color:${c.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.4">${parts[0]}</div><div style="font-size:8px;color:${c.text};opacity:.8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.3">${parts[1]||''}</div></div>`;
+    }).join('');
+    return`<div onclick="openSchDayPicker('${ds}','${monthStr}')" style="min-height:56px;padding:3px 3px 3px 3px;border-right:0.5px solid var(--border);border-bottom:0.5px solid var(--border);cursor:pointer;background:${cellBg};box-sizing:border-box;${isPending?'outline:2px solid var(--amber);outline-offset:-2px;':''}">
+      <div style="font-size:10px;font-weight:500;color:${dayColor};pointer-events:none">${day}</div>
+      ${namesHtml}
     </div>`;
   }).join('')}
   </div>`;
@@ -3739,53 +3774,110 @@ function renderScheduleGrid(y,m,daysInMonth,monthStr){
   <div class="card" style="margin-top:12px"><div style="font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Смен в месяце · ${studio}</div><div style="display:flex;flex-wrap:wrap;gap:8px">${scheduleAdmins.map(a=>{
     // Count from saved data
     let cnt=Object.entries(scheduleData).filter(([,list])=>list.some(x=>x.name===a.name&&x.studio===studio)).length;
-    // Apply pending changes
+    // Apply pending changes (val is array or null)
     Object.entries(schedulePendingChanges).forEach(([date,val])=>{
       const wasAssigned=(scheduleData[date]||[]).some(x=>x.name===a.name&&x.studio===studio);
-      const nowAssigned=val!==null&&val.name===a.name&&val.studio===studio;
-      if(wasAssigned&&!nowAssigned&&(val===null||(val&&val.name!==a.name)))cnt--;
+      const nowAssigned=val!==null&&val.some(x=>x.name===a.name&&x.studio===studio);
+      if(wasAssigned&&!nowAssigned)cnt--;
       if(!wasAssigned&&nowAssigned)cnt++;
     });
-    return`<div style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:var(--bg2);border-radius:var(--radius-sm);font-size:13px"><span>${a.name.split(' ')[0]} ${(a.name.split(' ')[1]||'')[0]||''}.</span><span style="font-weight:700;min-width:20px;text-align:center;color:${studio==='Империал'?'#185FA5':'#0F6E56'}">${Math.max(0,cnt)}</span></div>`;}).join('')}</div></div>`;
+    const c=getAdminColor(a.name);
+    return`<div style="display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:var(--radius-sm);font-size:13px;background:${c.bg}"><span style="color:${c.text};font-weight:500">${a.name.split(' ')[0]} ${(a.name.split(' ')[1]||'')[0]||''}.</span><span style="font-weight:700;min-width:20px;text-align:center;color:${c.text}">${Math.max(0,cnt)}</span></div>`;}).join('')}</div></div>`;
 }
+
+let _schPickerSlot=0; // активный слот для выбора: 0 или 1
+let _schPickerDate='';
+let _schPickerMonthStr='';
+let _schPickerStudio='';
 
 function openSchDayPicker(date,monthStr){
   const picker=document.getElementById('sch-picker');
   if(!picker)return;
-  const studio=scheduleCurrentStudio;
-  const current=(schedulePendingChanges[date]!==undefined?
-    (schedulePendingChanges[date]?.name||null):
-    (scheduleData[date]||[]).find(x=>x.studio===studio)?.name||null);
+  _schPickerDate=date;
+  _schPickerMonthStr=monthStr;
+  _schPickerStudio=scheduleCurrentStudio;
+  // По умолчанию: выбираем слот 0 если пусто, иначе слот 1
+  const cur=_getPickerCurrent();
+  _schPickerSlot=cur.length>=1?1:0;
+  renderSchPicker();
+}
+
+function _getPickerCurrent(){
+  const date=_schPickerDate, studio=_schPickerStudio;
+  const base=(schedulePendingChanges[date]!==undefined?
+    schedulePendingChanges[date]:
+    (scheduleData[date]||[]).filter(x=>x.studio===studio));
+  return base||[];
+}
+
+function _schPickSlot(idx){_schPickerSlot=idx;renderSchPicker();}
+
+function renderSchPicker(){
+  const picker=document.getElementById('sch-picker');
+  if(!picker)return;
+  const date=_schPickerDate,studio=_schPickerStudio;
+  const current=_getPickerCurrent();
+  const slot0=current[0]||null;
+  const slot1=current[1]||null;
+  const slotColors=['#185FA5','#7B3FA5'];
   picker.style.display='block';
-  // Position near center of screen
   picker.style.top='30%';picker.style.left='50%';picker.style.transform='translateX(-50%)';
-  picker.innerHTML=`<div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:10px;display:flex;justify-content:space-between;align-items:center">
+
+  function slotHtml(slotIdx){
+    const person=slotIdx===0?slot0:slot1;
+    const isActive=_schPickerSlot===slotIdx;
+    const c=person?getAdminColor(person.name):{bg:'var(--bg2)',text:'var(--text3)'};
+    return`<div onclick="_schPickSlot(${slotIdx})" style="flex:1;padding:7px 8px;border-radius:6px;cursor:pointer;text-align:center;border:2px solid ${isActive?slotColors[slotIdx]:'transparent'};background:${c.bg}">
+      <div style="font-size:10px;color:${isActive?slotColors[slotIdx]:'var(--text3)'};font-weight:600;margin-bottom:2px">Слот ${slotIdx+1}</div>
+      ${person?`<div style="font-size:11px;color:${c.text};font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${person.name.split(' ')[0]}</div><div style="font-size:10px;color:${c.text};opacity:.8">${person.name.split(' ')[1]||''}</div>`:`<div style="font-size:11px;color:var(--text3)">Свободно</div>`}
+      ${person?`<div onclick="event.stopPropagation();setSchDay('${date}',null,${slotIdx});document.getElementById('sch-picker').style.display='none'" style="font-size:9px;color:var(--red-text);margin-top:2px;pointer-events:auto">✕ убрать</div>`:''}
+    </div>`;
+  }
+
+  picker.innerHTML=`<div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
     <span>${formatDate(date)} · ${studio}</span>
     <button onclick="document.getElementById('sch-picker').style.display='none'" style="background:none;border:none;font-size:16px;cursor:pointer;color:var(--text3)">✕</button>
   </div>
-  ${current?`<div style="margin-bottom:8px;padding:6px 10px;background:${studio==='Империал'?'#E6F1FB':'#E1F5EE'};border-radius:6px;font-size:13px;color:${studio==='Империал'?'#0C447C':'#085041'}">
-    Сейчас: <b>${current}</b>
-    <button onclick="setSchDay('${date}',null);document.getElementById('sch-picker').style.display='none'" style="float:right;background:none;border:none;cursor:pointer;color:var(--red-text);font-size:12px">Убрать</button>
-  </div>`:'<div style="font-size:12px;color:var(--text3);margin-bottom:8px">Не назначено</div>'}
-  <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Назначить</div>
-  ${scheduleAdmins.map(a=>`<div onclick="setSchDay('${date}','${a.name}');document.getElementById('sch-picker').style.display='none'" style="padding:8px 10px;border-radius:6px;cursor:pointer;margin-bottom:4px;background:var(--bg2);font-size:13px;${a.name===current?'border:1px solid var(--border2);':''}">${a.name}</div>`).join('')}`;
-  // Close on outside click
+  <div style="display:flex;gap:6px;margin-bottom:10px">${slotHtml(0)}${slotHtml(1)}</div>
+  <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Назначить в слот ${_schPickerSlot+1}</div>
+  <div style="max-height:200px;overflow-y:auto">
+  ${scheduleAdmins.map(a=>{
+    const isInSlot=current.some(x=>x.name===a.name);
+    const c=getAdminColor(a.name);
+    return`<div onclick="setSchDay('${date}','${a.name}',_schPickerSlot);document.getElementById('sch-picker').style.display='none'" style="padding:7px 10px;border-radius:6px;cursor:pointer;margin-bottom:4px;background:${c.bg};font-size:13px;${isInSlot?'opacity:.5;pointer-events:none;':''}" title="${isInSlot?'Уже назначен':''}"><span style="color:${c.text};font-weight:500">${a.name}</span>${isInSlot?'<span style="float:right;font-size:10px;color:var(--text3)">✓</span>':''}</div>`;
+  }).join('')}
+  </div>`;
   setTimeout(()=>{
     const hide=(e)=>{if(!picker.contains(e.target)){picker.style.display='none';document.removeEventListener('click',hide);}};
     document.addEventListener('click',hide);
   },50);
 }
 
-function setSchDay(date,adminName){
+function setSchDay(date,adminName,slotIdx){
   const studio=scheduleCurrentStudio;
-  const current=(scheduleData[date]||[]).find(x=>x.studio===studio)?.name||null;
+  // Получаем текущий список (pending или из базы)
+  const base=(schedulePendingChanges[date]!==undefined?
+    (schedulePendingChanges[date]||[]):
+    (scheduleData[date]||[]).filter(x=>x.studio===studio));
+  let arr=base.slice(); // копия
+
   if(adminName===null){
-    if(current===null)delete schedulePendingChanges[date];
-    else schedulePendingChanges[date]=null;
+    // Убрать конкретный слот
+    arr.splice(slotIdx,1);
   } else {
-    if(adminName===current)delete schedulePendingChanges[date];
-    else schedulePendingChanges[date]={name:adminName,studio};
+    // Не допускаем дублирование одного человека
+    arr=arr.filter(x=>x.name!==adminName);
+    // Вставляем в нужный слот (или заменяем)
+    if(slotIdx<arr.length){arr[slotIdx]={name:adminName,studio};}
+    else{arr.push({name:adminName,studio});}
   }
+  // Обрезаем до 2 человек
+  arr=arr.slice(0,2);
+  // Сравниваем с оригиналом из базы
+  const orig=(scheduleData[date]||[]).filter(x=>x.studio===studio);
+  const sameAsOrig=orig.length===arr.length&&arr.every((v,i)=>orig[i]&&orig[i].name===v.name);
+  if(sameAsOrig) delete schedulePendingChanges[date];
+  else schedulePendingChanges[date]= arr.length===0?null:arr;
   // Re-render grid without full reload
   const y=scheduleYear,m=scheduleMonth;
   const monthStr=y+'-'+String(m+1).padStart(2,'0');
@@ -3807,18 +3899,17 @@ async function clearScheduleMonth(){
 
 async function saveSchedule(){
   const studio=scheduleCurrentStudio;
-  const toDelete=Object.entries(schedulePendingChanges).filter(([,v])=>v===null).map(([d])=>d);
-  const toUpsert=Object.entries(schedulePendingChanges).filter(([,v])=>v!==null).map(([d,v])=>({admin_name:v.name,studio:v.studio,date:d,created_by:'admin'}));
   let hasError=false;
-  if(toDelete.length){
-    for(const date of toDelete){
-      const {error}=await sb.from('schedule').delete().eq('date',date).eq('studio',studio);
-      if(error){alert('Ошибка удаления: '+error.message);hasError=true;break;}
+  for(const [date,val] of Object.entries(schedulePendingChanges)){
+    // Сначала удаляем старые записи для этой даты и студии
+    const {error:delErr}=await sb.from('schedule').delete().eq('date',date).eq('studio',studio);
+    if(delErr){alert('Ошибка удаления: '+delErr.message);hasError=true;break;}
+    // Затем вставляем новые (если не null)
+    if(val&&val.length>0){
+      const rows=val.map(x=>({admin_name:x.name,studio:x.studio,date,created_by:'admin'}));
+      const {error:insErr}=await sb.from('schedule').insert(rows);
+      if(insErr){alert('Ошибка сохранения: '+insErr.message);hasError=true;break;}
     }
-  }
-  if(!hasError&&toUpsert.length){
-    const {error}=await sb.from('schedule').upsert(toUpsert,{onConflict:'admin_name,date'});
-    if(error){alert('Ошибка сохранения: '+error.message);hasError=true;}
   }
   if(!hasError){schedulePendingChanges={};await renderSchedule();}
 }
