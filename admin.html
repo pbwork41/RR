@@ -1788,12 +1788,13 @@ async function renderStaff(){
           </div>
           <div class="form-row" style="margin:0;flex:1;min-width:200px">
             <label style="font-size:11px">Тип мотивации</label>
-            <select style="font-size:12px;padding:4px 6px" onchange="updateProfile(${p.id},'motivation_type',this.value);this.nextElementSibling.style.display=this.value==='sales_pct'?'block':'none'">
+            <select style="font-size:12px;padding:4px 6px" onchange="updateProfile(${p.id},'motivation_type',this.value);this.nextElementSibling.style.display=(this.value==='sales_pct'||this.value==='service_manager')?'block':'none';this.nextElementSibling.innerHTML=this.value==='service_manager'?'💜 Расчёт по выходам, NPS, звонкам, возвратам и массажам — настройте таргеты в разделе <b onclick=\\'switchTab(\\\"service\\\")\\' style=\\'cursor:pointer;text-decoration:underline\\'>Сервис-менеджер</b>':'📊 Шкала настраивается в разделе <b onclick=\\'switchTab(\\\"motivation\\\")\\' style=\\'cursor:pointer;text-decoration:underline\\'>Мотивация → Шкала продаж</b>'">
               <option value="standard" ${(p.motivation_type||'standard')==='standard'?'selected':''}>Оклад + % от продаж</option>
               <option value="sales_pct" ${p.motivation_type==='sales_pct'?'selected':''}>% от объёма продаж (шкала)</option>
+              <option value="service_manager" ${p.motivation_type==='service_manager'?'selected':''}>Сервис-менеджер (выходы + бонусы)</option>
             </select>
-            <div style="display:${p.motivation_type==='sales_pct'?'block':'none'};font-size:11px;color:var(--purple-text);margin-top:3px">
-              📊 Шкала настраивается в разделе <b onclick="switchTab('motivation')" style="cursor:pointer;text-decoration:underline">Мотивация → Шкала продаж</b>
+            <div style="display:${(p.motivation_type==='sales_pct'||p.motivation_type==='service_manager')?'block':'none'};font-size:11px;color:var(--purple-text);margin-top:3px">
+              ${p.motivation_type==='service_manager'?`💜 Расчёт по выходам, NPS, звонкам, возвратам и массажам — настройте таргеты в разделе <b onclick="switchTab('service')" style="cursor:pointer;text-decoration:underline">Сервис-менеджер</b>`:`📊 Шкала настраивается в разделе <b onclick="switchTab('motivation')" style="cursor:pointer;text-decoration:underline">Мотивация → Шкала продаж</b>`}
             </div>
           </div>
         </div>
@@ -1915,18 +1916,30 @@ async function loadSalaryData(){
     {data:sd},
     {data:bonusData},
     {data:profilesData},
-    {data:salesSchemes}
+    {data:salesSchemes},
+    {data:smTargetsData},
+    {data:smReportsData},
+    {data:npsData}
   ] = await Promise.all([
     sb.from('shifts').select('*').gte('date',from).lte('date',to),
     sb.from('admin_bonuses').select('*').gte('month',from.slice(0,7)).lte('month',to.slice(0,7)),
     sb.from('profiles').select('id,name,motivation_type,role').eq('active',true),
-    sb.from('sales_motivation_schemes').select('*').order('effective_from',{ascending:false}).limit(1)
+    sb.from('sales_motivation_schemes').select('*').order('effective_from',{ascending:false}).limit(1),
+    sb.from('service_manager_targets').select('*').order('effective_from',{ascending:false}).limit(1),
+    sb.from('service_manager_reports').select('*').gte('report_date',from).lte('report_date',to),
+    sb.from('nps_responses').select('id,collected_by,survey_date').gte('survey_date',from).lte('survey_date',to)
   ]);
 
   btn.disabled=false;btn.textContent='Загрузить';
 
   const profileMap={};(profilesData||[]).forEach(p=>{profileMap[p.name]=p;});
   const salesScheme=(salesSchemes||[])[0];
+  const smT=(smTargetsData||[])[0]||{shift_rate:1500,nps_target:100,nps_bonus:7000,calls_target:200,calls_bonus:10000,returned_client_bonus:500,massage_bonus:500};
+  // Данные СМ сгруппированные по имени менеджера
+  const smReports=smReportsData||[];
+  const smNpsData=npsData||[];
+  // Список id профилей сервис-менеджеров
+  const smProfileIds=new Set((profilesData||[]).filter(p=>p.role==='service_manager'||p.motivation_type==='service_manager').map(p=>p.id));
 
   const periodShifts=(sd||[]).map(r=>({
     id:r.id,date:r.date,studio:r.studio,admin:r.admin,
@@ -1952,10 +1965,28 @@ async function loadSalaryData(){
     const revenue=ss.reduce((a,s)=>a+s.newSales+s.renew+s.restore,0);
 
     let fix=0,pNew=0,pRenew=0,pRestore=0,bonus=0,salaryByRevenue=0;
+    // Данные сервис-менеджера
+    let smShifts=0,smNps=0,smCalls=0,smReturned=0,smMassage=0;
+    let smSalShifts=0,smSalNps=0,smSalCalls=0,smSalReturned=0,smSalMassage=0;
 
-    if(motType==='sales_pct'&&salesScheme){
+    if(motType==='service_manager'){
+      // Считаем по service_manager_reports по имени
+      const myReps=smReports.filter(r=>r.manager_name===admin);
+      smShifts=myReps.length;
+      smCalls=myReps.reduce((a,r)=>a+(+r.calls_count||0),0);
+      smReturned=myReps.reduce((a,r)=>a+(+r.returned_clients||0),0);
+      smMassage=myReps.reduce((a,r)=>a+(+r.massage_bookings||0),0);
+      // NPS из nps_responses по collected_by (id конкретного профиля)
+      const myProfileId=profile.id;
+      smNps=smNpsData.filter(r=>r.collected_by===myProfileId).length;
+      smSalShifts=smShifts*smT.shift_rate;
+      smSalNps=smNps>=smT.nps_target?smT.nps_bonus:0;
+      smSalCalls=smCalls>=smT.calls_target?smT.calls_bonus:0;
+      smSalReturned=smReturned*smT.returned_client_bonus;
+      smSalMassage=smMassage*smT.massage_bonus;
+    } else if(motType==='sales_pct'&&salesScheme){
       // Мотивация по объёму продаж: шкала порогов
-      fix=ss.length*+salesScheme.fix_per_shift||0; // нет оклада за смену в этом типе
+      fix=ss.length*+salesScheme.fix_per_shift||0;
       const sal=calcSalesSalary(revenue,salesScheme);
       salaryByRevenue=sal.base;
       bonus=sal.extra;
@@ -1965,10 +1996,12 @@ async function loadSalaryData(){
         fix+=sal.fix;pNew+=sal.pNew;pRenew+=sal.pRenew;pRestore+=sal.pRestore;bonus+=sal.bonus;
       });
     }
-    const total=(motType==='sales_pct'?salaryByRevenue+bonus:fix+pNew+pRenew+pRestore+bonus);
+    const smTotal=smSalShifts+smSalNps+smSalCalls+smSalReturned+smSalMassage;
+    const total=motType==='service_manager'?smTotal:(motType==='sales_pct'?salaryByRevenue+bonus:fix+pNew+pRenew+pRestore+bonus);
     const adminBonusList=(bonusData||[]).filter(b=>b.admin_name===admin);
     const bonusManual=adminBonusList.reduce((a,b)=>a+(+b.amount||0),0);
-    return{admin,studio,n,revenue,fix,pNew,pRenew,pRestore,bonus,salaryByRevenue,bonusManual,adminBonusList,total:total+bonusManual,motType};
+    return{admin,studio,n,revenue,fix,pNew,pRenew,pRestore,bonus,salaryByRevenue,bonusManual,adminBonusList,total:total+bonusManual,motType,
+      smShifts,smNps,smCalls,smReturned,smMassage,smSalShifts,smSalNps,smSalCalls,smSalReturned,smSalMassage,smT};
   }).sort((a,b)=>b.total-a.total);
   
   const grandTotal=adminData.reduce((a,d)=>a+d.total,0);
@@ -1995,22 +2028,28 @@ async function loadSalaryData(){
           <div style="font-size:11px;color:var(--text3)">выручка: ${fmt(d.revenue)} ₽</div>
         </div>
       </div>
-      <div style="background:var(--bg2);border-radius:var(--radius-sm);padding:.75rem">
-        ${(d.motType==='sales_pct'?[
-          {label:`База по объёму продаж (${fmt(d.revenue)} ₽)`,val:d.salaryByRevenue},
-          {label:'Сверхплановые (10%)',val:d.bonus},
-          {label:'Бонусы руководителя',val:d.bonusManual},
+      <div style="background:${d.motType==='service_manager'?'var(--purple-bg)':'var(--bg2)'};border-radius:var(--radius-sm);padding:.75rem">
+        ${(d.motType==='service_manager'?[
+          {label:`Выходы (${d.smShifts} × ${fmt(d.smT.shift_rate)} ₽)`,val:d.smSalShifts,tip:null},
+          {label:`NPS (${d.smNps}/${d.smT.nps_target})`,val:d.smSalNps,tip:d.smNps<d.smT.nps_target?`не хватает ${d.smT.nps_target-d.smNps}`:null},
+          {label:`Звонки (${d.smCalls}/${d.smT.calls_target})`,val:d.smSalCalls,tip:d.smCalls<d.smT.calls_target?`не хватает ${d.smT.calls_target-d.smCalls}`:null},
+          {label:`Возвраты (${d.smReturned} кл.)`,val:d.smSalReturned,tip:null},
+          {label:`Массажи (${d.smMassage})`,val:d.smSalMassage,tip:null},
+        ]:d.motType==='sales_pct'?[
+          {label:`База по объёму продаж (${fmt(d.revenue)} ₽)`,val:d.salaryByRevenue,tip:null},
+          {label:'Сверхплановые (10%)',val:d.bonus,tip:null},
+          {label:'Бонусы руководителя',val:d.bonusManual,tip:null},
         ]:[
-          {label:`Оклад (${d.n} × 1 500 ₽)`,val:d.fix},
-          {label:'Новые абонементы (5%)',val:d.pNew},
-          {label:'Продления (8%)',val:d.pRenew},
-          {label:'Восстановление (10%)',val:d.pRestore},
-          {label:'Бонус за кассу',val:d.bonus},
-          {label:'Бонусы руководителя',val:d.bonusManual},
-        ]).filter(i=>i.val>0).map(i=>`
+          {label:`Оклад (${d.n} × 1 500 ₽)`,val:d.fix,tip:null},
+          {label:'Новые абонементы (5%)',val:d.pNew,tip:null},
+          {label:'Продления (8%)',val:d.pRenew,tip:null},
+          {label:'Восстановление (10%)',val:d.pRestore,tip:null},
+          {label:'Бонус за кассу',val:d.bonus,tip:null},
+          {label:'Бонусы руководителя',val:d.bonusManual,tip:null},
+        ]).filter(i=>i.val>0||i.tip).map(i=>`
           <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);font-size:13px">
-            <span style="color:var(--text2)">${i.label}</span>
-            <span style="font-weight:600">${fmt(i.val)} ₽</span>
+            <span style="color:var(--text2)">${i.label}${i.tip?` <span style="font-size:11px;color:var(--amber-text)">(${i.tip})</span>`:''}</span>
+            <span style="font-weight:600">${i.val>0?fmt(i.val)+' ₽':'—'}</span>
           </div>`).join('')}
         ${d.adminBonusList&&d.adminBonusList.length?`<div style="margin-top:6px;padding-top:6px;border-top:1px solid var(--border)">${d.adminBonusList.map(b=>`<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px;color:var(--text2)"><span>↳ ${b.reason||'Бонус'}</span><span style="color:var(--green-text);font-weight:500">+${fmt(b.amount)} ₽</span></div>`).join('')}</div>`:''}
         <div style="display:flex;justify-content:space-between;padding:8px 0 0;font-size:14px;font-weight:700">
@@ -3971,7 +4010,11 @@ function renderNpsUI(el){
       <button class="btn btn-sm" onclick="npsPeriodFrom='';npsPeriodTo='';renderNpsUI(document.getElementById('nps-content'))">Все</button>
     </div>
     ${total?`
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px">
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:16px">
+      <div style="background:var(--bg2);border-radius:var(--radius-sm);padding:12px;text-align:center">
+        <div style="font-size:22px;font-weight:800;color:var(--purple)">${total}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">Всего собрано</div>
+      </div>
       <div style="background:var(--bg2);border-radius:var(--radius-sm);padding:12px;text-align:center">
         <div style="font-size:22px;font-weight:800;color:var(--purple)">${avg??'—'}</div>
         <div style="font-size:11px;color:var(--text3);margin-top:2px">Средний балл</div>
@@ -4012,8 +4055,13 @@ async function openNpsForm(){
   document.getElementById('nps-modal').style.display='flex';
   // Заполняем дропдаун сервис-менеджеров
   const sel=document.getElementById('nps-collected-by');
-  const {data:sms}=await sb.from('profiles').select('id,name').eq('active',true).eq('role','service_manager');
-  sel.innerHTML='<option value="">— не указано —</option>'+(sms||[]).map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+  const {data:sms}=await sb.from('profiles').select('id,name').eq('active',true).in('role',['service_manager']).order('name');
+  const saved=localStorage.getItem('nps_collector_id')||'';
+  sel.innerHTML='<option value="">— выберите себя —</option>'+(sms||[]).map(p=>`<option value="${p.id}"${String(p.id)===saved?'selected':''}>${p.name}</option>`).join('');
+  // Обновляем подпись если менеджер уже выбран
+  if(saved&&(sms||[]).find(p=>String(p.id)===saved)){
+    sel.style.background='var(--green-bg,#d8f5d8)';
+  }
 }
 
 async function saveNPS(){
@@ -4032,7 +4080,8 @@ async function saveNPS(){
   if(error){btn.disabled=false;btn.textContent='Сохранить';alert('Ошибка: '+error.message);return;}
   document.getElementById('nps-modal').style.display='none';
   ['nps-name','nps-phone','nps-score','nps-comment'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('nps-collected-by').value='';
+  // НЕ сбрасываем nps-collected-by — менеджер остаётся выбран для следующей записи
+  document.querySelectorAll('#nps-modal button[onclick^="selectNpsScore"]').forEach(b=>{b.style.background='#fff';b.style.color='inherit';b.style.borderColor='var(--border)';});
   btn.disabled=false;btn.textContent='Сохранить';
   renderNPS();
   renderOverview();
@@ -4117,6 +4166,13 @@ async function saveNPS(){
       <button class="btn btn-sm" onclick="document.getElementById('nps-modal').style.display='none'">✕</button>
     </div>
     <div style="display:grid;gap:10px">
+      <div style="background:var(--purple-bg,#f3e8ff);border-radius:var(--radius-sm);padding:12px;border:2px solid var(--purple,#9333ea)">
+        <label style="font-size:12px;font-weight:700;color:var(--purple,#9333ea);display:block;margin-bottom:6px">👤 Кто собирает NPS (ваш профиль)</label>
+        <select id="nps-collected-by" onchange="localStorage.setItem('nps_collector_id',this.value)" style="width:100%;padding:9px 12px;border:1px solid var(--purple,#9333ea);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;font-weight:600">
+          <option value="">— выберите себя —</option>
+        </select>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">Выбор запомнится на этом устройстве</div>
+      </div>
       <div>
         <label style="font-size:12px;font-weight:500;color:var(--text2);display:block;margin-bottom:4px">Имя клиента *</label>
         <input id="nps-name" type="text" placeholder="Иванова Анна" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit">
@@ -4146,21 +4202,13 @@ async function saveNPS(){
         <label style="font-size:12px;font-weight:500;color:var(--text2);display:block;margin-bottom:4px">Комментарий</label>
         <textarea id="nps-comment" rows="2" placeholder="Что клиент сказал..." style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-family:inherit;resize:vertical"></textarea>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        <div>
-          <label style="font-size:12px;font-weight:500;color:var(--text2);display:block;margin-bottom:4px">Кто собрал (сервис-менеджер)</label>
-          <select id="nps-collected-by" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-family:inherit">
-            <option value="">— не указано —</option>
-          </select>
-        </div>
-        <div>
-          <label style="font-size:12px;font-weight:500;color:var(--text2);display:block;margin-bottom:4px">Студия</label>
-          <select id="nps-studio" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-family:inherit">
-            <option value="">Все</option>
-            <option value="Империал">Империал</option>
-            <option value="Мечта">Мечта</option>
-          </select>
-        </div>
+      <div>
+        <label style="font-size:12px;font-weight:500;color:var(--text2);display:block;margin-bottom:4px">Студия</label>
+        <select id="nps-studio" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-family:inherit">
+          <option value="">Все</option>
+          <option value="Империал">Империал</option>
+          <option value="Мечта">Мечта</option>
+        </select>
       </div>
     </div>
     <div style="display:flex;gap:8px;margin-top:16px">
